@@ -143,116 +143,121 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
               <span>review items left</span>
             </div>
           </div>
-          <div className="atlas-tabs" aria-label="Access review views">
-            {[
-              ['map', 'Access map', Network],
-              ['matrix', 'Resource matrix', Layers],
-              ['queue', 'Review queue', FileCheck2],
-              ['changes', 'Changes', GitCompareArrows],
-            ].map(([id, label, Icon]) => (
-              <button
-                key={String(id)}
-                aria-pressed={view === id}
-                className={view === id ? 'active' : ''}
-                onClick={() => setView(String(id))}
-              >
-                {typeof Icon !== 'string' && <Icon size={17} />}
-                <span>{String(label)}</span>
-                {id === 'queue' && <span className="tab-count">{items.length - reviewed}</span>}
-              </button>
-            ))}
-          </div>
-          {view === 'map' && (
-            <AccessMap snapshot={snapshot} onManage={() => navigate('permissions')} />
-          )}
-          {view === 'matrix' && <ResourceMatrix snapshot={snapshot} />}
-          {view === 'queue' && (
-            <ReviewQueue
-              items={items}
-              decisions={decisions}
-              setDecisions={setDecisions}
-              snapshot={snapshot}
-              navigate={navigate}
-            />
-          )}
-          {view === 'changes' && (
-            <section className="panel drift-panel">
-              <div className="section-heading">
-                <div>
-                  <h2>Configuration changes</h2>
-                  <p>Compare two captures from the same configured instance.</p>
-                </div>
-                <div className="inline-actions">
-                  <button disabled={!complete} onClick={() => setBaseline(snapshot)}>
-                    Use current as baseline
-                  </button>
-                  <button onClick={() => file.current?.click()}>
-                    <Upload size={15} /> Import baseline
-                  </button>
-                </div>
-              </div>
-              <input
-                ref={file}
-                type="file"
-                accept="application/json,.json"
-                hidden
-                onChange={(e) => {
-                  void importBaseline(e.target.files?.[0]);
-                  e.target.value = '';
-                }}
-              />
-              {baseline ? (
-                <>
-                  <div className="baseline-strip">
-                    <span>Baseline: {new Date(baseline.capturedAt).toLocaleString()}</span>
-                    <button className="text-link" onClick={() => setBaseline(undefined)}>
-                      Clear baseline
-                    </button>
-                  </div>
-                  {delta.error ? (
-                    <ErrorBox error={delta.error} />
-                  ) : (
-                    <>
-                      <p className="padded muted">
-                        {delta.rows.length} changed records. Capture again after an administrative
-                        change to compare. Review notes are excluded.
-                      </p>
-                      {delta.rows.map((d) => (
-                        <details className="drift-row" key={d.kind + ':' + d.name}>
-                          <summary>
-                            <Badge tone={d.change === 'removed' ? 'warning' : 'neutral'}>
-                              {d.change}
-                            </Badge>
-                            <span>{d.kind}</span>
-                            <strong>{d.name}</strong>
-                          </summary>
-                          <div className="diff-columns">
-                            <div>
-                              <h3>Before</h3>
-                              <pre>{JSON.stringify(d.before ?? null, null, 2)}</pre>
-                            </div>
-                            <div>
-                              <h3>After</h3>
-                              <pre>{JSON.stringify(d.after ?? null, null, 2)}</pre>
-                            </div>
-                          </div>
-                        </details>
-                      ))}
-                    </>
-                  )}
-                </>
-              ) : (
-                <div className="atlas-empty">
-                  <GitCompareArrows size={32} />
-                  <h2>Start a comparison</h2>
-                  <p>
-                    Save this capture as a baseline, make a reviewed change in the administration
-                    tools, then capture again. You can also import a previously exported snapshot.
-                  </p>
-                </div>
+          <div className="atlas-review-layout">
+            <nav className="atlas-tabs" aria-label="Access review views">
+              {[
+                ['map', 'Access map', Network],
+                ['matrix', 'Resource matrix', Layers],
+                ['queue', 'Review queue', FileCheck2],
+                ['changes', 'Changes', GitCompareArrows],
+              ].map(([id, label, Icon]) => (
+                <button
+                  key={String(id)}
+                  aria-pressed={view === id}
+                  className={view === id ? 'active' : ''}
+                  onClick={() => setView(String(id))}
+                >
+                  {typeof Icon !== 'string' && <Icon size={17} />}
+                  <span>{String(label)}</span>
+                  {id === 'queue' && <span className="tab-count">{items.length - reviewed}</span>}
+                </button>
+              ))}
+            </nav>
+            <div className="atlas-review-content">
+              {view === 'map' && (
+                <AccessMap snapshot={snapshot} onManage={() => navigate('permissions')} />
               )}
-            </section>
-          )}
+              {view === 'matrix' && <ResourceMatrix snapshot={snapshot} />}
+              {view === 'queue' && (
+                <ReviewQueue
+                  items={items}
+                  decisions={decisions}
+                  setDecisions={setDecisions}
+                  snapshot={snapshot}
+                  navigate={navigate}
+                />
+              )}
+              {view === 'changes' && (
+                <section className="panel drift-panel">
+                  <div className="section-heading">
+                    <div>
+                      <h2>Configuration changes</h2>
+                      <p>Compare two captures from the same configured instance.</p>
+                    </div>
+                    <div className="inline-actions">
+                      <button disabled={!complete} onClick={() => setBaseline(snapshot)}>
+                        Use current as baseline
+                      </button>
+                      <button onClick={() => file.current?.click()}>
+                        <Upload size={15} /> Import baseline
+                      </button>
+                    </div>
+                  </div>
+                  <input
+                    ref={file}
+                    type="file"
+                    accept="application/json,.json"
+                    hidden
+                    onChange={(e) => {
+                      void importBaseline(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                  />
+                  {baseline ? (
+                    <>
+                      <div className="baseline-strip">
+                        <span>Baseline: {new Date(baseline.capturedAt).toLocaleString()}</span>
+                        <button className="text-link" onClick={() => setBaseline(undefined)}>
+                          Clear baseline
+                        </button>
+                      </div>
+                      {delta.error ? (
+                        <ErrorBox error={delta.error} />
+                      ) : (
+                        <>
+                          <p className="padded muted">
+                            {delta.rows.length} changed records. Capture again after an
+                            administrative change to compare. Review notes are excluded.
+                          </p>
+                          {delta.rows.map((d) => (
+                            <details className="drift-row" key={d.kind + ':' + d.name}>
+                              <summary>
+                                <Badge tone={d.change === 'removed' ? 'warning' : 'neutral'}>
+                                  {d.change}
+                                </Badge>
+                                <span>{d.kind}</span>
+                                <strong>{d.name}</strong>
+                              </summary>
+                              <div className="diff-columns">
+                                <div>
+                                  <h3>Before</h3>
+                                  <pre>{JSON.stringify(d.before ?? null, null, 2)}</pre>
+                                </div>
+                                <div>
+                                  <h3>After</h3>
+                                  <pre>{JSON.stringify(d.after ?? null, null, 2)}</pre>
+                                </div>
+                              </div>
+                            </details>
+                          ))}
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <div className="atlas-empty">
+                      <GitCompareArrows size={32} />
+                      <h2>Start a comparison</h2>
+                      <p>
+                        Save this capture as a baseline, make a reviewed change in the
+                        administration tools, then capture again. You can also import a previously
+                        exported snapshot.
+                      </p>
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+          </div>
           <p className="atlas-footnote">
             Configuration evidence, not a live authorization decision. Application roles,
             escalation, SQL/row policies and current sessions can change runtime access. Captures

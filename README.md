@@ -6,6 +6,8 @@ Built for the [InterSystems Programming Contest: Build Your Own Management Porta
 
 ![Access Atlas reviewing real IRIS configuration](docs/images/overview.png)
 
+The top navigation separates **Review**, **Administration** and **Instance**. Review has its own tool rail for the access map, resource matrix, review queue and changes. Administration contains accounts, applications, security and tasks; Instance contains the overview, host resources, logs and REST explorer. Switching sections preserves the captured review until logout or reload.
+
 ## The access-review workflow
 
 1. Sign in and let **Access review** capture users, role definitions, resources and applications. Read the completeness indicator and any warnings.

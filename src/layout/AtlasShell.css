@@ -1,0 +1,375 @@
+/* Atlas uses a document workspace with global sections above the review tools. */
+:root {
+  background: var(--bg);
+  color: var(--text);
+  --bg: #f7f8fa;
+  --panel: #fff;
+  --line: #d9dfe7;
+  --accent: #234c85;
+  --tint: #edf2f8;
+}
+.access-atlas-app {
+  display: block;
+  font-family: 'Segoe UI', Arial, sans-serif;
+}
+.atlas-masthead {
+  display: flex;
+  align-items: center;
+  gap: 38px;
+  min-height: 84px;
+  padding: 0 34px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.atlas-wordmark {
+  font:
+    27px Georgia,
+    serif;
+  white-space: nowrap;
+  color: var(--text);
+}
+.atlas-wordmark > span {
+  display: block;
+  font:
+    11px 'Segoe UI',
+    sans-serif;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.atlas-masthead nav {
+  display: flex;
+  align-self: stretch;
+  gap: 8px;
+}
+.atlas-masthead nav button {
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  border-radius: 0;
+  padding: 0 18px;
+  font-size: 14px;
+}
+.atlas-masthead nav button[aria-current] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.atlas-session {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+}
+.atlas-session button {
+  border: 0;
+  background: transparent;
+}
+.atlas-signout {
+  margin-left: 10px;
+}
+.atlas-section-nav {
+  display: flex;
+  gap: 20px;
+  padding: 0 34px;
+  background: var(--panel);
+  overflow-x: auto;
+  border-bottom: 1px solid var(--line);
+}
+.atlas-section-nav button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  padding: 14px 5px;
+  flex-shrink: 0;
+}
+.atlas-section-nav button[aria-current] {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.atlas-document {
+  max-width: 1600px;
+  padding: 30px 34px;
+  min-height: calc(100vh - 84px);
+}
+.atlas-document h1 {
+  font:
+    30px Georgia,
+    serif;
+  letter-spacing: -0.5px;
+}
+.atlas-document h2,
+.atlas-document h3 {
+  font-family: 'Segoe UI', Arial, sans-serif;
+  letter-spacing: 0;
+}
+.atlas-document .page-header {
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 20px;
+  margin-bottom: 12px;
+}
+.atlas-document .panel {
+  border-radius: 2px;
+}
+.atlas-document button,
+.atlas-document input,
+.atlas-document select,
+.atlas-document textarea {
+  border-radius: 3px;
+}
+.atlas-document .badge {
+  border-radius: 3px;
+}
+.atlas-document .atlas-context {
+  padding: 8px 0;
+  margin: 0;
+  font-size: 12px;
+}
+.atlas-document .atlas-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 26px;
+  background: transparent;
+  border: 0;
+  margin: 6px 0 24px;
+}
+.atlas-document .atlas-summary > div {
+  flex-wrap: nowrap;
+  padding: 0;
+  border: 0;
+  gap: 7px;
+}
+.atlas-document .atlas-summary svg {
+  display: none;
+}
+.atlas-document .atlas-summary strong {
+  font-size: 15px;
+}
+.atlas-document .atlas-summary span {
+  width: auto;
+  font-size: 12px;
+}
+.atlas-review-layout {
+  display: grid;
+  grid-template-columns: 164px minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+.atlas-review-content {
+  min-width: 0;
+}
+.atlas-document .atlas-tabs {
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  margin: 0;
+  gap: 3px;
+  overflow: visible;
+}
+.atlas-document .atlas-tabs button {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+  padding: 12px 10px;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 0;
+  white-space: normal;
+  font-size: 12px;
+}
+.atlas-document .atlas-tabs button.active {
+  border-color: var(--accent);
+  background: var(--tint);
+}
+.atlas-document .atlas-tabs button svg {
+  flex-shrink: 0;
+  width: 16px;
+}
+.atlas-document .access-workbench {
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+}
+.atlas-document .identity-list {
+  border: 0;
+  border-right: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: 0;
+}
+.atlas-document .identity-options {
+  max-height: 65vh;
+}
+.atlas-document .identity-options > button {
+  border-radius: 0;
+  margin: 0;
+  padding: 11px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.atlas-document .identity-avatar {
+  display: none;
+}
+.atlas-document .identity-options > button.selected {
+  border-color: var(--line);
+  background: var(--panel);
+  box-shadow: inset 3px 0 var(--accent);
+}
+.atlas-document .access-detail {
+  border: 0;
+  border-radius: 0;
+}
+.atlas-document .access-detail .section-heading {
+  padding: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.atlas-document .access-detail .section-heading h2 {
+  font:
+    27px Georgia,
+    serif;
+  margin-top: 5px;
+}
+.atlas-document .role-switches label {
+  background: transparent;
+  border-radius: 2px;
+  padding: 6px 8px;
+}
+.atlas-document .role-path-intro {
+  padding-top: 18px;
+}
+.access-atlas-app .primary,
+.access-atlas-login .primary {
+  background: var(--accent);
+  color: var(--panel);
+  border-color: var(--accent);
+}
+.atlas-document .atlas-footnote {
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+  margin-top: 24px;
+}
+.atlas-document .table-wrap {
+  border-radius: 0;
+}
+.atlas-document th {
+  background: var(--panel);
+  border-bottom: 2px solid var(--line);
+}
+.atlas-document tbody tr:nth-child(even) {
+  background: var(--bg);
+}
+.access-atlas-login {
+  background: var(--panel);
+}
+.access-atlas-login .login-card {
+  border: 0;
+  border-top: 3px solid var(--accent);
+  border-radius: 0;
+  padding: 30px 0;
+}
+.access-atlas-login .brand {
+  font:
+    32px Georgia,
+    serif;
+}
+.access-atlas-login .brand-mark {
+  display: none;
+}
+.access-atlas-login .login-card h1 {
+  font:
+    24px Georgia,
+    serif;
+}
+[data-theme='dark'] {
+  --bg: #18212d;
+  --panel: #202b39;
+  --line: #3b4757;
+  --accent: #a7c8f9;
+  --tint: #29394d;
+}
+@media (max-width: 1100px) {
+  .atlas-masthead {
+    gap: 18px;
+    padding: 0 22px;
+  }
+  .atlas-masthead nav button {
+    padding: 0 12px;
+  }
+  .atlas-review-layout {
+    grid-template-columns: 140px minmax(0, 1fr);
+    gap: 16px;
+  }
+  .atlas-document .access-workbench {
+    grid-template-columns: 180px minmax(0, 1fr);
+  }
+  .atlas-signout span {
+    display: none;
+  }
+}
+@media (max-width: 800px) {
+  .atlas-masthead {
+    flex-wrap: wrap;
+    padding: 18px 18px 0;
+    gap: 15px;
+  }
+  .atlas-wordmark {
+    font-size: 25px;
+  }
+  .atlas-masthead nav {
+    order: 3;
+    width: 100%;
+    height: 46px;
+  }
+  .atlas-masthead nav button {
+    flex: 1;
+    font-size: 13px;
+  }
+  .atlas-session {
+    gap: 0;
+  }
+  .atlas-session button {
+    padding: 8px;
+  }
+  .atlas-signout {
+    margin: 0;
+  }
+  .atlas-document {
+    padding: 22px 18px;
+  }
+  .atlas-document h1 {
+    font-size: 27px;
+  }
+  .atlas-section-nav {
+    padding: 0 18px;
+    gap: 14px;
+  }
+  .atlas-review-layout {
+    display: block;
+  }
+  .atlas-document .atlas-tabs {
+    flex-direction: row;
+    overflow-x: auto;
+    margin-bottom: 16px;
+  }
+  .atlas-document .atlas-tabs button {
+    width: auto;
+    flex-shrink: 0;
+    white-space: nowrap;
+    border-left: 0;
+    border-bottom: 2px solid transparent;
+  }
+  .atlas-document .access-workbench {
+    display: block;
+  }
+  .atlas-document .identity-list {
+    border: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .atlas-document .identity-options {
+    max-height: 190px;
+  }
+  .atlas-document .atlas-summary {
+    gap: 10px 20px;
+  }
+  .atlas-document .atlas-context {
+    flex-wrap: wrap;
+  }
+}
