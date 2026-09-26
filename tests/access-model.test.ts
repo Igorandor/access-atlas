@@ -126,6 +126,35 @@ test('baseline parser rejects injected fields and oversized collections', () => 
   assert.throws(() => parseSnapshot({ ...fixture(), command: 'delete' }));
   assert.throws(() => parseSnapshot({ ...fixture(), users: Array(201).fill(fixture().users[0]) }));
 });
+
+test('a baseline cannot hide changed identities by omitting incompleteness warnings', () => {
+  for (const kind of ['users', 'roles', 'apps'] as const) {
+    const before = fixture(),
+      after = fixture();
+    before.apps = [
+      { Name: '/private', Enabled: true, AutheEnabled: 32, Resource: 'Data', NameSpace: 'USER' },
+    ];
+    after.apps = structuredClone(before.apps);
+    before[kind][0].unavailable = '';
+    after.users[0].Roles = ['%All'];
+    const imported = parseSnapshot(JSON.parse(JSON.stringify(before)));
+    assert.deepEqual(imported.warnings, []);
+    assert.throws(() => compareSnapshots(imported, after), /complete/);
+    assert.throws(() => compareSnapshots(after, imported), /complete/);
+  }
+});
+
+test('baseline parser rejects nested prototype fields and keeps identity names as data', () => {
+  const baseline = JSON.parse(JSON.stringify(fixture()));
+  baseline.users[0] = JSON.parse(
+    '{"Name":"__proto__","Enabled":true,"Roles":[],"EscalationRoles":[],"__proto__":{"polluted":true}}',
+  );
+  assert.throws(() => parseSnapshot(baseline));
+  delete baseline.users[0].__proto__;
+  const parsed = parseSnapshot(baseline);
+  assert.equal(parsed.users[0].Name, '__proto__');
+  assert.equal(({} as Record<string, unknown>).polluted, undefined);
+});
 test('capture only returns selected access metadata, never account secrets', async () => {
   const client = new IrisClient('http://iris', async (input) => {
     const path = new URL(String(input)).pathname;

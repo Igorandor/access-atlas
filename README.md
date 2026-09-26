@@ -167,3 +167,5 @@ Original application code is MIT licensed. The InterSystems API specification is
 ## Shared foundation
 
 The administration foundation is shared with the sibling Harbor project. Access Atlas adds its own access-review domain and standalone `Atlas` native extension. No sibling checkout is required. See [project provenance](docs/PROVENANCE.md).
+
+See [Reading and editing native API data](docs/DATA_VIEWS.md) for interactive response views, nested configuration controls and their limits.

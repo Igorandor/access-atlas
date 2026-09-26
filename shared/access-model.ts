@@ -152,7 +152,14 @@ export function canonical(value: unknown): string {
 export function compareSnapshots(before: AccessSnapshot, after: AccessSnapshot): Drift[] {
   if (before.instance !== after.instance)
     throw new Error('Snapshots belong to different configured instances.');
-  if (before.warnings.length || after.warnings.length)
+  // Imported data may omit capture warnings. Missing detail evidence must never
+  // be interpreted as an unchanged identity, even if the summary says complete.
+  const incomplete = (snapshot: AccessSnapshot) =>
+    snapshot.warnings.length > 0 ||
+    [...snapshot.users, ...snapshot.roles, ...snapshot.apps].some((row) =>
+      Object.prototype.hasOwnProperty.call(row, 'unavailable'),
+    );
+  if (incomplete(before) || incomplete(after))
     throw new Error('Both captures must be complete before comparing changes.');
   const changes: Drift[] = [];
   for (const kind of ['users', 'roles', 'resources', 'apps'] as const) {
@@ -161,8 +168,6 @@ export function compareSnapshots(before: AccessSnapshot, after: AccessSnapshot):
     for (const name of [...new Set([...left.keys(), ...right.keys()])].sort()) {
       const a = left.get(name),
         b = right.get(name);
-      // Missing detail data is reported in snapshot warnings, never fabricated as a removal.
-      if ((a && 'unavailable' in a) || (b && 'unavailable' in b)) continue;
       if (!a) changes.push({ kind, name, change: 'added', after: b });
       else if (!b) changes.push({ kind, name, change: 'removed', before: a });
       else if (canonical(a) !== canonical(b))

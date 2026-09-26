@@ -1,3 +1,4 @@
+import { DataDiff } from '../components/DataView';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
@@ -228,16 +229,7 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
                                 <span>{d.kind}</span>
                                 <strong>{d.name}</strong>
                               </summary>
-                              <div className="diff-columns">
-                                <div>
-                                  <h3>Before</h3>
-                                  <pre>{JSON.stringify(d.before ?? null, null, 2)}</pre>
-                                </div>
-                                <div>
-                                  <h3>After</h3>
-                                  <pre>{JSON.stringify(d.after ?? null, null, 2)}</pre>
-                                </div>
-                              </div>
+                              <DataDiff before={d.before} after={d.after} />
                             </details>
                           ))}
                         </>
