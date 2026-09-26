@@ -33,4 +33,8 @@ Access Atlas helps administrators understand and review declared access in Inter
 
 ## Current review status
 
-See [the latest authorization and readiness review](CONTEST_SECURITY_REVIEW.md). Public repository publication, the Open Exchange listing, participant eligibility and organizer acceptance remain unconfirmed. The sibling projects currently reuse the Harbor administration foundation; this must be disclosed and is not a guarantee of separate acceptance. A requirement to remove that reused implementation is under review with the project owner.
+See [the latest authorization and readiness review](CONTEST_SECURITY_REVIEW.md). Public repository publication, the Open Exchange listing, participant eligibility and organizer acceptance remain unconfirmed. The earlier Harbor application foundation has been replaced by separate implementations. Retained references and validation support are disclosed in [PROVENANCE.md](PROVENANCE.md); separate acceptance still belongs to the organizer.
+
+## Original idea and current walkthrough
+
+The [original project idea](../IDEA.md) and the additional product-specific walkthrough in [README](../README.md) describe the current independent release. The official [contest page](https://openexchange.intersystems.com/contest/48), read September 26, lists the submission deadline as September 27, 2026, 23:59 EST. It also identifies complexity, clarity of instructions, developer experience, applicability and usability as judging criteria. No acceptance or bonus award is implied.

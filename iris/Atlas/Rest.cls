@@ -1,39 +1,39 @@
 Class Atlas.Rest Extends %CSP.REST
 {
-Parameter CHARSET = "utf-8";
 Parameter UseSession = 0;
+Parameter CHARSET = "utf-8";
 XData UrlMap
 {
 <Routes>
-  <Route Url="/telemetry" Method="GET" Call="Telemetry" />
-  <Route Url="/logs" Method="GET" Call="Logs" />
+<Route Url="/logs" Method="GET" Call="LogEvidence"/>
+<Route Url="/telemetry" Method="GET" Call="HostEvidence"/>
 </Routes>
 }
 ClassMethod OnPreDispatch(pUrl As %String, pMethod As %String, ByRef pContinue As %Boolean) As %Status
 {
-    Set pContinue = 1
-    If '$SYSTEM.Security.Check("%Admin_Operate","USE") {
-        Set %response.Status = "403 Forbidden", pContinue = 0
-        Write "{""error"":""Requires %Admin_Operate:USE""}"
+    Set %response.ContentType="application/json"
+    Set pContinue=$SYSTEM.Security.Check("%Admin_Operate","USE")
+    If 'pContinue {
+        Set %response.Status="403 Forbidden"
+        Write "{""error"":""Operating permission is required for Atlas evidence.""}"
     }
-    Quit $$$OK
+    Return $$$OK
 }
-ClassMethod Telemetry() As %Status
+ClassMethod HostEvidence() As %Status
 {
-    Set %response.ContentType = "application/json"
     Write ##class(Atlas.Telemetry).Read()
-    Quit $$$OK
+    Return $$$OK
 }
-ClassMethod Logs() As %Status
+ClassMethod LogEvidence() As %Status
 {
-    Set %response.ContentType = "application/json"
-    Set source = $Get(%request.Data("source",1),"messages")
-    If (source'="messages")&&(source'="alerts") {
-        Set %response.Status = "400 Bad Request"
-        Write "{""error"":""Unknown log source""}"
-        Quit $$$OK
+    Set requested=$Get(%request.Data("source",1),"messages")
+    If (requested="messages")!(requested="alerts") {
+        Set lines=+$Get(%request.Data("limit",1),200)
+        Write ##class(Atlas.Telemetry).Logs(requested,lines)
+    } Else {
+        Set %response.Status="400 Bad Request"
+        Write "{""error"":""Select messages or alerts.""}"
     }
-    Write ##class(Atlas.Telemetry).Logs(source,+$Get(%request.Data("limit",1),200))
-    Quit $$$OK
+    Return $$$OK
 }
 }

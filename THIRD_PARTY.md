@@ -2,7 +2,7 @@
 
 - `shared/iris-openapi.json` is the contest's published SysAdmin API specification from [intersystems-community/sysadmin-api-specification](https://github.com/intersystems-community/sysadmin-api-specification/blob/master/mainspec_v2.json), retrieved September 26, 2026. `shared/iris-contract.json` is its request-only projection. These InterSystems reference materials are attributed to their upstream authors and are not relicensed as original Atlas code.
 - InterSystems IRIS Community is distributed under InterSystems' terms. The Docker reference does not change those terms.
-- DM Sans and Manrope fonts are bundled through Fontsource under their SIL Open Font License distributions.
+- Manrope is bundled through Fontsource under the SIL Open Font License.
 - Lucide icons use the ISC license. React, Express, Vite and the remaining npm dependencies retain their respective licenses; exact resolved versions are recorded in `package-lock.json`.
 
-Access Atlas's review domain was created for this project. Its general administration foundation is shared with Harbor; the Harbor copyright notice is retained in `LICENSE`. See [project provenance](docs/PROVENANCE.md) for the reused components and the separate review implementation. This attribution does not imply that the organizers have approved separate contest entries.
+The current application foundation is independent. Earlier revisions reused Harbor; retained security and native integration probes preserve that provenance and the Harbor license notice. See [project provenance](docs/PROVENANCE.md). Attribution does not imply organizer approval.

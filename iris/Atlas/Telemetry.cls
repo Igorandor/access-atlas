@@ -1,52 +1,69 @@
 Class Atlas.Telemetry Extends %RegisteredObject
 {
-/// Linux host metrics, collected inside IRIS by Embedded Python. No subprocesses.
+/// Collect an evidence sample without invoking external programs.
 ClassMethod Read() As %String [ Language = python ]
 {
-    import json, os, time, platform
-    from pathlib import Path
-    result = {"sampledAt": time.time(), "platform": platform.system(), "scope": "IRIS host (container host metrics are not container limits)"}
-    if platform.system() == "Linux":
-        mem = {}
-        for line in Path("/proc/meminfo").read_text().splitlines():
-            key, value = line.split(":", 1)
-            mem[key] = int(value.strip().split()[0]) * 1024
-        result["memory"] = {"total": mem.get("MemTotal", 0), "available": mem.get("MemAvailable", 0)}
-        cpu = [int(v) for v in Path("/proc/stat").read_text().splitlines()[0].split()[1:9]]
-        result["cpu"] = {"totalTicks": sum(cpu), "idleTicks": cpu[3] + cpu[4], "logicalCount": os.cpu_count(), "loadAverage": list(os.getloadavg())}
-        result["uptimeSeconds"] = float(Path("/proc/uptime").read_text().split()[0])
-    else:
-        result["notice"] = "Detailed memory and CPU counters are available on Linux; use the native IRIS dashboard on other platforms."
-    import iris
-    directory = str(iris.system.Util.ManagerDirectory())
+    import json
+    import os
+    import platform
     import shutil
-    usage = shutil.disk_usage(directory)
-    result["disk"] = {"path": directory, "total": usage.total, "free": usage.free, "used": usage.used}
-    return json.dumps(result)
+    import time
+    import iris
+
+    manager = str(iris.system.Util.ManagerDirectory())
+    volume = shutil.disk_usage(manager)
+    sample = dict(sampledAt=time.time(), platform=platform.system(),
+                  scope="IRIS-visible host counters; container quotas may differ",
+                  disk=dict(path=manager, total=volume.total, used=volume.used, free=volume.free))
+    if platform.system() != "Linux":
+        sample["notice"] = "This platform provides disk evidence only; native IRIS APIs remain available."
+    else:
+        with open("/proc/meminfo", encoding="ascii") as source:
+            memory = {}
+            for line in source:
+                tokens = line.split()
+                if tokens[0] in ("MemTotal:", "MemAvailable:"):
+                    memory[tokens[0][:-1]] = int(tokens[1]) * 1024
+        with open("/proc/stat", encoding="ascii") as source:
+            ticks = list(map(int, source.readline().split()[1:9]))
+        with open("/proc/uptime", encoding="ascii") as source:
+            uptime = float(source.readline().split()[0])
+        sample.update(
+            memory=dict(total=memory.get("MemTotal", 0), available=memory.get("MemAvailable", 0)),
+            cpu=dict(totalTicks=sum(ticks), idleTicks=ticks[3] + ticks[4],
+                     logicalCount=os.cpu_count(), loadAverage=list(os.getloadavg())),
+            uptimeSeconds=uptime
+        )
+    return json.dumps(sample)
 }
 
-/// Fixed log allowlist, bounded tail, no client-supplied filesystem paths.
+/// Return only the final bounded window from one of two named sources.
 ClassMethod Logs(source As %String = "messages", limit As %Integer = 200) As %String [ Language = python ]
 {
-    import json, iris, re
-    from pathlib import Path
-    names = {"messages": "messages.log", "alerts": "alerts.log"}
-    if source not in names:
-        raise ValueError("Unknown log source")
-    limit = max(1, min(int(limit), 500))
-    path = Path(str(iris.system.Util.ManagerDirectory())) / names[source]
-    if not path.is_file():
-        return json.dumps({"source": source, "lines": [], "notice": "This log file has not been created on this instance."})
-    with path.open("rb") as handle:
-        handle.seek(0, 2)
-        size = handle.tell()
-        start = max(0, size - 1048576)
-        handle.seek(start)
-        if start:
-            handle.readline()
-        lines = handle.read(1048576).decode("utf-8", "replace").splitlines()[-limit:]
-    # Best-effort masking only: operational logs must still be treated as sensitive.
-    lines = [re.sub(r"(?i)(password|token|secret)([=: ]+)(\S+)", r"\1\2[redacted]", line) for line in lines]
-    return json.dumps({"source": source, "lines": lines, "bytes": size, "bounded": True})
+    import json
+    import os
+    import re
+    import iris
+
+    if source not in ("messages", "alerts"):
+        raise ValueError("Unsupported evidence source")
+    filename = os.path.join(str(iris.system.Util.ManagerDirectory()), source + ".log")
+    count = min(500, max(1, int(limit)))
+    try:
+        with open(filename, "rb") as stream:
+            size = stream.seek(0, 2)
+            offset = max(0, size - 1048576)
+            stream.seek(offset)
+            window = stream.read(1048576)
+    except FileNotFoundError:
+        return json.dumps(dict(source=source, lines=[], notice="No file exists for this log source yet."))
+    if offset:
+        # Discard a partial leading line inside the window, never read beyond it.
+        split = window.find(b"\n")
+        window = window[split + 1:] if split >= 0 else b""
+    clean = []
+    for line in window.decode("utf-8", errors="replace").splitlines()[-count:]:
+        clean.append(re.sub(r"(?i)\b(password|token|secret)([=: ]+)(\S+)", r"\1\2[redacted]", line))
+    return json.dumps(dict(source=source, lines=clean, bytes=size, bounded=True))
 }
 }

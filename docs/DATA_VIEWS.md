@@ -1,13 +1,13 @@
-# Reading and editing native API data
+# Atlas evidence and proposals
 
-REST Explorer opens a structured response view. Record arrays support search, sortable columns, pages of 20 records and a record inspector. The table chooses up to six columns from the first 100 records; the inspector exposes the other returned fields. Search covers nested values as well as displayed columns.
+The access map, matrix, queue and baseline comparison are specialized review views. Native administration uses a register with an object index and a separate proposal area.
 
-Objects use labeled fields. Nested objects open on demand and scalar arrays appear as lists. Each level displays at most 100 entries and the viewer stops at depth six. These are display limits, not a promise that the native response contains the entire instance. The optional Raw API response disclosure previews at most 100,000 characters. Save response exports all data returned to the portal, subject to server-side masking and native API limits.
+A register reads at most 250 rows by default. Search filters the loaded records; supported native filters can narrow the next request. Wallet and OAuth registers use explicit scopes. Selecting an object reads its native details. A proposal includes only checked fields; selected existing values are preserved, credentials are masked, and nested values have typed controls. Creation of tasks supplies all native default fields. Every write has a review step; deletion and execution controls require a typed identifier.
 
-Configuration editors use typed nested controls. Object/array sections open on demand; closing and reopening a section preserves edited values. Add setting follows the native schema when available, with named key/value controls for free-form objects. The editor supports up to 100 entries per collection and eight nested levels; data beyond these limits remains in the form without being rendered. Existing native configuration remains subject to IRIS validation. Review changes shows labeled before/after values and hides secrets. Empty text is distinguished from an absent value. Task suspension is described as Paused or Scheduled.
+Evidence arrays use a table with at most eight discovered columns and 250 visible matching rows. Record inspection expands nested values on demand; each level displays at most 100 fields/items and the viewer stops at five levels. The export contains the loaded, redacted data, including records outside the visible table slice. It is not a full-instance backup.
 
-Captured host data shows memory and disk used/available/total values with GiB/MiB switching. CPU load averages describe runnable or waiting processes; a single CPU-counter sample is not current CPU utilization. Metrics describe the host visible to IRIS, not container quotas. Missing or inconsistent capacity samples are labeled unavailable.
+The proposal editor supports up to eight nested levels and 200 array items. Additional schema fields are selected explicitly. Omitted fields are not sent. Native validation errors leave the proposal available for correction.
 
-Captured log and API-console messages support text search and word-based classification. The classification is a reading aid, not the native severity code. The view displays at most 500 matching lines; bounded excerpts are labeled. Health data explicitly reports monitor freshness and offers a filter for checks not reported as Normal.
+Instance evidence and logs are collected manually with source labels and capture timestamps. Session history is ephemeral. Logs, task history, journal files and asynchronous audit queries keep their native meanings. Host counters describe the OS visible to IRIS, not container resource quotas; cumulative CPU ticks are not labelled as utilization.
 
-Configuration comparison displays one row per setting with a Changed fields only switch. The original capture/import semantics and evidence limits remain unchanged. See [the mobile comparison](images/data-comparison-mobile.png).
+The API catalog executes read operations only. JSON is an export format, not a required configuration editor.

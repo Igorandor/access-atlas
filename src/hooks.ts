@@ -1,47 +1,39 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useReducer, useState } from 'react';
 import { iris } from './api';
 export function useData<T = any>(path: string, query: Record<string, string> = {}, interval = 0) {
-  const [data, setData] = useState<T>(),
-    [error, setError] = useState(''),
-    [loading, setLoading] = useState(true),
-    [at, setAt] = useState<Date>(),
-    [version, setVersion] = useState(0);
-  const sequence = useRef(0),
-    key = JSON.stringify(query);
+  const [revision, refresh] = useReducer((value: number) => value + 1, 0);
+  const [state, update] = useState<{ data?: T; error: string; loading: boolean; at?: Date }>({
+    error: '',
+    loading: !!path,
+  });
+  const signature = JSON.stringify(query);
   useEffect(() => {
-    if (!path) {
-      setLoading(false);
-      return;
-    }
-    let live = true;
-    const load = async () => {
-      const id = ++sequence.current;
-      setLoading(true);
+    let disposed = false,
+      timer: ReturnType<typeof setTimeout> | undefined;
+    update({ error: '', loading: !!path });
+    async function read() {
+      if (disposed || !path) return;
+      update((previous) => ({ ...previous, loading: true }));
       try {
-        const result = await iris<T>(path, JSON.parse(key));
-        if (live && id === sequence.current) {
-          setData(result.data);
-          setError('');
-          setAt(new Date());
-        }
-      } catch (e) {
-        if (live && id === sequence.current) setError((e as Error).message);
+        const response = await iris<T>(path, JSON.parse(signature));
+        if (!disposed) update({ data: response.data, error: '', loading: false, at: new Date() });
+      } catch (error) {
+        if (!disposed)
+          update((previous) => ({ ...previous, error: (error as Error).message, loading: false }));
       } finally {
-        if (live && id === sequence.current) setLoading(false);
+        if (!disposed && interval) timer = setTimeout(visibleSample, interval);
       }
-    };
-    setData(undefined);
-    void load();
-    const timer = interval
-      ? setInterval(() => {
-          if (!document.hidden) void load();
-        }, interval)
-      : undefined;
+    }
+    function visibleSample() {
+      if (disposed) return;
+      if (document.hidden) timer = setTimeout(visibleSample, interval);
+      else void read();
+    }
+    void read();
     return () => {
-      live = false;
-      if (timer) clearInterval(timer);
+      disposed = true;
+      clearTimeout(timer);
     };
-  }, [path, key, version, interval]);
-  const refresh = useCallback(() => setVersion((v) => v + 1), []);
-  return { data, error, loading, at, refresh };
+  }, [path, signature, revision, interval]);
+  return { ...state, refresh };
 }

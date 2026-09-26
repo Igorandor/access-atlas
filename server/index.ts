@@ -1,16 +1,22 @@
 import 'dotenv/config';
 import { createApp } from './app.js';
-const irisUrl = process.env.IRIS_URL ?? 'http://127.0.0.1:52780';
-if (!['http:', 'https:'].includes(new URL(irisUrl).protocol))
-  throw new Error('IRIS_URL must use HTTP or HTTPS.');
-const app = createApp({
-  irisUrl,
-  instanceId: process.env.IRIS_INSTANCE_ID,
+const endpoint = process.env.IRIS_URL || 'http://127.0.0.1:52780';
+const port = Number(process.env.PORT || 3200);
+if (
+  !['http:', 'https:'].includes(new URL(endpoint).protocol) ||
+  !Number.isInteger(port) ||
+  port < 1 ||
+  port > 65535
+)
+  throw new Error('Atlas requires an HTTP(S) IRIS_URL and a valid TCP PORT.');
+const application = createApp({
+  irisUrl: endpoint,
+  instanceId: process.env.ATLAS_INSTANCE_ID,
   origin: process.env.PUBLIC_ORIGIN,
   secure: process.env.COOKIE_SECURE === 'true',
 });
-const server = app.listen(Number(process.env.PORT ?? 3200), process.env.HOST ?? '127.0.0.1', () =>
-  console.log(`Atlas listening on port ${process.env.PORT ?? 3200}`),
+const listener = application.listen(port, process.env.HOST || '127.0.0.1', () =>
+  console.log('Access Atlas ready on port ' + port),
 );
-for (const signal of ['SIGINT', 'SIGTERM'])
-  process.on(signal, () => server.close(() => process.exit(0)));
+process.once('SIGTERM', () => listener.close(() => process.exit(0)));
+process.once('SIGINT', () => listener.close(() => process.exit(0)));

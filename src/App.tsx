@@ -1,423 +1,195 @@
-import { AtlasShell } from './layout/AtlasShell';
-import { lazy, Suspense, useEffect, useState } from 'react';
-
+import { useEffect, useState, type FormEvent } from 'react';
 import {
   Activity,
-  ArrowRight,
   BookOpen,
-  Check,
-  ChevronDown,
-  Command,
-  ExternalLink,
   Globe,
   LayoutDashboard,
-  Search,
   Server,
   Shield,
   Users,
   Workflow,
-  X,
 } from 'lucide-react';
-
-import { entities } from '../shared/catalog';
-
-import { request } from './api';
-
-import { useData } from './hooks';
-
-import { ErrorBox, IconButton, Loading, Modal } from './components/ui';
-
-import { Collection } from './pages/Collection';
-
-import { Overview } from './pages/Overview';
-
-import { System } from './pages/System';
-
-const Explorer = lazy(() =>
-  import('./pages/Explorer').then((module) => ({ default: module.Explorer })),
-);
-
-import { Logs } from './pages/Logs';
+import { AtlasShell } from './layout/AtlasShell';
 import { AccessReview } from './pages/AccessReview';
+import { ConfigurationDesk } from './desk/ConfigurationDesk';
+import { ReadDesk } from './desk/ReadDesk';
+import { request } from './api';
+import { ErrorBox, Loading, Modal } from './components/ui';
 
 const navigation = [
   { id: 'atlas', label: 'Access review', icon: Shield },
-  { id: 'overview', label: 'Overview', icon: LayoutDashboard },
-  { id: 'apps', label: 'Web applications', icon: Globe },
-  { id: 'permissions', label: 'Access & permissions', icon: Users },
-  { id: 'security', label: 'Security & secrets', icon: Shield },
-  { id: 'tasks', label: 'Scheduled tasks', icon: Workflow },
-  { id: 'system', label: 'System resources', icon: Server },
-  { id: 'logs', label: 'Logs & activity', icon: Activity },
-  { id: 'explorer', label: 'REST explorer', icon: BookOpen },
+  { id: 'permissions', label: 'Account register', icon: Users },
+  { id: 'apps', label: 'Application register', icon: Globe },
+  { id: 'security', label: 'Security register', icon: Shield },
+  { id: 'tasks', label: 'Task register', icon: Workflow },
+  { id: 'overview', label: 'Instance evidence', icon: LayoutDashboard },
+  { id: 'system', label: 'Host & devices', icon: Server },
+  { id: 'logs', label: 'Logs & evidence', icon: Activity },
+  { id: 'explorer', label: 'Read API catalog', icon: BookOpen },
 ];
-
+const readPage = () =>
+  navigation.some((item) => item.id === location.hash.substring(1))
+    ? location.hash.substring(1)
+    : 'atlas';
 export default function App() {
-  const [session, setSession] = useState<any>(),
-    [sessionError, setSessionError] = useState(''),
-    [checking, setChecking] = useState(true),
-    [page, setPage] = useState(() => location.hash.slice(1) || 'atlas'),
-    [toast, setToast] = useState(''),
-    [command, setCommand] = useState(false),
-    [theme, setTheme] = useState(() => localStorage.getItem('atlas-theme') ?? 'light');
-
+  const [account, setAccount] = useState<any>(null),
+    [checking, setChecking] = useState(true);
+  const [page, setPage] = useState(readPage),
+    [switcher, showSwitcher] = useState(false);
+  const [theme, setTheme] = useState(localStorage.getItem('atlas-theme') || 'light');
+  const [error, setError] = useState(''),
+    [leaving, setLeaving] = useState(false);
   useEffect(() => {
+    let disposed = false;
     request('session')
-      .then(setSession)
+      .then((value) => {
+        if (!disposed) setAccount(value);
+      })
       .catch(() => {})
-      .finally(() => setChecking(false));
-    const expired = () => setSession(undefined);
-    window.addEventListener('session-ended', expired);
-    return () => window.removeEventListener('session-ended', expired);
+      .finally(() => {
+        if (!disposed) setChecking(false);
+      });
+    const ended = () => {
+      setAccount(null);
+      setError('');
+    };
+    const moved = () => setPage(readPage());
+    const keys = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        showSwitcher(true);
+      }
+    };
+    window.addEventListener('session-ended', ended);
+    window.addEventListener('hashchange', moved);
+    window.addEventListener('keydown', keys);
+    return () => {
+      disposed = true;
+      window.removeEventListener('session-ended', ended);
+      window.removeEventListener('hashchange', moved);
+      window.removeEventListener('keydown', keys);
+    };
   }, []);
-
-  useEffect(() => {
-    const change = () => setPage(location.hash.slice(1) || 'atlas');
-    window.addEventListener('hashchange', change);
-    return () => window.removeEventListener('hashchange', change);
-  }, []);
-
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem('atlas-theme', theme);
   }, [theme]);
-
-  useEffect(() => {
-    if (toast) {
-      const t = setTimeout(() => setToast(''), 5000);
-      return () => clearTimeout(t);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    const key = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setCommand((v) => !v);
-      }
-    };
-    window.addEventListener('keydown', key);
-    return () => window.removeEventListener('keydown', key);
-  }, []);
-
   const navigate = (id: string) => {
     location.hash = id;
     setPage(id);
-    setCommand(false);
+    showSwitcher(false);
   };
-
   async function logout() {
-    setSessionError('');
+    if (leaving) return;
+    setLeaving(true);
+    setError('');
     try {
       await request('logout', {});
-      setSession(undefined);
-    } catch (error) {
-      setSessionError('Sign out could not be confirmed. ' + (error as Error).message);
+      setAccount(null);
+    } catch (failure) {
+      setError('Sign out could not be confirmed. ' + (failure as Error).message);
+    } finally {
+      setLeaving(false);
     }
   }
-
   if (checking) return <Loading />;
-
-  if (!session)
-    return (
-      <Login
-        onLogin={(value) => {
-          setSessionError('');
-          setSession(value);
-        }}
-      />
-    );
-
-  const info = session.info,
-    props = { info, notify: setToast };
-
+  if (!account) return <AtlasSignIn accept={setAccount} />;
   return (
-    <div className="app-shell access-atlas-app">
+    <div className="access-atlas-app">
       <a
-        href="#main-content"
         className="skip-link"
+        href="#main-content"
         onClick={(event) => {
           event.preventDefault();
           document.getElementById('main-content')?.focus();
         }}
       >
-        Skip to main content
+        Skip to evidence
       </a>
       <AtlasShell
+        navigation={navigation}
         page={page}
         navigate={navigate}
-        navigation={navigation}
-        username={info.username}
+        username={account.info.username}
         theme={theme}
         onTheme={() => setTheme(theme === 'light' ? 'dark' : 'light')}
-        onCommand={() => setCommand(true)}
+        onCommand={() => showSwitcher(true)}
         onLogout={logout}
       >
-        {sessionError && <ErrorBox error={sessionError} retry={() => void logout()} />}
+        {error && <ErrorBox error={error} retry={() => void logout()} />}
         <div hidden={page !== 'atlas'}>
           <AccessReview navigate={navigate} />
         </div>
-        {page === 'overview' && <Overview navigate={navigate} info={info} />}
-
-        {page === 'apps' && <Collection entity={entities.apps} {...props} />}
-
-        {page === 'permissions' && (
-          <Group key="permissions" ids={['users', 'roles', 'resources']} {...props} />
+        {['permissions', 'apps', 'security', 'tasks', 'system'].includes(page) && (
+          <ConfigurationDesk key={page} section={page} username={account.info.username} />
         )}
-
-        {page === 'security' && (
-          <Group
-            key="security"
-            ids={['collections', 'secrets', 'certificates', 'tls', 'oauthServers', 'oauthClients']}
-            {...props}
-          />
+        {['overview', 'logs', 'explorer'].includes(page) && (
+          <ReadDesk key={page} kind={page as 'overview' | 'logs' | 'explorer'} />
         )}
-
-        {page === 'tasks' && <Collection entity={entities.tasks} {...props} />}
-
-        {page === 'system' && <System {...props} />}
-        {page === 'logs' && <Logs />}
-        {page === 'explorer' && (
-          <Suspense fallback={<Loading />}>
-            <Explorer />
-          </Suspense>
-        )}
-
-        {!navigation.some((n) => n.id === page) && <Overview navigate={navigate} info={info} />}
       </AtlasShell>
-
-      {toast && (
-        <div className="toast" role="status">
-          <Check size={18} />
-          {toast}
-          <IconButton title="Dismiss notification" onClick={() => setToast('')}>
-            <X size={14} />
-          </IconButton>
-        </div>
-      )}
-
-      {command && <CommandMenu navigate={navigate} onClose={() => setCommand(false)} />}
-    </div>
-  );
-}
-
-function Group({ ids, info, notify }: { ids: string[]; info: any; notify: (s: string) => void }) {
-  const [tab, setTab] = useState(ids[0]);
-  return (
-    <>
-      <div className="tabs group-tabs" aria-label="Workspace sections">
-        {ids.map((id) => (
-          <button
-            key={id}
-            className={tab === id ? 'active' : ''}
-            aria-pressed={tab === id}
-            onClick={() => setTab(id)}
-          >
-            {entities[id].title}
-          </button>
-        ))}
-      </div>
-      {tab === 'secrets' ? (
-        <Secrets info={info} notify={notify} />
-      ) : tab === 'oauthClients' ? (
-        <OAuthClients info={info} notify={notify} />
-      ) : (
-        <Collection key={tab} entity={entities[tab]} info={info} notify={notify} />
-      )}
-    </>
-  );
-}
-
-function Secrets({ info, notify }: { info: any; notify: (s: string) => void }) {
-  const collections = useData<any[]>('/v2/wallet/collections'),
-    [collection, setCollection] = useState('');
-  const selected = collection || collections.data?.[0]?.Name;
-  return (
-    <>
-      {collections.error && <ErrorBox error={collections.error} />}
-      <div className="collection-picker">
-        <label htmlFor="wallet-collection">Collection</label>
-        <select
-          id="wallet-collection"
-          value={selected ?? ''}
-          onChange={(e) => setCollection(e.target.value)}
-        >
-          <option value="">Choose a collection…</option>
-          {collections.data?.map((c) => (
-            <option key={c.Name}>{c.Name}</option>
-          ))}
-        </select>
-        <span>Values stay in the IRIS wallet.</span>
-      </div>
-      {selected ? (
-        <Collection
-          key={selected}
-          entity={entities.secrets}
-          info={info}
-          notify={notify}
-          query={{ collection: selected }}
-        />
-      ) : (
-        <p className="notice">Create a wallet collection first, then add its secrets here.</p>
-      )}
-    </>
-  );
-}
-
-function CommandMenu({
-  navigate,
-  onClose,
-}: {
-  navigate: (s: string) => void;
-  onClose: () => void;
-}) {
-  const [search, setSearch] = useState('');
-  return (
-    <Modal title="Go to workspace" onClose={onClose}>
-      <div className="modal-body">
-        <div className="search-field">
-          <Search size={18} />
-          <input
-            autoFocus
-            aria-label="Find a workspace"
-            placeholder="Search workspaces…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-        <div className="command-options">
-          {navigation
-            .filter((n) => n.label.toLowerCase().includes(search.toLowerCase()))
-            .map((n) => (
-              <button key={n.id} onClick={() => navigate(n.id)}>
-                <n.icon size={18} />
-                {n.label}
-                <ArrowRight size={15} />
+      {switcher && (
+        <Modal title="Choose a workspace" onClose={() => showSwitcher(false)}>
+          <nav className="atlas-switcher">
+            {navigation.map((item) => (
+              <button key={item.id} onClick={() => navigate(item.id)}>
+                {item.label}
               </button>
             ))}
-        </div>
-      </div>
-    </Modal>
-  );
-}
-
-function Login({ onLogin }: { onLogin: (s: any) => void }) {
-  const [username, setUsername] = useState(''),
-    [password, setPassword] = useState(''),
-    [error, setError] = useState(''),
-    [busy, setBusy] = useState(false),
-    [target, setTarget] = useState('Configured IRIS instance');
-
-  useEffect(() => {
-    request('health')
-      .then((d) => setTarget(d.target))
-      .catch(() => {});
-  }, []);
-
-  return (
-    <div className="login-layout access-atlas-login">
-      <div className="login-form">
-        <div className="login-card">
-          <div className="brand">
-            <span className="brand-mark">A</span>
-            <span>
-              access atlas<span className="brand-subtitle">IRIS access review</span>
-            </span>
-          </div>
-          <h1>Sign in</h1>
-          <p>Sign in with your IRIS account.</p>
-          <div className="target-label">
-            <Server size={15} aria-hidden="true" />
-            <code>{target}</code>
-          </div>
-          {error && <ErrorBox error={error} />}
-          <form
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setBusy(true);
-              setError('');
-              try {
-                onLogin(await request('login', { username, password }));
-                setPassword('');
-              } catch (e) {
-                setError((e as Error).message);
-              } finally {
-                setBusy(false);
-              }
-            }}
-          >
-            <div className="field">
-              <label htmlFor="username">Username</label>
-              <input
-                id="username"
-                name="username"
-                autoComplete="username"
-                required
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                autoFocus
-              />
-            </div>
-            <div className="field">
-              <label htmlFor="password">Password</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </div>
-            <button className="primary" disabled={busy}>
-              {busy ? 'Connecting…' : 'Connect to IRIS'} <ArrowRight size={17} />
-            </button>
-          </form>
-          <p className="login-note">
-            <Shield size={15} /> Your existing IRIS permissions apply. Credentials are kept in
-            server memory for this session.
-          </p>
-        </div>
-      </div>
+          </nav>
+        </Modal>
+      )}
     </div>
   );
 }
-
-function OAuthClients({ info, notify }: { info: any; notify: (s: string) => void }) {
-  const servers = useData<any[]>('/v2/security/oauth2/client/server-definitions'),
-    [server, setServer] = useState('');
-  const selected = server || String(servers.data?.[0]?.ID ?? '');
+function AtlasSignIn({ accept }: { accept: (session: any) => void }) {
+  const [error, setError] = useState(''),
+    [pending, setPending] = useState(false);
+  async function connect(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget,
+      fields = new FormData(form);
+    setPending(true);
+    setError('');
+    try {
+      const session = await request('login', {
+        username: fields.get('username'),
+        password: fields.get('password'),
+      });
+      form.reset();
+      accept(session);
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setPending(false);
+    }
+  }
   return (
-    <>
-      {servers.error && <ErrorBox error={servers.error} />}
-      <div className="collection-picker">
-        <label htmlFor="oauth-server">Authorization server</label>
-        <select id="oauth-server" value={selected} onChange={(e) => setServer(e.target.value)}>
-          <option value="">Choose a server definition…</option>
-          {servers.data?.map((s) => (
-            <option key={s.ID} value={s.ID}>
-              {s.IssuerEndpoint ?? s.ID}
-            </option>
-          ))}
-        </select>
-      </div>
-      {selected ? (
-        <Collection
-          key={selected}
-          entity={{
-            ...entities.oauthClients,
-            defaults: { ...entities.oauthClients.defaults, OAuth2ServerDefinition: selected },
-          }}
-          info={info}
-          notify={notify}
-          query={{ serverId: selected }}
-        />
-      ) : (
-        <p className="notice">
-          Create an OAuth server definition first, then configure its clients here.
+    <main className="atlas-sign-in">
+      <section>
+        <span className="eyebrow">InterSystems IRIS / Configuration evidence</span>
+        <h1>Access Atlas</h1>
+        <p>Understand access. Review a proposal. Verify the change.</p>
+        {error && <ErrorBox error={error} />}
+        <form onSubmit={(event) => void connect(event)}>
+          <fieldset disabled={pending}>
+            <label className="field">
+              IRIS username
+              <input name="username" autoComplete="username" required autoFocus />
+            </label>
+            <label className="field">
+              Password
+              <input name="password" autoComplete="current-password" type="password" required />
+            </label>
+            <button className="primary" type="submit">
+              {pending ? 'Checking your account…' : 'Open review workspace'}
+            </button>
+          </fieldset>
+        </form>
+        <p className="muted">
+          Your account permissions apply to every request. Review captures remain in this browser
+          until exported.
         </p>
-      )}
-    </>
+      </section>
+    </main>
   );
 }

@@ -1,14 +1,19 @@
 Class Atlas.Installer Extends %RegisteredObject
 {
+/// Install an authenticated evidence endpoint; do not assign user or application roles.
 ClassMethod Install() As %Status
 {
     New $Namespace
-    Set $Namespace = "%SYS"
-    Set props("DispatchClass")="Atlas.Rest",props("NameSpace")="%SYS"
-    Set props("AutheEnabled")=32,props("Enabled")=1,props("Resource")="%Admin_Operate"
-    If ##class(Security.Applications).Exists("/api/atlas") {
-        Quit ##class(Security.Applications).Modify("/api/atlas",.props)
+    Set $Namespace="%SYS"
+    Set configuration("NameSpace")="%SYS"
+    Set configuration("Resource")="%Admin_Operate"
+    Set configuration("DispatchClass")="Atlas.Rest"
+    Set configuration("Enabled")=1
+    Set configuration("AutheEnabled")=32
+    Set application="/api/atlas"
+    If '##class(Security.Applications).Exists(application) {
+        Return ##class(Security.Applications).Create(application,.configuration)
     }
-    Quit ##class(Security.Applications).Create("/api/atlas",.props)
+    Return ##class(Security.Applications).Modify(application,.configuration)
 }
 }

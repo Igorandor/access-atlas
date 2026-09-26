@@ -1,41 +1,21 @@
-# Architecture and extension points
+# Atlas architecture
 
-## Request path
+The browser has three workspaces. Review owns the access graph, matrix, review notes and baseline comparison. Administration is a configuration register: inspect a record, explicitly include fields in a proposal, compare the selected values and apply it. Instance gathers labelled observations from the native API and extension.
 
-1. The browser sends login credentials to the same-origin gateway.
-2. The gateway calls `/api/admin/info`, checks API version 2 and stores the user's authorization header in an expiring in-memory session.
-3. Subsequent operations contain a method, an exact catalog path, a query dictionary and optionally a body. Operators cannot supply a target URL.
-4. The gateway validates the operation against the request contract and an explicit write allowlist, encodes query values with `URLSearchParams`, calls IRIS and checks both HTTP status and IRIS status errors.
-5. Asynchronous reads expose only a job identifier. The client polls `/v2/async-result` with a bounded wait and reports failures, cancellation, pause or unfinished work.
+The proposal desk is Atlas-specific. `TypedProposal` provides schema-backed scalar, enum, object and array controls; unselected root fields are omitted. Selecting an existing field starts with its inspected value where it is safe to reuse. Credential values are write-only and masked for review. Tasks receive complete defaults on creation; updates send only selected fields. Before an update, Atlas rereads those fields and refuses a conflict. This is not an atomic native compare-and-swap.
 
-## User interface
+`atlas-sessions.ts` owns expiring sessions, login budgets and capture coordination. `app.ts` supplies same-origin/CSRF enforcement and separate session, evidence-capture and native-operation routes. `atlas-transport.ts` validates exact operations against the pinned contract and explicit write policy, applies concurrency and response budgets, translates known wire differences and projects safe diagnostics. `upstream.ts` exposes a compatibility import used by the collector and regression probes.
 
-`Collection` provides search, pagination, detail inspection and edit entry points. `Editor` uses the contract for field types and descriptions, with specialized resource-grant controls. Additional settings are explicitly added from the schema. Nested configuration remains available as validated JSON where the IRIS API supports multiple complex structures.
+Requests target one configured IRIS endpoint. The gateway never accepts arbitrary URLs, follows redirects or automatically retries writes. Credentials stay in server memory. Native permissions remain authoritative. The `Atlas` extension observes the OS visible to IRIS and reads bounded windows of two allowlisted logs; it does not launch a shell.
 
-Updates normally send only changed fields. Tasks are an exception: IRIS requires complete records, so the editor preserves the loaded configuration and supplies complete defaults for new tasks. New tasks default to **On Demand**, avoiding unintended schedules. The review displays changes and masks credential fields.
+The access collector and strict snapshot schema are unchanged in purpose. See [analysis semantics](ACCESS_ANALYSIS.md) for partial capture, special roles, escalation and imported evidence.
 
-Before an update, the editor reloads the record and compares changed fields with the original values. This detects common conflicts but does not eliminate the race between re-read and write. IRIS v2 does not expose an ETag precondition in the pinned contract. Destructive changes use a typed identifier confirmation.
+## Native adaptations
 
-`useData` ignores stale responses after navigation and refreshes only while the document is visible. Sampling timestamps are shown. Theme is the only persisted browser preference. Lists and request history are bounded; the system does not collect unbounded telemetry or copy IRIS data into another database.
+- Audit records use POST and bounded async-result polling.
+- OAuth client `OAuth2ServerDefinition` is translated to the tested native `ServerDefinition` field.
+- Task execution state is read separately from `/v2/task/info`; the task-list suspended flag is not treated as authoritative.
+- Creation supplies the native task fields omitted from JSON Schema required declarations.
+- Empty/HTML 401 and 403 responses retain their status; failed native error envelopes cannot become successful writes.
 
-## Known wire-contract adaptations
-
-- Audit retrieval is `POST /v2/security/audit/records`, followed by async-result polling; it is not a GET.
-- OAuth client bodies use `ServerDefinition` on tested IRIS 2026.2, while the published schema names it `OAuth2ServerDefinition`. The gateway translates this field at the boundary and normalizes responses back to the schema name.
-- The task list's `Suspended` flag was observed to remain false after suspension. Atlas reads the authoritative `/v2/task/info` field in task details and does not show the unreliable list flag as a status indicator.
-- Task creation requires all scheduling fields even when the published schema omits JSON Schema `required` declarations. `task-defaults.ts` supplies complete defaults.
-
-The pinned source specification is kept unchanged. Run `npx tsx scripts/build-contract.ts` to regenerate the smaller browser request contract. Contract tests detect invalid endpoint and editor-field mappings.
-
-## Adding a managed resource
-
-1. Add a catalog entry with the actual list identity, detail query name and relevant fields.
-2. Add write endpoints to `server/upstream.ts` only if needed; never create a wildcard proxy.
-3. Validate the behavior on a disposable IRIS instance with create/update/read/cleanup tests.
-4. Add the workspace route and document the required IRIS resource.
-
-Keep resource-specific workflows in dedicated components once they exceed simple collection editing. Do not put domain policy into generic table components.
-
-## Product workspace
-
-The application shell is isolated in `src/layout/`. Its navigation and CSS belong to this product. The administrative primitives in `src/components/` retain the shared contract and safety behavior. The main review/operations component remains mounted when switching tools so in-progress inspection is preserved.
+See [provenance](PROVENANCE.md) for the replaced foundation and retained validation material.

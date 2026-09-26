@@ -1,38 +1,71 @@
-/** Credential names may use IRIS casing, OAuth snake_case, or hyphens. */
-function sensitiveField(key: string): boolean {
-  const normalized = key.replace(/[^a-z0-9]/gi, '').toLowerCase();
-  return /password|token|privatekey|secrets?$|walletsecretconfig|hotpkey/.test(normalized);
-}
-
-/** Collect submitted secrets so an upstream diagnostic cannot echo them as free text. */
-export function credentialValues(value: unknown, sensitive = false): string[] {
-  if (typeof value === 'string') return sensitive && value ? [value] : [];
-  if (Array.isArray(value)) return value.flatMap((item) => credentialValues(item, sensitive));
-  if (value && typeof value === 'object')
-    return Object.entries(value).flatMap(([key, item]) =>
-      credentialValues(item, sensitive || sensitiveField(key)),
-    );
-  return [];
-}
-
-/** Mask credential-bearing fields before any response, review, or export. */
-export function redact(value: any, secrets: readonly string[] = []): any {
-  const literals = [...new Set(secrets.filter(Boolean))]
-    .sort((a, b) => b.length - a.length)
-    .map((secret) => secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const pattern = literals.length ? new RegExp(literals.join('|'), 'g') : undefined;
-  // One pass over each original string. Never mask the replacement marker again:
-  // attacker-chosen short secrets could otherwise amplify it on every iteration.
-  function visit(item: any): any {
-    if (Array.isArray(item)) return item.map(visit);
-    if (item && typeof item === 'object')
-      return Object.fromEntries(
-        Object.entries(item).map(([key, child]) => [
-          key,
-          sensitiveField(key) ? '[redacted]' : visit(child),
-        ]),
-      );
-    return typeof item === 'string' && pattern ? item.replace(pattern, () => '[redacted]') : item;
+/** Atlas exports configuration evidence; credentials never belong in that evidence. */
+const credentialName = (name: string) => {
+  const letters = name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return (
+    ['password', 'token', 'privatekey', 'walletsecretconfig', 'hotpkey'].some((part) =>
+      letters.includes(part),
+    ) ||
+    letters.endsWith('secret') ||
+    letters.endsWith('secrets')
+  );
+};
+export function credentialValues(root: unknown, classified = false): string[] {
+  const found: string[] = [],
+    stack: Array<[unknown, boolean]> = [[root, classified]];
+  while (stack.length) {
+    const [value, protectedBranch] = stack.pop()!;
+    if (typeof value === 'string') {
+      if (protectedBranch && value.length) found.push(value);
+    } else if (Array.isArray(value)) for (const item of value) stack.push([item, protectedBranch]);
+    else if (value && typeof value === 'object')
+      for (const [name, item] of Object.entries(value))
+        stack.push([item, protectedBranch || credentialName(name)]);
   }
-  return visit(value);
+  return found;
+}
+export function redact(root: any, known: readonly string[] = []): any {
+  const dictionary = Array.from(new Set(known))
+    .filter((s) => s.length)
+    .sort((x, y) => y.length - x.length);
+  const escapeLiteral = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const matcher = dictionary.length
+    ? new RegExp(dictionary.map(escapeLiteral).join('|'), 'g')
+    : null;
+  const holder: any = { value: null };
+  const jobs: Array<{ source: any; target: any; key: string }> = [
+    { source: root, target: holder, key: 'value' },
+  ];
+  while (jobs.length) {
+    const { source, target, key } = jobs.pop()!;
+    if (!source || typeof source !== 'object') {
+      Object.defineProperty(target, key, {
+        enumerable: true,
+        configurable: true,
+        writable: true,
+        value:
+          typeof source === 'string' && matcher
+            ? source.replace(matcher, () => '[redacted]')
+            : source,
+      });
+      continue;
+    }
+    const copy: any = Array.isArray(source) ? [] : {};
+    Object.defineProperty(target, key, {
+      value: copy,
+      enumerable: true,
+      configurable: true,
+      writable: true,
+    });
+    for (const [name, child] of Object.entries(source)) {
+      if (!Array.isArray(source) && credentialName(name))
+        Object.defineProperty(copy, name, {
+          value: '[redacted]',
+          enumerable: true,
+          configurable: true,
+          writable: true,
+        });
+      else jobs.push({ source: child, target: copy, key: name });
+    }
+  }
+  return holder.value;
 }

@@ -1,9 +1,15 @@
-# Project scope and shared foundation
+# Independent implementation and provenance
 
-Access Atlas is a standalone contest project built around access reviews: role-path analysis, local removal previews, a resource matrix, a review queue and snapshot comparison.
+Access Atlas is an access-review project: graph analysis, local role-removal previews, a resource matrix, review notes and snapshot comparison.
 
-It shares an original MIT-licensed administration foundation with the sibling Harbor project: the native API catalog, safe gateway, collection editors, telemetry/log extension and general administration screens. This reuse is intentional and disclosed; the review domain is implemented separately in `shared/access-model.ts`, `server/access-snapshot.ts` and `src/features/access`.
+An earlier revision reused Harbor's custom administration foundation. It was not an organizer-provided application template. On September 26, 2026 that production foundation was removed: the generic Collection, Editor, StructuredField, Overview, System, Logs and Explorer screens and their presentation model no longer exist in this checkout.
 
-There is no dependency on a Harbor checkout, server or deployment. The repository contains its own build, installer, Docker stack, tests and documentation. Its native extension uses the separate `Atlas` package and `/api/atlas` application. The three proposed contest entries should be described by their distinct workflows, with this common foundation acknowledged rather than presented as unrelated implementations.
+Atlas now has its own configuration register and field-level proposal desk in `src/desk`, an independent bounded transport in `server/atlas-transport.ts`, session vault in `server/atlas-sessions.ts`, application router, response views, typed proposal form, schema/redaction helpers and native extension implementation. Its original access analysis, collector, import schema and review UI remain the central domain.
 
-The presentation layer is also separate: `src/layout/AtlasShell.tsx` provides section-based top navigation, and Access Review uses its own review rail and identity/resource workspace. Shared administration editors are placed inside this shell, with a report-oriented visual hierarchy.
+No Harbor or Relay file, local package, checkout, service or volume is required to build or run Atlas. This is a separate Git repository, npm project, image, Compose stack and native namespace.
+
+## What still has common provenance
+
+The official InterSystems API reference and its generated request projection are reference material, not an application template. Third-party packages and conventional React/Vite/TypeScript/container bootstrap configuration necessarily follow common conventions. Security regression contracts and native integration probes from the earlier foundation remain intentionally: they verify that replacement code preserves previously tested guarantees. The small `shared/catalog.ts` adapter exists for those probes; the application uses `shared/register.ts`.
+
+The Harbor copyright notice remains for retained test/support material and historical revisions. Git history is intact and shows the earlier implementation. Exact-file checks find no identical production TypeScript files across the three projects; this is a regression check, not a numerical originality score or organizer approval.

@@ -1,40 +1,35 @@
-/** IRIS 2026.2 requires the complete Task record on creation, including unused fields. */
-export function taskDefaults(username: string) {
-  return {
-    Name: '',
+import { bodySchema, resolveSchema } from './schema';
+/** The supplied Task contract requires every scalar/list on creation. */
+export function taskDefaults(username: string): Record<string, any> {
+  const draft: Record<string, any> = {};
+  for (const [name, definition] of Object.entries(
+    bodySchema('/v2/task', 'POST').properties ?? {},
+  )) {
+    const field = resolveSchema(definition);
+    draft[name] =
+      field.type === 'array'
+        ? []
+        : field.type === 'object'
+          ? {}
+          : field.type === 'boolean'
+            ? false
+            : ['integer', 'number'].includes(field.type ?? '')
+              ? 0
+              : '';
+  }
+  Object.assign(draft, {
     RunAsUser: username,
-    EmailOnCompletion: [],
-    EmailOnError: [],
-    EmailOnExpiration: [],
-    EmailOutput: false,
-    Expires: false,
-    ExpiresDays: 0,
-    ExpiresHours: 0,
-    ExpiresMinutes: 0,
-    OpenOutputFile: false,
-    OutputDirectory: '',
-    OutputFilename: '',
-    OutputFileIsBinary: false,
-    SuspendOnError: true,
-    SuspendTerminated: true,
-    Priority: 'Normal',
-    TaskClass: '',
-    IsBatch: false,
     NameSpace: '%SYS',
+    Priority: 'Normal',
     TimePeriod: 'On Demand',
-    TimePeriodEvery: '',
-    TimePeriodDay: '',
     DailyFrequency: 'Once',
-    DailyFrequencyTime: '',
-    DailyIncrement: '',
     DailyStartTime: '00:00:00',
     DailyEndTime: '00:00:00',
-    StartDate: new Date(Date.now() + 86400000).toISOString().slice(0, 10),
-    EndDate: '',
-    RunAfterGUID: '',
+    StartDate: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().substring(0, 10),
     MirrorStatus: 'Any',
+    SuspendOnError: true,
+    SuspendTerminated: true,
     RescheduleOnStart: true,
-    Description: '',
-    Settings: {},
-  };
+  });
+  return draft;
 }

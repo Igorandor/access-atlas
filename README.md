@@ -18,22 +18,22 @@ The top navigation separates **Review**, **Administration** and **Instance**. Re
 
 This analyzes configured grants, not live authorization. Public access, special roles, escalation and missing data are distinguished explicitly. See [analysis semantics and limits](docs/ACCESS_ANALYSIS.md). Snapshots and notes remain in browser memory until exported; reload or logout clears them.
 
-## Complete administration tools
+## Administration and evidence
 
-| Workspace            | Capabilities                                                                                                                            |
-| -------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Overview             | Live IRIS monitor values, subsystem health, uptime, backup status and upcoming tasks.                                                   |
-| Web applications     | Create, inspect, edit and delete applications; configure dispatch classes, namespaces, authentication and access resources.             |
-| Access & permissions | Manage users, reset passwords, edit roles and inherited roles, and configure resource grants.                                           |
-| Security & secrets   | Manage wallet collections and secrets, X.509 credentials, TLS configurations, OAuth server definitions, clients and client credentials. |
-| Scheduled tasks      | Create and edit schedules; run, suspend and resume tasks; inspect authoritative execution state.                                        |
-| System resources     | CPU, memory and disk telemetry; process inspection and eligible process controls; device management; database inspection.               |
-| Logs & activity      | System messages, alerts, security audit, task history, journal files and session-local portal activity; filtering and exports.          |
-| REST explorer        | Search the official request catalog and execute read requests with your current account permissions.                                    |
+| Area             | Current workflow                                                                                                |
+| ---------------- | --------------------------------------------------------------------------------------------------------------- |
+| Applications     | Inspect and change native web application routes, namespaces, dispatch and authentication settings.             |
+| Permissions      | Manage accounts, passwords, role inheritance and resource grants.                                               |
+| Security         | Wallet metadata and write-only secrets, certificate ownership, TLS and OAuth configuration/credentials.         |
+| Tasks            | Create on-demand or scheduled work, edit selected fields, inspect task info and run/suspend/resume with review. |
+| Host and devices | Real host observations, processes and eligible controls, device definitions and database inventory.             |
+| Logs             | Messages, alerts, asynchronous audit queries, task history, journals and session receipts.                      |
 
-Every editor has a separate review step. Deletions and execution controls require you to type the target identifier. Editing checks for changes made by another administrator before sending an update. These checks reduce accidental overwrites; they are not a server-side transaction or lock.
+Every write has a separate review step. Execution and destructive controls require a typed target. Updates compare the touched fields with a fresh native read; this reduces lost updates but is not an atomic native lock.
 
-Light and dark themes, keyboard navigation, a **Ctrl/Cmd+K** workspace switcher, responsive layouts, loading states, empty states and actionable errors are included. Fonts and icons are bundled locally.
+The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. Native API values are never replaced with sample data.
+
+Atlas uses a configuration register and explicit field-selection proposals. Instance evidence is collected manually from labelled sources. The access-review workspace remains mounted while switching tools.
 
 ## Quick start: complete local installation
 
@@ -104,14 +104,14 @@ See [deployment and security](docs/DEPLOYMENT.md) before serving to other users.
 
 ## Administration walkthrough
 
-1. Sign in and inspect **Overview**. The system-monitor indicator explains when IRIS statistics are not updating. Values are never replaced with sample numbers.
-2. Open **Web applications**, search for a route and open its details. Choose **Edit**, change a description, then review the old and new values before applying.
-3. In **Access & permissions → Roles**, inspect a role's resource grants and inherited roles. New grants use explicit resource names and `R`, `W`, `U` permission combinations.
-4. In **Security & secrets**, create a wallet collection. Select it in **Wallet secrets** and create a `collection.name` secret. Secret values are write-only; the list shows metadata. Use the `WalletSecretConfig` help text to supply the documented IRIS configuration for the selected secret type.
-5. In **Scheduled tasks**, open a task to see its execution status from `/task/info`. Create an on-demand `Atlas.DemoTask` in `%SYS` to try a harmless run: it only records the last-run timestamp in `^AtlasDemo`. A requested run is not proof that arbitrary task code succeeded; inspect **Logs → Task history**.
-6. In **System resources**, wait for two telemetry samples to see CPU utilization, then inspect a process. The UI honors IRIS capability flags for suspension and termination.
-7. Open **Logs & activity**, switch between original sources, filter entries and export a source if needed. Security audit queries run asynchronously and are polled until completion.
-8. Use **REST explorer** for less common read requests. Required query parameters are taken from the pinned API contract.
+1. Under Administration, choose Application register and inspect an existing route. Select Propose changes, include Description, edit its inspected value and review the before/after proposal.
+2. Under Account register, inspect roles and their nested grants. A new or changed object includes only selected fields; native errors preserve the proposal for correction.
+3. Security register includes wallet boundaries and secret metadata. Select a collection before creating or rotating an entry. Stored secret values cannot be retrieved.
+4. Task register shows native task execution state separately from configuration. Create an on-demand Atlas.DemoTask in %SYS to record a harmless timestamp in ^AtlasDemo; inspect task history to verify execution.
+5. Under Instance, choose Instance evidence, select Host capacity and counters and Collect evidence. The data describes the OS visible to IRIS. CPU ticks are cumulative, not a sampled utilization percentage.
+6. Host & devices provides process inspection and reviewed controls, device definitions and database inventory.
+7. Logs & evidence gathers a selected source; audit requests are polled to completion. Session operation history lasts only for the current gateway session.
+8. Read API catalog exposes additional native reads. Required query inputs come from the pinned specification.
 
 ## Development and verification
 
@@ -150,9 +150,9 @@ Node.js gateway (Express)
 - `shared/access-model.ts`: pure graph traversal, finding rules and comparison.
 - `server/access-snapshot.ts`: bounded native configuration collector.
 - `shared/snapshot-schema.ts`: strict baseline import validation.
-- `src/pages`: application screens and review orchestration.
-- `src/components`: accessible tables, dialogs and schema-backed editors.
-- `shared/catalog.ts`: the human-facing resource catalog; `shared/schema.ts`: request-schema access.
+- `src/pages/AccessReview.tsx`: review orchestration; `src/desk`: independent register, proposals and evidence reads.
+- `src/components`: product-specific evidence views and dialogs.
+- `shared/register.ts`: configuration register; `shared/schema.ts`: contract access.
 - `shared/iris-openapi.json`: unchanged upstream specification; `iris-contract.json`: generated request-only projection.
 - `server`: sessions, origin/CSRF protection, allowlisted upstream requests and response handling.
 - `iris/Atlas`: native extension, installer and harmless demo task.
@@ -164,8 +164,14 @@ There is no background AI service, analytics, paid API, cloud account requiremen
 
 Original application code is MIT licensed. The InterSystems API specification is attributed separately in [THIRD_PARTY.md](THIRD_PARTY.md). InterSystems IRIS is a separately licensed product and is not covered by this repository's MIT license.
 
-## Shared foundation
+## Independent project
 
-The administration foundation is shared with the sibling Harbor project. Access Atlas adds its own access-review domain and standalone `Atlas` native extension. No sibling checkout is required. See [project provenance](docs/PROVENANCE.md).
+The earlier Harbor-derived application foundation has been replaced. Atlas now owns its administration workflow, gateway/session implementation, presentation components and native extension. Official API references, conventional build scaffolding and retained regression/native probes have their provenance documented in [PROVENANCE.md](docs/PROVENANCE.md). No sibling checkout or service is required. Git history remains intact.
 
-See [Reading and editing native API data](docs/DATA_VIEWS.md) for interactive response views, nested configuration controls and their limits.
+See [data views and limits](docs/DATA_VIEWS.md).
+
+## Local duty rules
+
+Open Review → Duty rules after capturing configuration. Enter a rule title and two different roles that should be reviewed together; add the rule. Evaluate ordinary conflicts, conditional escalation paths and unknown evidence separately. Inspect a row for its role paths. Export rules for reuse or Export evaluation for the rules, capture time, instance, warnings and results. Imports accept an exported JSON array up to 32 KB and 20 rules. Disabled accounts are excluded unless their configuration is unreadable. Rules remain in this view while changing tabs and clear at logout/reload. These rules do not enforce permissions or prove denied runtime access.
+
+See [the original project idea](IDEA.md). The written walkthrough above is part of the contest demonstration; no video or public hosted demo is implied.

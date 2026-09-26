@@ -1,0 +1,167 @@
+/** Atlas organizes administrative evidence by the objects reviewed, not by generic CRUD pages. */
+export interface RegisterEntry {
+  key: string;
+  title: string;
+  section: string;
+  list: string;
+  record?: string;
+  identity: string;
+  parameter?: string;
+  create?: 'PUT' | 'POST';
+  opaque?: boolean;
+  scope?: { parameter: string; list: string; identity: string; label: string };
+}
+const security = '/v2/security/';
+export const register: RegisterEntry[] = [
+  {
+    key: 'apps',
+    title: 'Application entry points',
+    section: 'apps',
+    list: '/v2/web-apps',
+    record: '/v2/web-app',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+  },
+  {
+    key: 'users',
+    title: 'Accounts',
+    section: 'permissions',
+    list: security + 'users',
+    record: security + 'user',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'POST',
+  },
+  {
+    key: 'roles',
+    title: 'Role definitions',
+    section: 'permissions',
+    list: security + 'roles',
+    record: security + 'role',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+  },
+  {
+    key: 'resources',
+    title: 'Protected resources',
+    section: 'permissions',
+    list: security + 'resources',
+    record: security + 'resource',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+  },
+  {
+    key: 'collections',
+    title: 'Wallet boundaries',
+    section: 'security',
+    list: '/v2/wallet/collections',
+    record: '/v2/wallet/collection',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+  },
+  {
+    key: 'secrets',
+    title: 'Secret metadata',
+    section: 'security',
+    list: '/v2/wallet/secrets',
+    record: '/v2/wallet/secret',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+    opaque: true,
+    scope: {
+      parameter: 'collection',
+      list: '/v2/wallet/collections',
+      identity: 'Name',
+      label: 'Wallet collection',
+    },
+  },
+  {
+    key: 'certificates',
+    title: 'Certificate ownership',
+    section: 'security',
+    list: security + 'x509-credentials',
+    record: security + 'x509-credential',
+    identity: 'Alias',
+    parameter: 'alias',
+    create: 'POST',
+  },
+  {
+    key: 'tls',
+    title: 'TLS policy',
+    section: 'security',
+    list: security + 'ssl-configurations',
+    record: security + 'ssl-configuration',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+  },
+  {
+    key: 'oauthServers',
+    title: 'Trusted OAuth issuers',
+    section: 'security',
+    list: security + 'oauth2/client/server-definitions',
+    record: security + 'oauth2/client/server-definition',
+    identity: 'ID',
+    parameter: 'serverId',
+    create: 'POST',
+  },
+  {
+    key: 'oauthClients',
+    title: 'OAuth applications',
+    section: 'security',
+    list: security + 'oauth2/client/client-configurations',
+    record: security + 'oauth2/client/client-configuration',
+    identity: 'ApplicationName',
+    parameter: 'applicationName',
+    create: 'PUT',
+    scope: {
+      parameter: 'serverId',
+      list: security + 'oauth2/client/server-definitions',
+      identity: 'ID',
+      label: 'Issuer definition',
+    },
+  },
+  {
+    key: 'tasks',
+    title: 'Scheduled work',
+    section: 'tasks',
+    list: '/v2/tasks',
+    record: '/v2/task',
+    identity: 'Id',
+    parameter: 'id',
+    create: 'POST',
+  },
+  {
+    key: 'processes',
+    title: 'Live processes',
+    section: 'system',
+    list: '/v2/processes',
+    record: '/v2/process',
+    identity: 'Pid',
+    parameter: 'id',
+  },
+  {
+    key: 'devices',
+    title: 'Device definitions',
+    section: 'system',
+    list: '/v2/devices',
+    record: '/v2/device',
+    identity: 'Name',
+    parameter: 'name',
+    create: 'PUT',
+  },
+  {
+    key: 'databases',
+    title: 'Database inventory',
+    section: 'system',
+    list: '/v2/databases',
+    record: '/v2/database',
+    identity: 'Name',
+    parameter: 'name',
+  },
+];

@@ -17,6 +17,7 @@ import { compareSnapshots, findings, type AccessSnapshot } from '../../shared/ac
 
 import { AccessMap } from '../features/access/AccessMap';
 import { ResourceMatrix } from '../features/access/ResourceMatrix';
+import { DutyReview } from '../features/access/DutyReview';
 import { ReviewQueue, type Decision } from '../features/access/ReviewQueue';
 export function AccessReview({ navigate }: { navigate: (page: string) => void }) {
   const [snapshot, setSnapshot] = useState<AccessSnapshot>();
@@ -151,6 +152,7 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
                 ['matrix', 'Resource matrix', Layers],
                 ['queue', 'Review queue', FileCheck2],
                 ['changes', 'Changes', GitCompareArrows],
+                ['duties', 'Duty rules', ShieldCheck],
               ].map(([id, label, Icon]) => (
                 <button
                   key={String(id)}
@@ -165,6 +167,9 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
               ))}
             </nav>
             <div className="atlas-review-content">
+              <div hidden={view !== 'duties'}>
+                <DutyReview snapshot={snapshot} />
+              </div>
               {view === 'map' && (
                 <AccessMap snapshot={snapshot} onManage={() => navigate('permissions')} />
               )}

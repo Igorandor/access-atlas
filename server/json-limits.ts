@@ -1,14 +1,14 @@
-/** Iterative budget check before recursive redaction or serialization. */
+/** Inspect JSON breadth and depth before transformations or retention. */
 export function boundedJson(value: unknown, maxDepth: number, maxNodes: number): boolean {
-  const pending: { value: unknown; depth: number }[] = [{ value, depth: 0 }];
-  let visited = 0;
-  while (pending.length) {
-    const item = pending.pop()!;
-    if (++visited > maxNodes || item.depth > maxDepth) return false;
-    if (item.value && typeof item.value === 'object') {
-      const children = Object.values(item.value);
-      if (visited + pending.length + children.length > maxNodes) return false;
-      for (const value of children) pending.push({ value, depth: item.depth + 1 });
+  const todo: Array<{ value: unknown; level: number }> = [{ value, level: 0 }];
+  let remaining = maxNodes;
+  while (todo.length) {
+    const current = todo.pop()!;
+    if (--remaining < 0 || current.level > maxDepth) return false;
+    if (current.value && typeof current.value === 'object') {
+      const children = Object.values(current.value);
+      if (children.length + todo.length > remaining) return false;
+      for (const child of children) todo.push({ value: child, level: current.level + 1 });
     }
   }
   return true;
