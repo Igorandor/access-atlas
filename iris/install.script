@@ -1,0 +1,7 @@
+zn "%SYS"
+set sc=$SYSTEM.OBJ.LoadDir("/opt/atlas-iris/Atlas","ck",,1)
+if $SYSTEM.Status.IsError(sc) do $SYSTEM.Status.DisplayError(sc) halt 1
+set sc=##class(Atlas.Installer).Install()
+if $SYSTEM.Status.IsError(sc) do $SYSTEM.Status.DisplayError(sc) halt 1
+write "Atlas extension installed",!
+halt
