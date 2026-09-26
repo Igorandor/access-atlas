@@ -54,7 +54,7 @@ export function AccessMap({
               <span>
                 <strong>{u.Name}</strong>
                 <small>
-                  {u.unavailable
+                  {u.unavailable !== undefined
                     ? 'Details unavailable'
                     : u.Enabled
                       ? 'Enabled account'
@@ -76,16 +76,24 @@ export function AccessMap({
                 <h2>{user.Name}</h2>
               </div>
               <div className="inline-actions">
-                <Badge tone={user.Enabled ? 'good' : 'neutral'}>
-                  {user.Enabled ? 'Enabled' : 'Disabled'}
+                <Badge
+                  tone={
+                    user.unavailable !== undefined ? 'warning' : user.Enabled ? 'good' : 'neutral'
+                  }
+                >
+                  {user.unavailable !== undefined
+                    ? 'State unknown'
+                    : user.Enabled
+                      ? 'Enabled'
+                      : 'Disabled'}
                 </Badge>
                 <button onClick={onManage}>
                   Manage accounts <ArrowRight size={14} />
                 </button>
               </div>
             </div>
-            {user.unavailable ? (
-              <ErrorBox error={user.unavailable} />
+            {user.unavailable !== undefined ? (
+              <ErrorBox error={user.unavailable || 'Details unavailable.'} />
             ) : (
               <>
                 <div className="role-path-intro">

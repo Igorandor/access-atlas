@@ -1,5 +1,17 @@
 import { IrisClient } from './upstream.js';
 import type { AccessSnapshot } from '../shared/access-model.js';
+import { z } from 'zod';
+import { snapshotSchema } from '../shared/snapshot-schema.js';
+
+const identitySchema = z.object({ Name: z.string().min(1).max(512) });
+const resourceSchema = snapshotSchema.shape.resources.element
+  .extend({ Name: identitySchema.shape.Name })
+  .strip();
+const detailSchemas = {
+  user: snapshotSchema.shape.users.element.omit({ Name: true, unavailable: true }).strip(),
+  role: snapshotSchema.shape.roles.element.omit({ Name: true, unavailable: true }).strip(),
+  app: snapshotSchema.shape.apps.element.omit({ Name: true, unavailable: true }).strip(),
+};
 
 const names = (value: unknown): string[] =>
   Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
@@ -15,39 +27,64 @@ export async function captureAccess(
   const warnings: string[] = [];
   const read = async (path: string, query: Record<string, string> = {}) =>
     (await client.request(auth, { path, method: 'GET', query })).data;
-  async function list(path: string, limit: number): Promise<any[]> {
+  async function list(
+    path: string,
+    limit: number,
+    schema: z.ZodType<any> = identitySchema,
+  ): Promise<any[]> {
     try {
       const rows = await read(path, { maxRows: String(limit + 1) });
       if (!Array.isArray(rows)) throw new Error('The API did not return a list.');
       if (rows.length > limit)
         warnings.push(`${path}: capture limited to ${limit} records; analysis is incomplete.`);
-      return rows.slice(0, limit);
+      const valid: any[] = [],
+        seen = new Set<string>();
+      let rejected = 0;
+      for (const row of rows.slice(0, limit)) {
+        const parsed = schema.safeParse(row);
+        if (!parsed.success || seen.has(parsed.data.Name)) {
+          rejected++;
+          continue;
+        }
+        seen.add(parsed.data.Name);
+        valid.push(parsed.data);
+      }
+      if (rejected)
+        warnings.push(
+          `${path}: ${rejected} malformed or duplicate records excluded; analysis is incomplete.`,
+        );
+      return valid;
     } catch (error) {
-      warnings.push(`${path}: ${(error as Error).message}`);
+      warnings.push(`${path}: ${(error as Error).message.slice(0, 1000)}`);
       return [];
     }
   }
   const [users, roles, resources, apps] = await Promise.all([
     list('/v2/security/users', 200),
     list('/v2/security/roles', 200),
-    list('/v2/security/resources', 999),
+    list('/v2/security/resources', 999, resourceSchema),
     list('/v2/web-apps', 200),
   ]);
   const jobs = [
-    ...users.map((row) => ({ row, path: '/v2/security/user' })),
-    ...roles.map((row) => ({ row, path: '/v2/security/role' })),
-    ...apps.map((row) => ({ row, path: '/v2/web-app' })),
+    ...users.map((row) => ({ row, path: '/v2/security/user', schema: detailSchemas.user })),
+    ...roles.map((row) => ({ row, path: '/v2/security/role', schema: detailSchemas.role })),
+    ...apps.map((row) => ({ row, path: '/v2/web-app', schema: detailSchemas.app })),
   ];
   let cursor = 0;
   await Promise.all(
     Array.from({ length: 6 }, async () => {
       while (cursor < jobs.length) {
-        const { row, path } = jobs[cursor++];
+        const { row, path, schema } = jobs[cursor++];
         try {
           if (Date.now() - started > 45000) throw new Error('Capture time budget reached.');
-          Object.assign(row, await read(path, { name: String(row.Name) }));
+          const detail = await read(path, { name: row.Name });
+          if (detail && Object.hasOwn(detail, 'Name') && detail.Name !== row.Name)
+            throw new Error('Detail identity differs from the requested record.');
+          const parsed = schema.safeParse(detail);
+          if (!parsed.success) throw new Error('Access metadata is missing or malformed.');
+          Object.assign(row, parsed.data);
         } catch (error) {
-          row.unavailable = (error as Error).message;
+          row.unavailable = (error as Error).message.slice(0, 1000) || 'Details unavailable.';
           warnings.push(`${path} ${row.Name}: ${row.unavailable}`);
         }
       }

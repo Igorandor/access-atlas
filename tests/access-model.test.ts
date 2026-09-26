@@ -58,6 +58,116 @@ const fixture = (): AccessSnapshot => ({
   apps: [],
 });
 
+test('an unconditional role path remains unconditional when a shorter escalation path exists', () => {
+  const data = fixture();
+  data.roles = [
+    {
+      Name: 'Conditional',
+      Description: '',
+      GrantedRoles: ['Target'],
+      Resources: [],
+      EscalationOnly: true,
+    },
+    {
+      Name: 'Ordinary',
+      Description: '',
+      GrantedRoles: ['Middle'],
+      Resources: [],
+      EscalationOnly: false,
+    },
+    {
+      Name: 'Middle',
+      Description: '',
+      GrantedRoles: ['Target'],
+      Resources: [],
+      EscalationOnly: false,
+    },
+    {
+      Name: 'Target',
+      Description: '',
+      GrantedRoles: ['Leaf'],
+      Resources: [],
+      EscalationOnly: false,
+    },
+    {
+      Name: 'Leaf',
+      Description: '',
+      GrantedRoles: [],
+      Resources: [{ Name: 'Data', Permissions: 'R' }],
+      EscalationOnly: false,
+    },
+  ];
+  for (const roots of [
+    ['Conditional', 'Ordinary'],
+    ['Ordinary', 'Conditional'],
+  ]) {
+    const access = resolveAccess(data, roots);
+    assert.equal(access.roles.get('Target')?.conditional, false);
+    assert.deepEqual(access.roles.get('Target')?.roles, ['Ordinary', 'Middle', 'Target']);
+    assert.equal(access.roles.get('Leaf')?.conditional, false);
+    assert.equal(access.grants.get('Data')?.permissions, 'R');
+  }
+});
+
+test('empty unavailable markers do not make unknown metadata authoritative', () => {
+  const data = fixture();
+  data.roles[1].unavailable = '';
+  const resolved = resolveAccess(data, ['Reader']);
+  assert.equal(resolved.grants.size, 0);
+  assert.match(resolved.warnings.join(' '), /unknown/);
+  data.users[0].Roles = ['%All'];
+  data.users[0].unavailable = '';
+  data.apps = [
+    {
+      Name: '/public',
+      Enabled: true,
+      AutheEnabled: 64,
+      Resource: '',
+      NameSpace: 'USER',
+      unavailable: '',
+    },
+  ];
+  assert.ok(!findings(data).some((f) => f.kind === 'user' || f.kind === 'app'));
+});
+
+test('generated cyclic graphs agree with independent unconditional reachability', () => {
+  let seed = 1701;
+  const random = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0);
+  for (let sample = 0; sample < 80; sample++) {
+    const data = fixture();
+    data.roles = Array.from({ length: 8 }, (_, i) => ({
+      Name: 'R' + i,
+      Description: '',
+      GrantedRoles: Array.from({ length: random() % 5 }, () => 'R' + (random() % 8)),
+      EscalationOnly: random() % 4 === 0,
+      Resources: [{ Name: 'Data', Permissions: i % 2 ? 'R' : 'W' }],
+    }));
+    const roots = ['R' + (random() % 8), 'R' + (random() % 8)];
+    function reachable(ordinaryOnly: boolean) {
+      const seen = new Set<string>(),
+        pending = [...roots];
+      while (pending.length) {
+        const name = pending.pop()!,
+          role = data.roles.find((r) => r.Name === name)!;
+        if (seen.has(name) || (ordinaryOnly && role.EscalationOnly)) continue;
+        seen.add(name);
+        pending.push(...role.GrantedRoles);
+      }
+      return seen;
+    }
+    const all = reachable(false),
+      ordinary = reachable(true);
+    const actual = resolveAccess(data, roots);
+    assert.deepEqual([...actual.roles.keys()].sort(), [...all].sort());
+    for (const [name, path] of actual.roles) {
+      assert.equal(path.conditional, !ordinary.has(name));
+      assert.ok(roots.includes(path.roles[0]));
+      assert.equal(path.roles.at(-1), name);
+      assert.equal(new Set(path.roles).size, path.roles.length);
+    }
+  }
+});
+
 test('nested role grants are unioned with a shortest source path', () => {
   const access = resolveAccess(fixture(), ['Parent', 'Writer']);
   assert.equal(access.grants.get('Data')?.permissions, 'RW');

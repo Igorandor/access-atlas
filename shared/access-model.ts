@@ -46,7 +46,7 @@ export function permissions(value: string): string {
   return ['R', 'W', 'U'].filter((p) => value.toUpperCase().includes(p)).join('');
 }
 
-/** Breadth-first traversal keeps one shortest explanation per role; cycles terminate. */
+/** Prefer an unconditional path, then its shortest explanation; cycles terminate. */
 export function resolveAccess(snapshot: AccessSnapshot, roots: string[]): ResolvedAccess {
   const definitions = new Map(snapshot.roles.map((r) => [r.Name, r]));
   const roles = new Map<string, EvidencePath>();
@@ -55,12 +55,13 @@ export function resolveAccess(snapshot: AccessSnapshot, roots: string[]): Resolv
   const queue = roots.map((name) => ({ name, path: [] as string[], conditional: false }));
   for (let cursor = 0; cursor < queue.length; cursor++) {
     const next = queue[cursor];
-    if (roles.has(next.name)) continue;
     const role = definitions.get(next.name);
     const path = [...next.path, next.name];
     const conditional = next.conditional || !!role?.EscalationOnly;
+    const previous = roles.get(next.name);
+    if (previous && (!previous.conditional || conditional)) continue;
     roles.set(next.name, { roles: path, conditional });
-    if (!role || role.unavailable) {
+    if (!role || Object.hasOwn(role, 'unavailable')) {
       warnings.add(`Role ${next.name} could not be read; its privileges are unknown.`);
       continue;
     }
@@ -93,7 +94,11 @@ export function findings(snapshot: AccessSnapshot): Finding[] {
   const add = (finding: Omit<Finding, 'fingerprint'>) =>
     result.push({ ...finding, fingerprint: JSON.stringify(finding) });
   for (const user of snapshot.users) {
-    if (!user.unavailable && user.Enabled && resolveAccess(snapshot, user.Roles).broadAccess)
+    if (
+      !Object.hasOwn(user, 'unavailable') &&
+      user.Enabled &&
+      resolveAccess(snapshot, user.Roles).broadAccess
+    )
       add({
         id: `all:${user.Name}`,
         category: 'Broad access',
@@ -115,7 +120,7 @@ export function findings(snapshot: AccessSnapshot): Finding[] {
       });
   }
   for (const app of snapshot.apps) {
-    if (!app.unavailable && app.Enabled && app.AutheEnabled & 64)
+    if (!Object.hasOwn(app, 'unavailable') && app.Enabled && app.AutheEnabled & 64)
       add({
         id: `guest:${app.Name}`,
         category: 'Application entry',

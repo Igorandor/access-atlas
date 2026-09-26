@@ -86,7 +86,11 @@ export function ResourceMatrix({ snapshot }: { snapshot: AccessSnapshot }) {
               <tr key={u.Name}>
                 <th>
                   {u.Name}
-                  {!u.Enabled && <small>Disabled</small>}
+                  {u.unavailable !== undefined ? (
+                    <small>State unknown</small>
+                  ) : (
+                    !u.Enabled && <small>Disabled</small>
+                  )}
                 </th>
                 <td>
                   {access.get(u.Name)?.broadAccess ? <Badge tone="warning">%All</Badge> : '—'}
@@ -97,7 +101,7 @@ export function ResourceMatrix({ snapshot }: { snapshot: AccessSnapshot }) {
                       aria-label={`Explain ${u.Name} on ${r.Name}`}
                       onClick={() => setCell({ user: u, resource: r.Name })}
                     >
-                      {u.unavailable
+                      {u.unavailable !== undefined
                         ? '?'
                         : access.get(u.Name)?.grants.get(r.Name)?.permissions || '—'}
                     </button>
@@ -124,7 +128,9 @@ export function ResourceMatrix({ snapshot }: { snapshot: AccessSnapshot }) {
               Public:{' '}
               {snapshot.resources.find((r) => r.Name === cell.resource)?.PublicPermission || 'none'}
             </p>
-            {cell.user.unavailable && <ErrorBox error={cell.user.unavailable} />}
+            {cell.user.unavailable !== undefined && (
+              <ErrorBox error={cell.user.unavailable || 'Details unavailable.'} />
+            )}
             <p>
               Reachable %All:{' '}
               {access.get(cell.user.Name)?.broadAccess
