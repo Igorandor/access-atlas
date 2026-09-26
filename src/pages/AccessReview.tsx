@@ -74,9 +74,8 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
   return (
     <>
       <PageHeader
-        eyebrow="Access review"
-        title="Understand who can do what."
-        description="Trace configured grants, review broad access and keep evidence of what changed."
+        title="Access review"
+        description="Role inheritance, resource grants and configuration changes."
       >
         <button
           disabled={!snapshot}

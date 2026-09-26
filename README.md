@@ -1,7 +1,5 @@
 # Access Atlas for InterSystems IRIS
 
-**Trace access. Review exceptions. Keep evidence of configuration changes.**
-
 Access Atlas is an access-review workspace and a complete IRIS administration client. Its main workflow explains declared role paths, previews the effect of removing an assigned role, compares captured configuration and records review notes. The native administration tools cover applications, permissions, secrets, tasks, host resources and logs. Every operational result comes from a real IRIS instance.
 
 Built for the [InterSystems Programming Contest: Build Your Own Management Portal](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal).

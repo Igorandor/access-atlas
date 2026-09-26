@@ -33,6 +33,8 @@ The additional `npm run test:access` suite passed against both the shared dispos
 
 ## Browser review
 
+The interface copy and layout were refined in a subsequent review: direct screen titles, compact sign-in forms, fewer repeated labels and smaller operation cards. The updated production interfaces were checked at desktop and mobile widths, including keyboard navigation and theme switching.
+
 The actual browser was used against the real server, including the production Compose installation. Checks covered sign-in, navigation, loading and loaded states, task details, native process/database data, host telemetry, system logs, asynchronous security audit, and an application editor's separate change-review step. Keyboard activation and Escape dismissal were checked. A 390 × 844 viewport was used to review the responsive layout and dark theme. This was an interactive review, not a claim of automated WCAG certification.
 
 The access-review UI was also checked for local role-removal previews, review-note state and a real resource addition appearing in baseline comparison.
