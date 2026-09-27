@@ -2,9 +2,9 @@
 
 ## Developer Community article draft
 
-[ARTICLE.md](ARTICLE.md) contains an unpublished English feature walkthrough. Replace `YOUR_GITHUB_ACCOUNT` with the public repository owner, review the text, and publish it on Developer Community to request the article bonus. A file in this repository does not constitute a published Community article or an awarded bonus.
+[ARTICLE.md](ARTICLE.md) contains an unpublished English feature walkthrough. Review the draft and publish it on Developer Community to request the article bonus. A file in this repository does not constitute a published Community article or an awarded bonus.
 
-Source: [contest announcement](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal), checked September 27, 2026. The contest does not require a LOC minimum or a product described as a local demo. Hosted access is an optional bonus; the supplied quick start and existing-instance gateway deployment are separate installation choices.
+Source: [contest announcement](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal), checked September 27, 2026. The supplied quick start and existing-instance gateway deployment are separate installation choices. Hosted access is an optional bonus.
 
 | Required area                 | Atlas implementation                                                                          | Relevant APIs                                                                                                 |
 | ----------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -19,7 +19,7 @@ The application includes English installation instructions and a written demonst
 
 ## Technology bonuses
 
-The [published technology bonus list](https://community.intersystems.com/post/technology-bonuses-intersystems-programming-contest-build-your-own-management-portal) was reviewed. Atlas uses Docker and Embedded Python for a concrete purpose: native host telemetry and bounded log reads. It does not add vector search or an AI dependency merely to accumulate points.
+The [published technology bonus list](https://community.intersystems.com/post/technology-bonuses-intersystems-programming-contest-build-your-own-management-portal) was reviewed. Atlas uses Docker and Embedded Python for a concrete purpose: native host telemetry and bounded log reads.
 
 No claim is made for online hosting, published IPM packages, community ideas, articles, YouTube videos, first-time participation or reported vendor bugs. These require separate completed actions or eligibility checks.
 
@@ -33,7 +33,7 @@ No claim is made for online hosting, published IPM packages, community ideas, ar
 
 ### Suggested Open Exchange description
 
-Access Atlas supports recurring reviews of declared access in InterSystems IRIS. Campaigns retain captures, policy findings, object certifications, decisions and verified remediation receipts. Account/resource inquiries, role-path explanations, grant-impact comparisons and offline review reports support each review period. It also manages applications, accounts, secrets, X.509/TLS/OAuth configuration, tasks, processes and devices, with log analysis and a read-only REST workbench. A same-origin gateway preserves native permissions and requires reviewed, single-use writes with conflict checks and readback. Docker provides a complete quick start or a gateway connected to an existing IRIS instance.
+Access Atlas reviews access in InterSystems IRIS. Trace inherited resource grants, preview removing assigned roles and compare configuration captures. Campaigns save review decisions, object certifications and follow-up work for recurring reviews. Proposed changes require a target review and record their readback result. Administration tools also cover applications, accounts, secrets, tasks, host resources and logs. Install with Docker or connect the gateway to an existing IRIS instance.
 
 ## Current review status
 

@@ -1,10 +1,10 @@
-# Access Atlas: explain configured access and keep an IRIS review across quarters
+# Reviewing inherited IRIS permissions with Access Atlas
 
-An access review starts with a practical question: why does this account have this permission? Answering it can require following several inherited roles, checking public privileges and deciding whether the available configuration is complete. The next question is harder: what did the reviewer decide last time, and does that decision still apply?
+Removing a role from an IRIS account may leave its permissions unchanged if another assigned role grants the same access. Access Atlas shows these inheritance paths and lets you preview a removal before changing the account.
 
-Access Atlas combines these questions in an InterSystems IRIS management portal. Its access map explains captured grants. Review campaigns retain evidence, decisions, object certifications and change receipts so a recurring review can continue across sessions.
+For a recurring review, a campaign saves configuration captures, decisions and follow-up work. The examples below start with one account, then show how to keep that review for the next quarter.
 
-The [repository](https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas) contains the application, installation instructions and verification records. Original application code is MIT licensed; IRIS has its own license.
+The [repository](https://github.com/Igorandor/access-atlas) contains the application, installation instructions and verification records. Original application code is MIT licensed; IRIS has its own license.
 
 ## A review scenario
 
@@ -21,7 +21,7 @@ These views explain configuration. They do not prove that a particular request w
 The bundled installation needs Docker with Compose v2, Linux containers, at least 4 GB of available RAM and approximately 5 GB of free disk space. From a fresh checkout, run:
 
 ```sh
-git clone https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas.git
+git clone https://github.com/Igorandor/access-atlas.git
 cd access-atlas
 docker compose up -d --build
 ```
@@ -31,7 +31,7 @@ Open `http://localhost:3200` and sign in with the bundled quick-start account:
 - Username: `SuperUser`
 - Password: `AtlasLocal-2026!`
 
-Both published ports bind to loopback. This published credential belongs to the bundled image; an installation for other users needs private credentials and HTTPS. The [README](https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas/blob/main/README.md) also explains connecting to an existing instance without replacing its account passwords.
+Both published ports bind to loopback. This published credential belongs to the bundled image; an installation for other users needs private credentials and HTTPS. The [README](https://github.com/Igorandor/access-atlas/blob/main/README.md) also explains connecting to an existing instance without replacing its account passwords.
 
 For a first inspection:
 
@@ -51,7 +51,7 @@ Record an acceptance, required change, investigation or exception with a reason.
 
 Report & follow-ups brings together readiness checks, due work, decisions and remediation receipts. A campaign cannot close with incomplete evidence, unresolved certification, investigations still in progress or submitted changes awaiting readback. Archiving can preserve unfinished work without presenting it as complete.
 
-Next review period copies selected rule, policy and scope definitions into a new campaign. It does not copy old captures, decisions or receipts. The [campaign walkthrough](https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas/blob/main/docs/CAMPAIGNS.md) explains these boundaries. Printable HTML reports contain escaped values, no scripts and no external assets; JSON, Markdown and CSV exports support further review.
+Next review period copies selected rule, policy and scope definitions into a new campaign. It does not copy old captures, decisions or receipts. The [campaign walkthrough](https://github.com/Igorandor/access-atlas/blob/main/docs/CAMPAIGNS.md) explains these boundaries. Printable HTML reports contain escaped values, no scripts and no external assets; JSON, Markdown and CSV exports support further review.
 
 ## What happens when a change is necessary?
 
@@ -65,4 +65,4 @@ The React and TypeScript client talks to an Express gateway using an HttpOnly se
 
 A protected ObjectScript and Embedded Python extension supplies bounded log reads and host observations without invoking a shell. Linux counters describe the OS visible to IRIS, which may differ from container quotas. Campaign storage validates ownership and revisions; deployment requires one gateway writer per campaign directory.
 
-The September 27, 2026 checkpoint passed production builds and 218 Node tests. Separate native checks used IRIS Community 2026.2; IRIS for Health and complete external identity-provider flows remain unverified. Development used AI assistance, with implementation history and retained references documented in [provenance](https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas/blob/main/docs/PROVENANCE.md).
+The September 27, 2026 checkpoint passed production builds and 218 Node tests. Separate native checks used IRIS Community 2026.2; IRIS for Health and complete external identity-provider flows remain unverified. Development used AI assistance, with implementation history and retained references documented in [provenance](https://github.com/Igorandor/access-atlas/blob/main/docs/PROVENANCE.md).

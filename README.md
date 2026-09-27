@@ -1,6 +1,6 @@
 # Access Atlas for InterSystems IRIS
 
-Access Atlas combines recurring access reviews with IRIS administration. Review campaigns retain captures, policy findings, object certifications, decisions and guarded remediation receipts. Explain an account's configured access, compare the impact of changes and export a review report. Native tools cover applications, permissions, secrets, tasks, host resources and logs.
+Access Atlas helps review access in InterSystems IRIS. Trace an account's permissions through inherited roles, preview removing a role, and save review decisions in a campaign. It also provides administration tools for applications, accounts, secrets, tasks, host resources and logs.
 
 Built for the [InterSystems Programming Contest: Build Your Own Management Portal](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal).
 
@@ -37,7 +37,7 @@ Every write has a separate review step. Execution and destructive controls requi
 
 The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. Native API values are never replaced with sample data.
 
-Atlas uses a configuration register and explicit field-selection proposals. Instance data is loaded manually from labelled sources. The access review remains mounted while switching tools.
+Switching tools keeps the current access review open. Refresh instance data when you need a new observation.
 
 ## Quick start: complete local installation
 
@@ -179,3 +179,9 @@ See [data views and limits](docs/DATA_VIEWS.md).
 Open Review → Duty rules after capturing configuration. Enter a rule title and two different roles that should be reviewed together; add the rule. Evaluate ordinary conflicts, conditional escalation paths and unknown evidence separately. Inspect a row for its role paths. Export rules for reuse or Export evaluation for the rules, capture time, instance, warnings and results. Imports accept an exported JSON array up to 32 KB and 20 rules. Disabled accounts are excluded unless their configuration is unreadable. Rules remain in this view while changing tabs and clear at logout/reload. These rules do not enforce permissions or prove denied runtime access.
 
 See [the original project idea](IDEA.md). The written walkthrough above is part of the contest demonstration. A music-only screen walkthrough with English captions has also been prepared for publication; see the [video publication kit](docs/VIDEO.md). No public video or hosted-demo URL is claimed.
+
+## Author
+
+[Igor Podlewski on Developer Community](https://community.intersystems.com/user/igor-podlewski) · [GitHub](https://github.com/Igorandor)
+
+Development used AI assistance. See [provenance](docs/PROVENANCE.md) for implementation history and attribution.

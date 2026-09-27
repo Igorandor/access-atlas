@@ -20,7 +20,7 @@ Trace a grant, preview role removal, update a review decision and inspect campai
 
 Recorded interactions with the running application, edited into short clips with original timing. English captions and instrumental music; no narration. The demonstrated workflow reads IRIS Community and stores review records in an isolated presentation workspace.
 
-Source and installation: https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas
+Source and installation: https://github.com/Igorandor/access-atlas
 
 Companion article: add the published Developer Community URL.
 
