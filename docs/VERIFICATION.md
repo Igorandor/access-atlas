@@ -1,5 +1,11 @@
 # Verification record
 
+## Saved campaign entry after capture failure — September 27, 2026
+
+The existing Access review navigation now keeps Campaigns available before any ad hoc snapshot succeeds. Other tabs remain disabled until a snapshot is returned, and the capture error and explicit retry remain visible. This addresses whole-request failures, including a browser reload during the session's five-second capture cooldown; individual native-source failures already return a partial snapshot with warnings and did not cause this navigation block. No campaign backend or permission checks changed.
+
+Four actual-component regressions exercise AccessReview, Campaigns and its existing saved-evidence read handler with controlled transport. They cover initial 503 and 429, partial HTTP 200, explicit campaign list/detail GETs without another snapshot request, successful later capture without leaving the campaign, and a separately refused campaign read returning 403 without saved rows. Full production builds and **198 tests** pass. These checks use synthetic responses, not native IRIS or existing campaign files. The isolated production-build fixture is ready for separate desktop/mobile browser validation.
+
 ## Remediation recovery visibility — September 27, 2026
 
 A mobile reproduction showed that failed remediation left its recovery instructions above the viewport. The labelled recovery block now receives focus and scrolls into view once per failed review ID, after the request settles; reading history or rerendering does not steal focus. ConfigurationDesk's tested short proposal was already visible and is unchanged. One focused actual-component regression brings `npm run check` to **190 passing tests**, with production builds passing. See [the visibility finding and scope](APPLY_RESPONSE_RECOVERY.md#recovery-visibility-on-mobile).
@@ -102,3 +108,5 @@ Integration browser result: production client passed wallet keyword matching, mi
 ## Existing-instance configuration validation — September 27, 2026
 
 The bounded deployment review found two startup mismatches: IRIS_URL accepted a path prefix that fixed native URL construction discarded, and HTTP PUBLIC_ORIGIN accepted COOKIE_SECURE=true. Startup now rejects both before opening a listener. Two regressions cover invalid prefixes, both contradictory cookie/origin combinations, valid root origins, loopback development and HTTPS deployment. Build and184 Node tests pass. The original routing observation used a synthetic transport and no IRIS connection; no installer, native data, environment file or volume was changed. No browser UI changed in this correction. Harbor/Waypoint already had the corresponding guards and required no edit.
+
+Production-client integration for saved-campaign entry passed desktop1280×900 after first snapshot503 and phone390×844/375 after429. Saved list and detail opened independently, with the capture error still shown. An explicit partial200 capture recovered configuration tabs without navigating away from the selected campaign. With campaign reads separately denied403, a fresh mobile page showed the permission error and no saved row/detail. Fixture counters: four snapshot requests, three campaign lists, two details, zero mutation attempts and zero native connections. Evidence: atlas-campaign-entry-browser-state.json and desktop/mobile/denied-mobile screenshots in research outside the submission. These checks exercise synthetic transport and the production client; existing server authorization probes were not modified.

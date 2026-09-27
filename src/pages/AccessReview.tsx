@@ -96,7 +96,9 @@ export function AccessReview({
         <span>
           {snapshot
             ? 'Captured ' + new Date(snapshot.capturedAt).toLocaleString()
-            : 'Preparing configuration evidence'}
+            : loading
+              ? 'Preparing configuration evidence'
+              : 'No configuration capture loaded'}
         </span>
         <Badge tone={complete ? 'good' : 'warning'}>
           {snapshot
@@ -145,106 +147,117 @@ export function AccessReview({
               <span>review items left</span>
             </div>
           </div>
-          <div className="atlas-review-layout">
-            <nav className="atlas-tabs" aria-label="Access review views">
-              {[
-                ['map', 'Access map', Network],
-                ['matrix', 'Resource matrix', Layers],
-                ['queue', 'Review queue', FileCheck2],
-                ['changes', 'Changes', GitCompareArrows],
-                ['duties', 'Duty rules', ShieldCheck],
-                ['campaigns', 'Campaigns', FileCheck2],
-                ['analysis', 'Analysis', Network],
-              ].map(([id, label, Icon]) => (
-                <button
-                  key={String(id)}
-                  aria-pressed={view === id}
-                  className={view === id ? 'active' : ''}
-                  onClick={() => setView(String(id))}
-                >
-                  {typeof Icon !== 'string' && <Icon size={17} />}
-                  <span>{String(label)}</span>
-                  {id === 'queue' && <span className="tab-count">{items.length - reviewed}</span>}
-                </button>
-              ))}
-            </nav>
-            <div className="atlas-review-content">
-              {view === 'campaigns' && <Campaigns onManageAccount={onManageAccount} />}
-              {view === 'analysis' && <AnalysisTools snapshot={snapshot} />}
-              <div hidden={view !== 'duties'}>
-                <DutyReview snapshot={snapshot} />
-              </div>
-              {view === 'map' && <AccessMap snapshot={snapshot} onManage={onManageAccount} />}
-              {view === 'matrix' && <ResourceMatrix snapshot={snapshot} />}
-              {view === 'queue' && (
-                <ReviewQueue
-                  items={items}
-                  decisions={decisions}
-                  setDecisions={setDecisions}
-                  snapshot={snapshot}
-                  navigate={navigate}
-                />
-              )}
-              {view === 'changes' && (
-                <section className="panel drift-panel">
-                  <div className="section-heading">
-                    <div>
-                      <h2>Configuration changes</h2>
-                      <p>Compare two captures from the same configured instance.</p>
-                    </div>
-                    <div className="inline-actions">
-                      <button disabled={!complete} onClick={() => setBaseline(snapshot)}>
-                        Use current as baseline
-                      </button>
-                      <button onClick={() => file.current?.click()}>
-                        <Upload size={15} /> Import baseline
-                      </button>
-                    </div>
-                  </div>
-                  <input
-                    ref={file}
-                    type="file"
-                    accept="application/json,.json"
-                    hidden
-                    onChange={(e) => {
-                      void importBaseline(e.target.files?.[0]);
-                      e.target.value = '';
-                    }}
-                  />
-                  {baseline ? (
-                    <>
-                      <div className="baseline-strip">
-                        <span>Baseline: {new Date(baseline.capturedAt).toLocaleString()}</span>
-                        <button className="text-link" onClick={() => setBaseline(undefined)}>
-                          Clear baseline
-                        </button>
-                      </div>
-                      <DriftReview before={baseline} after={snapshot} />
-                    </>
-                  ) : (
-                    <div className="atlas-empty">
-                      <GitCompareArrows size={32} />
-                      <h2>Start a comparison</h2>
-                      <p>
-                        Save this capture as a baseline, make a reviewed change in the
-                        administration tools, then capture again. You can also import a previously
-                        exported snapshot.
-                      </p>
-                    </div>
-                  )}
-                </section>
-              )}
-            </div>
-          </div>
-          <p className="atlas-footnote">
-            Configuration evidence, not a live authorization decision. Application roles,
-            escalation, SQL/row policies and current sessions can change runtime access. Captures
-            are bounded and are not transactional.{' '}
-            {view === 'campaigns'
-              ? 'Campaign captures and decisions are saved on the gateway.'
-              : 'Ad hoc captures and notes stay in browser memory until exported.'}
-          </p>
         </>
+      )}
+      <div className="atlas-review-layout">
+        <nav className="atlas-tabs" aria-label="Access review views">
+          {[
+            ['map', 'Access map', Network],
+            ['matrix', 'Resource matrix', Layers],
+            ['queue', 'Review queue', FileCheck2],
+            ['changes', 'Changes', GitCompareArrows],
+            ['duties', 'Duty rules', ShieldCheck],
+            ['campaigns', 'Campaigns', FileCheck2],
+            ['analysis', 'Analysis', Network],
+          ].map(([id, label, Icon]) => (
+            <button
+              key={String(id)}
+              disabled={!snapshot && id !== 'campaigns'}
+              aria-pressed={view === id}
+              className={view === id ? 'active' : ''}
+              onClick={() => setView(String(id))}
+            >
+              {typeof Icon !== 'string' && <Icon size={17} />}
+              <span>{String(label)}</span>
+              {id === 'queue' && <span className="tab-count">{items.length - reviewed}</span>}
+            </button>
+          ))}
+        </nav>
+        <div className="atlas-review-content">
+          {view === 'campaigns' && <Campaigns onManageAccount={onManageAccount} />}
+          {!snapshot && view !== 'campaigns' && !loading && (
+            <p className="notice">
+              Open Campaigns to review saved work, or capture again to load configuration views.
+            </p>
+          )}
+          {snapshot && view === 'analysis' && <AnalysisTools snapshot={snapshot} />}
+          {snapshot && (
+            <div hidden={view !== 'duties'}>
+              <DutyReview snapshot={snapshot} />
+            </div>
+          )}
+          {snapshot && view === 'map' && (
+            <AccessMap snapshot={snapshot} onManage={onManageAccount} />
+          )}
+          {snapshot && view === 'matrix' && <ResourceMatrix snapshot={snapshot} />}
+          {snapshot && view === 'queue' && (
+            <ReviewQueue
+              items={items}
+              decisions={decisions}
+              setDecisions={setDecisions}
+              snapshot={snapshot}
+              navigate={navigate}
+            />
+          )}
+          {snapshot && view === 'changes' && (
+            <section className="panel drift-panel">
+              <div className="section-heading">
+                <div>
+                  <h2>Configuration changes</h2>
+                  <p>Compare two captures from the same configured instance.</p>
+                </div>
+                <div className="inline-actions">
+                  <button disabled={!complete} onClick={() => setBaseline(snapshot)}>
+                    Use current as baseline
+                  </button>
+                  <button onClick={() => file.current?.click()}>
+                    <Upload size={15} /> Import baseline
+                  </button>
+                </div>
+              </div>
+              <input
+                ref={file}
+                type="file"
+                accept="application/json,.json"
+                hidden
+                onChange={(e) => {
+                  void importBaseline(e.target.files?.[0]);
+                  e.target.value = '';
+                }}
+              />
+              {baseline ? (
+                <>
+                  <div className="baseline-strip">
+                    <span>Baseline: {new Date(baseline.capturedAt).toLocaleString()}</span>
+                    <button className="text-link" onClick={() => setBaseline(undefined)}>
+                      Clear baseline
+                    </button>
+                  </div>
+                  <DriftReview before={baseline} after={snapshot} />
+                </>
+              ) : (
+                <div className="atlas-empty">
+                  <GitCompareArrows size={32} />
+                  <h2>Start a comparison</h2>
+                  <p>
+                    Save this capture as a baseline, make a reviewed change in the administration
+                    tools, then capture again. You can also import a previously exported snapshot.
+                  </p>
+                </div>
+              )}
+            </section>
+          )}
+        </div>
+      </div>
+      {(snapshot || view === 'campaigns') && (
+        <p className="atlas-footnote">
+          Configuration evidence, not a live authorization decision. Application roles, escalation,
+          SQL/row policies and current sessions can change runtime access. Captures are bounded and
+          are not transactional.{' '}
+          {view === 'campaigns'
+            ? 'Campaign captures and decisions are saved on the gateway.'
+            : 'Ad hoc captures and notes stay in browser memory until exported.'}
+        </p>
       )}
     </>
   );

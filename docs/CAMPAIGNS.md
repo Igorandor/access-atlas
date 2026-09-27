@@ -2,6 +2,8 @@
 
 Campaigns store review work independently of the ad hoc access snapshot. A campaign belongs to the signed-in native account and configured instance. Reopening it requires current native access to security users and roles.
 
+The Campaigns tab remains available while an ad hoc capture is loading or after its first request fails. Other configuration views require a returned snapshot. For example, reloading the browser during the five-second capture cooldown can reject the initial capture with 429; you can still open saved campaigns without waiting for another capture. A campaign's own read failure or permission refusal is shown separately and does not bypass its current native access checks. Use Capture again when you need fresh ad hoc configuration evidence. A partial snapshot with source warnings continues to support the existing configuration views.
+
 ## Start and capture
 
 1. Open Access review → Campaigns and create a named review with its scope and period.
