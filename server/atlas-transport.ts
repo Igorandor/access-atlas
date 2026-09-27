@@ -175,15 +175,17 @@ export class AtlasTransport {
     private send: typeof fetch = fetch,
   ) {}
 
-  async request(authorization: string, operation: Operation) {
+  async request(authorization: string, operation: Operation, callerSignal?: AbortSignal) {
     validateOperation(operation);
+    const readSignal = operation.method === 'GET' ? callerSignal : undefined;
+    if (readSignal?.aborted) throw new ApiError(499, 'The requesting client cancelled this read.');
     const count = this.leases.get(authorization) || 0;
     if (count === 8 || this.total === 16)
       throw new ApiError(429, 'The native request pool is full. Try after current reads finish.');
     this.leases.set(authorization, count + 1);
     this.total++;
     try {
-      return await this.exchange(authorization, operation);
+      return await this.exchange(authorization, operation, readSignal);
     } finally {
       this.total--;
       const count = this.leases.get(authorization)! - 1;
@@ -192,7 +194,7 @@ export class AtlasTransport {
     }
   }
 
-  private async exchange(authorization: string, operation: Operation) {
+  private async exchange(authorization: string, operation: Operation, callerSignal?: AbortSignal) {
     const extension = operation.path.startsWith('/extension/');
     const endpoint = new URL(
       extension
@@ -221,9 +223,13 @@ export class AtlasTransport {
           'Accept-Language': 'en',
         },
         body: payload === undefined ? undefined : JSON.stringify(payload),
-        signal: AbortSignal.timeout(20000),
+        signal: callerSignal
+          ? AbortSignal.any([callerSignal, AbortSignal.timeout(20000)])
+          : AbortSignal.timeout(20000),
       });
     } catch {
+      if (callerSignal?.aborted)
+        throw new ApiError(499, 'The requesting client cancelled this read.');
       throw new ApiError(
         502,
         'IRIS did not respond within the connection deadline. A write may have completed; inspect before retrying.',

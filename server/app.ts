@@ -197,14 +197,26 @@ export function createApp(options: AppOptions) {
         ...session.activity,
       ].slice(0, 100);
     };
+    const readCancellation = operation.method === 'GET' ? new AbortController() : undefined;
+    function cancelDisconnectedRead() {
+      if (!response.writableEnded) readCancellation?.abort();
+    }
+    if (readCancellation) {
+      response.once('close', cancelDisconnectedRead);
+      if (response.destroyed) readCancellation.abort();
+    }
     try {
-      const result = await transport.request(session.auth, operation);
+      const result = await transport.request(session.auth, operation, readCancellation?.signal);
+      if (readCancellation?.signal.aborted) return;
       if (operation.method !== 'GET' || result.console?.length)
         record(result.status, result.console);
       response.json(result);
     } catch (error) {
+      if (readCancellation?.signal.aborted) return;
       record(error instanceof ApiError ? error.status : 500);
       throw error;
+    } finally {
+      if (readCancellation) response.off('close', cancelDisconnectedRead);
     }
   });
   api.use((_request, _response) => {
