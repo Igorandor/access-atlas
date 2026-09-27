@@ -104,7 +104,7 @@ npm run build
 npm start
 ```
 
-For a gateway container connected to an existing IRIS instance, set `IRIS_URL`, a stable `IRIS_INSTANCE_ID`, and an exact HTTPS `PUBLIC_ORIGIN`, then run `docker compose -f compose.gateway.yaml up -d --build`. It starts only Atlas, requires secure cookies and binds to loopback for a TLS reverse proxy. The `campaigns` volume stores review campaigns. See [deployment and security](docs/DEPLOYMENT.md).
+For a gateway container connected to an existing IRIS instance, set `IRIS_URL`, a stable `IRIS_INSTANCE_ID`, and an exact HTTPS `PUBLIC_ORIGIN`, then run `docker compose -f compose.gateway.yaml up -d --build`. Use a root origin for `IRIS_URL`, such as `https://iris.example:52773`, without `/api/admin` or another path prefix; Atlas addresses the fixed `/api/admin` and `/api/atlas` routes itself. Startup rejects path prefixes and HTTP public origins combined with secure cookies. It starts only Atlas, requires secure cookies and binds to loopback for a TLS reverse proxy. The `campaigns` volume stores review campaigns. See [deployment and security](docs/DEPLOYMENT.md).
 
 ## Administration walkthrough
 

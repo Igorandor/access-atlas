@@ -11,6 +11,10 @@ export function readConfiguration(env: NodeJS.ProcessEnv) {
     endpoint.hash
   )
     throw new Error('IRIS_URL must be an HTTP(S) address without credentials, query or fragment.');
+  if (endpoint.pathname !== '/')
+    throw new Error(
+      'IRIS_URL must be a root origin (scheme, host and optional port), without a path prefix.',
+    );
   const port = Number(env.PORT || 3200);
   if (!Number.isInteger(port) || port < 1 || port > 65535)
     throw new Error('PORT must be a valid TCP port.');
@@ -25,6 +29,8 @@ export function readConfiguration(env: NodeJS.ProcessEnv) {
   const secure = env.COOKIE_SECURE === 'true';
   if (origin?.startsWith('https:') && !secure)
     throw new Error('HTTPS deployments require COOKIE_SECURE=true.');
+  if (origin?.startsWith('http:') && secure)
+    throw new Error('COOKIE_SECURE=true requires an HTTPS PUBLIC_ORIGIN.');
   const instanceId = env.IRIS_INSTANCE_ID || env.ATLAS_INSTANCE_ID || endpoint.origin;
   if (!instanceId.trim() || instanceId.length > 256 || /[\x00-\x1f]/.test(instanceId))
     throw new Error(
