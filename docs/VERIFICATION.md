@@ -1,5 +1,9 @@
 # Verification record
 
+## Native read hook recovery — September 27, 2026
+
+Configuration list results now belong to a path/query key, so the first render of another scope cannot return the previous scope's data or collection time. Same-key 500 preserves prior evidence, while 403 and disabled paths clear it. Four actual-hook regressions bring `npm run check` to **177 passing tests**, including successful production builds. See [the confirmed behavior and scope limits](NATIVE_READ_RECOVERY.md). The optional polling branch is tested but has no current polling consumer; no native operations were performed.
+
 ## Log read refusal recovery — September 27, 2026
 
 LogReview now removes the current source's capture, baseline, inspection, annotations and export controls after an explicit read 403. A temporary 500 retains the evidence and draft notes. Three actual-component callback regressions also verify stale-response rejection after source changes. `npm run check` passes production builds and **173 tests**. See [the confirmed issue and boundaries](LOG_READ_RECOVERY.md). Browser observations are recorded separately; no native operations were performed.

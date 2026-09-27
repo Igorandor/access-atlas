@@ -1,25 +1,42 @@
 import { useEffect, useReducer, useState } from 'react';
-import { iris } from './api';
+import { iris, RequestError } from './api';
 export function useData<T = any>(path: string, query: Record<string, string> = {}, interval = 0) {
+  const signature = JSON.stringify(query);
+  const key = JSON.stringify([path, signature]);
   const [revision, refresh] = useReducer((value: number) => value + 1, 0);
-  const [state, update] = useState<{ data?: T; error: string; loading: boolean; at?: Date }>({
+  const [state, update] = useState<{
+    key: string;
+    data?: T;
+    error: string;
+    loading: boolean;
+    at?: Date;
+  }>({
+    key,
     error: '',
     loading: !!path,
   });
-  const signature = JSON.stringify(query);
   useEffect(() => {
     let disposed = false,
       timer: ReturnType<typeof setTimeout> | undefined;
-    update({ error: '', loading: !!path });
+    update((previous) =>
+      path && previous.key === key
+        ? { ...previous, error: '', loading: true }
+        : { key, error: '', loading: !!path },
+    );
     async function read() {
       if (disposed || !path) return;
       update((previous) => ({ ...previous, loading: true }));
       try {
         const response = await iris<T>(path, JSON.parse(signature));
-        if (!disposed) update({ data: response.data, error: '', loading: false, at: new Date() });
+        if (!disposed)
+          update({ key, data: response.data, error: '', loading: false, at: new Date() });
       } catch (error) {
         if (!disposed)
-          update((previous) => ({ ...previous, error: (error as Error).message, loading: false }));
+          update((previous) =>
+            error instanceof RequestError && error.status === 403
+              ? { key, error: error.message, loading: false }
+              : { ...previous, error: (error as Error).message, loading: false },
+          );
       } finally {
         if (!disposed && interval) timer = setTimeout(visibleSample, interval);
       }
@@ -35,5 +52,16 @@ export function useData<T = any>(path: string, query: Record<string, string> = {
       clearTimeout(timer);
     };
   }, [path, signature, revision, interval]);
-  return { ...state, refresh };
+  // Effects run after render. Never relabel the previous source while its new read starts.
+  const current =
+    path && state.key === key
+      ? state
+      : { error: '', loading: !!path, data: undefined, at: undefined };
+  return {
+    data: current.data,
+    error: current.error,
+    loading: current.loading,
+    at: current.at,
+    refresh,
+  };
 }
