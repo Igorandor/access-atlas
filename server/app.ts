@@ -8,6 +8,9 @@ import { ApiError, IrisClient, type Operation } from './upstream.js';
 import { captureAccess } from './access-snapshot.js';
 import { consolePreview } from './activity.js';
 import { parameters } from '../shared/schema.js';
+import { CampaignStore } from './campaign-store.js';
+import { campaignRoutes } from './campaign-routes.js';
+import { ReviewedChanges, reviewedChangeRoutes } from './reviewed-changes.js';
 
 export type AppOptions = {
   irisUrl: string;
@@ -16,6 +19,7 @@ export type AppOptions = {
   secure?: boolean;
   client?: IrisClient;
   now?: () => number;
+  campaignDirectory?: string;
 };
 const cookie = 'atlas_session';
 const loginInput = z.object({
@@ -54,6 +58,7 @@ export function createApp(options: AppOptions) {
   const clock = options.now ?? Date.now;
   const vault = new AtlasSessionVault(clock);
   const transport = options.client ?? new IrisClient(options.irisUrl);
+  const reviewedChanges = new ReviewedChanges(transport, clock);
   const readSession = (response: express.Response): AtlasSession => response.locals.atlas;
   app.disable('x-powered-by');
   app.use(
@@ -130,6 +135,17 @@ export function createApp(options: AppOptions) {
     response.json({ ok: true });
   });
   api.get('/activity', (_request, response) => response.json(readSession(response).activity));
+  api.use('/changes', reviewedChangeRoutes(reviewedChanges));
+  api.use(
+    '/campaigns',
+    campaignRoutes({
+      transport,
+      store: new CampaignStore(options.campaignDirectory || 'data/campaigns', clock),
+      instance: options.instanceId || new URL(options.irisUrl).origin,
+      now: clock,
+      changes: reviewedChanges,
+    }),
+  );
   api.post('/access-snapshot', async (_request, response) => {
     const session = readSession(response);
     if (
@@ -152,6 +168,8 @@ export function createApp(options: AppOptions) {
   });
   api.post('/iris', async (request, response) => {
     const operation = operationInput.parse(request.body) as Operation;
+    if (operation.method !== 'GET' && operation.path !== '/v2/security/audit/records')
+      throw new ApiError(409, 'Administrative writes require a server-reviewed proposal.');
     if (
       (operation.method === 'GET' || operation.path === '/v2/security/audit/records') &&
       parameters(operation.path, operation.method).some((field) => field.name === 'maxRows') &&

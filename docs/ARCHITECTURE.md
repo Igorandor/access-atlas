@@ -19,3 +19,17 @@ The access collector and strict snapshot schema are unchanged in purpose. See [a
 - Empty/HTML 401 and 403 responses retain their status; failed native error envelopes cannot become successful writes.
 
 See [provenance](PROVENANCE.md) for the replaced foundation and retained validation material.
+
+## Retained reviews and write lifecycle
+
+`campaign-store.ts` stores bounded JSON documents under a hash of native reviewer and configured instance. Reads validate schema and ownership. Listings project one document at a time to summaries; the gateway does not hold every campaign's snapshots in an aggregate list. Writes serialize revision checks with atomic replacement. Next-period creation loads its source under the same store lock, checks its revision and copies only selected definitions into a fresh campaign.
+
+`campaign-routes.ts` probes current identity and native security read access on every request. Captures, policy definitions, finding decisions, object certification, lifecycle changes and remediation records have explicit validated actions. Certification carry-forward compares relevant dependency evidence and preserves the original human review timestamp.
+
+`reviewed-changes.ts` keeps short-lived, session-bound proposal tickets. Preparation reads the target; execution checks identity, selected fields and process generation again, acquires a canonical target lock and dispatches once. Readback produces verified, different, acknowledged, unverified, uncertain or failed results. Credential-bearing values remain only in the pending in-memory operation; consumed tickets discard request bodies. Session receipt listings recheck each source's native read privilege through `receipt-authorization.ts`. Generic native writes cannot bypass this lifecycle.
+
+Campaign remediations persist the dispatch marker before the write. Reconciliation reads expected fields without replay. An active remediation blocks conflicting campaign edits; interrupted dispatch remains visible after restart. Campaign files are reviewer-owned working records, not an immutable security log.
+
+## Analysis and exports
+
+Inquiries explain a fixed account/target/permission question, optionally evaluating up to 50 reusable questions. Role candidates describe collateral captured grants. Drift analysis separates object changes, grant movement and finding predicates while preserving unknowns in incomplete captures. Campaign reports derive readiness, follow-ups and a decision register from stored data; HTML exports escape every value and contain no scripts or external resources. None of these analyses performs a native write.

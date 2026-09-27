@@ -44,8 +44,8 @@ export function AtlasShell(props: Props) {
         </nav>
         <div className="atlas-session">
           <button
-            aria-label="Go to workspace"
-            title="Go to workspace · Ctrl K"
+            aria-label="Find a tool"
+            title="Find a tool · Ctrl K"
             onClick={props.onCommand}
           >
             <Search size={17} />

@@ -4,7 +4,7 @@ export const Badge = ({ children, tone = 'neutral' }: { children: ReactNode; ton
 );
 export const Loading = () => (
   <p className="loading" role="status">
-    Reading instance evidence…
+    Loading…
   </p>
 );
 export function ErrorBox({ error, retry }: { error: string; retry?: () => void }) {

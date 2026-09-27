@@ -3,11 +3,13 @@ import { register, type RegisterEntry } from '../../shared/register';
 import { bodySchema, parameters, spec } from '../../shared/schema';
 import { taskDefaults } from '../../shared/task-defaults';
 import { redact } from '../../shared/redaction';
-import { iris } from '../api';
+import { iris, request } from '../api';
+import type { ChangeReview, ChangeReceipt } from '../../shared/change-review';
 import { useData } from '../hooks';
 import { DataDiff, DataValue, caption } from '../components/DataView';
 import { ErrorBox, Loading, PageHeader } from '../components/ui';
 import { TypedProposal, initialValue } from './TypedProposal';
+import { ReceiptHistory } from './ReceiptHistory';
 
 type Proposal = {
   title: string;
@@ -65,6 +67,9 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
   const [confirmation, setConfirmation] = useState('');
+  const [serverReview, setServerReview] = useState<ChangeReview>();
+  const [receipt, setReceipt] = useState<ChangeReceipt>();
+  const [receiptHistory, setReceiptHistory] = useState(false);
   const [execution, setExecution] = useState<any>();
   const generation = useRef(0);
   useEffect(
@@ -89,6 +94,8 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
   const resetProposal = (next: Proposal) => {
     setProposal(next);
     setReview(false);
+    setServerReview(undefined);
+    setReceipt(undefined);
     setConfirmation('');
     setError('');
     setNotice('');
@@ -162,40 +169,52 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
       body,
       destructive: true,
       editing: false,
+      baseline: record,
     });
   }
 
-  async function apply() {
+  async function prepareReview() {
     if (!proposal) return;
+    setBusy(true);
+    setError('');
+    try {
+      const prepared = await request<ChangeReview>('changes/review', {
+        path: proposal.path,
+        method: proposal.method,
+        query: proposal.query,
+        ...(proposal.method !== 'DELETE' ? { body: proposal.body } : {}),
+        ...((proposal.editing && !entry.opaque) || entry.key === 'processes'
+          ? { baseline: proposal.baseline }
+          : {}),
+      });
+      setServerReview(prepared);
+      setReview(true);
+      setConfirmation('');
+    } catch (failure) {
+      setError((failure as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function apply() {
+    if (!proposal || !serverReview) return;
     const current = proposal,
       version = generation.current;
     setBusy(true);
     setError('');
     try {
-      if (current.editing && !entry.opaque) {
-        const fresh = (await iris(entry.record!, keyQuery(identity))).data;
-        for (const key of Object.keys(current.body))
-          if (JSON.stringify(fresh[key]) !== JSON.stringify(current.baseline?.[key]))
-            throw new Error(
-              'The field ' +
-                caption(key) +
-                ' changed after inspection. Cancel the proposal and inspect again.',
-            );
-      }
-      const outcome = await iris(
-        current.path,
-        current.query,
-        current.method,
-        current.method === 'DELETE' ? undefined : current.body,
-      );
+      const outcome = await request<ChangeReceipt>('changes/apply', {
+        id: serverReview.id,
+        confirmation,
+      });
       if (version !== generation.current) return;
-      setNotice('Proposal applied. Refresh the access capture to compare configuration evidence.');
+      setReceipt(outcome);
+      setNotice(outcome.message);
       setProposal(undefined);
       setRecord(undefined);
       setIdentity('');
       inventory.refresh();
-      if (outcome.console.length)
-        setNotice('Proposal applied. ' + outcome.console.join(' ').slice(0, 2000));
     } catch (failure) {
       if (version === generation.current) setError((failure as Error).message);
     } finally {
@@ -249,6 +268,9 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
         <button disabled={busy || inventory.loading} onClick={inventory.refresh}>
           Reload register
         </button>
+        <button onClick={() => setReceiptHistory(!receiptHistory)} aria-pressed={receiptHistory}>
+          Session receipts
+        </button>
         {entry.create && (
           <button
             className="primary"
@@ -266,6 +288,26 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
         <p className="notice" role="status">
           {notice}
         </p>
+      )}
+      {receiptHistory && <ReceiptHistory onClose={() => setReceiptHistory(false)} />}
+      {receipt && (
+        <section className="panel padded">
+          <h3>Change result: {receipt.status}</h3>
+          <p>
+            {receipt.target} · {new Date(receipt.at).toLocaleString()}
+          </p>
+          <p>{receipt.message}</p>
+          {receipt.checkedFields.length > 0 && (
+            <p>Checked fields: {receipt.checkedFields.join(', ')}</p>
+          )}
+          {receipt.asyncId && (
+            <p>
+              Native asynchronous job: {receipt.asyncId}. Inspect it before repeating this
+              operation.
+            </p>
+          )}
+          {receipt.differences.length > 0 && <DataValue value={receipt.differences} />}
+        </section>
       )}
       <div className="atlas-register-layout">
         <nav className="atlas-record-index" aria-label={entry.title}>
@@ -400,9 +442,22 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
                         'New record'}
                     </strong>
                   </p>
-                  {proposal.destructive && (
+                  {serverReview && (
+                    <>
+                      <p>{serverReview.verification}</p>
+                      <p>
+                        Proposal expires {new Date(serverReview.expiresAt).toLocaleTimeString()}.
+                      </p>
+                      {serverReview.warnings.map((warning) => (
+                        <p className="notice" key={warning}>
+                          {warning}
+                        </p>
+                      ))}
+                    </>
+                  )}
+                  {serverReview && (
                     <label className="field">
-                      Type {identity} to confirm
+                      Type {serverReview.target} to confirm
                       <input
                         autoComplete="off"
                         value={confirmation}
@@ -416,7 +471,7 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
                     </button>
                     <button
                       className="primary"
-                      disabled={busy || (proposal.destructive && confirmation !== identity)}
+                      disabled={busy || !serverReview || confirmation !== serverReview.target}
                       onClick={() => void apply()}
                     >
                       Apply reviewed proposal
@@ -427,7 +482,7 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
                 <form
                   onSubmit={(event) => {
                     event.preventDefault();
-                    setReview(true);
+                    void prepareReview();
                   }}
                 >
                   <fieldset disabled={busy}>

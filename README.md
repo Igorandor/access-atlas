@@ -1,6 +1,6 @@
 # Access Atlas for InterSystems IRIS
 
-Access Atlas is an access-review workspace and a complete IRIS administration client. Its main workflow explains declared role paths, previews the effect of removing an assigned role, compares captured configuration and records review notes. The native administration tools cover applications, permissions, secrets, tasks, host resources and logs. Every operational result comes from a real IRIS instance.
+Access Atlas combines recurring access reviews with IRIS administration. Review campaigns retain captures, policy findings, object certifications, decisions and guarded remediation receipts. Explain an account's configured access, compare the impact of changes and export a review report. Native tools cover applications, permissions, secrets, tasks, host resources and logs.
 
 Built for the [InterSystems Programming Contest: Build Your Own Management Portal](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal).
 
@@ -16,7 +16,11 @@ The top navigation separates **Review**, **Administration** and **Instance**. Re
 4. Open **Review queue**. Record a reason or follow-up for broad roles, public writes or unauthenticated application entry. Export the notes as review evidence.
 5. In **Changes**, choose **Use current as baseline**. Use the administration tools to make a reviewed change, return here and choose **Capture again**. Inspect before/after configuration, or import an earlier exported baseline.
 
-This analyzes configured grants, not live authorization. Public access, special roles, escalation and missing data are distinguished explicitly. See [analysis semantics and limits](docs/ACCESS_ANALYSIS.md). Snapshots and notes remain in browser memory until exported; reload or logout clears them.
+This analyzes configured grants, not live authorization. Public access, special roles, escalation and missing data are distinguished explicitly. See [analysis semantics and limits](docs/ACCESS_ANALYSIS.md). Ad hoc captures stay in browser memory; campaigns save their own captures and decisions on the gateway.
+
+For a retained review, open **Campaigns**, create a campaign and save a capture. Configure duty rules, policies and certification scope, record decisions, then inspect **Report & follow-ups**. Remediation requires a separate target review and exact confirmation; the result is read back or marked unresolved. **Next review period** copies selected settings into a new campaign without reusing evidence or decisions. See the [campaign walkthrough](docs/CAMPAIGNS.md).
+
+**Analysis → Explain access** traces a specific account/resource or application-entry question. It separates ordinary, conditional and public grants and can export reusable question lists. **Changes** and campaign **Capture history** show field changes, inherited impact on accounts and a capture timeline. Exported HTML reports work offline and can be printed to PDF.
 
 ## Administration and evidence
 
@@ -33,7 +37,7 @@ Every write has a separate review step. Execution and destructive controls requi
 
 The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. Native API values are never replaced with sample data.
 
-Atlas uses a configuration register and explicit field-selection proposals. Instance evidence is collected manually from labelled sources. The access-review workspace remains mounted while switching tools.
+Atlas uses a configuration register and explicit field-selection proposals. Instance data is loaded manually from labelled sources. The access review remains mounted while switching tools.
 
 ## Quick start: complete local installation
 
@@ -48,7 +52,7 @@ Open **http://localhost:3200** and sign in:
 - Username: `SuperUser`
 - Password: `AtlasLocal-2026!`
 
-This is a known **local demonstration credential**, configured only by the bundled IRIS development image. Both published ports bind to `127.0.0.1`. Do not expose this stack to the public internet. Use your own instance and account for deployment.
+This is a published **quick-start credential**, configured only by the bundled IRIS image. Both published ports bind to `127.0.0.1`. Use an existing instance with private credentials and HTTPS for deployment to other users.
 
 The first image build takes several minutes. It installs the small ObjectScript/Embedded Python extension and pins the IRIS Community image by digest. The portal uses a non-root Node.js container. The `iris-data` volume preserves the IRIS manager databases across container replacement.
 
@@ -79,7 +83,7 @@ Use IRIS Community **2026.2 with SysAdmin API v2**, or a compatible newer instan
    do $SYSTEM.Status.DisplayError(##class(Atlas.Installer).Install())
    ```
 
-   The installer creates `/api/atlas` with password authentication and `%Admin_Operate` protection. It does **not** change existing account passwords. `iris/configure.script` is only for the disposable Docker demonstration image; never run it on an existing environment.
+   The installer creates `/api/atlas` with password authentication and `%Admin_Operate` protection. It does **not** change existing account passwords. `iris/configure.script` is only for the bundled quick-start image; never run it on an existing environment.
 
 3. Install Node.js 22 LTS or newer and configure the portal:
 
@@ -100,7 +104,7 @@ npm run build
 npm start
 ```
 
-See [deployment and security](docs/DEPLOYMENT.md) before serving to other users.
+For a gateway container connected to an existing IRIS instance, set `IRIS_URL`, a stable `IRIS_INSTANCE_ID`, and an exact HTTPS `PUBLIC_ORIGIN`, then run `docker compose -f compose.gateway.yaml up -d --build`. It starts only Atlas, requires secure cookies and binds to loopback for a TLS reverse proxy. The `campaigns` volume stores review campaigns. See [deployment and security](docs/DEPLOYMENT.md).
 
 ## Administration walkthrough
 
@@ -108,10 +112,10 @@ See [deployment and security](docs/DEPLOYMENT.md) before serving to other users.
 2. Under Account register, inspect roles and their nested grants. A new or changed object includes only selected fields; native errors preserve the proposal for correction.
 3. Security register includes wallet boundaries and secret metadata. Select a collection before creating or rotating an entry. Stored secret values cannot be retrieved.
 4. Task register shows native task execution state separately from configuration. Create an on-demand Atlas.DemoTask in %SYS to record a harmless timestamp in ^AtlasDemo; inspect task history to verify execution.
-5. Under Instance, choose Instance evidence, select Host capacity and counters and Collect evidence. The data describes the OS visible to IRIS. CPU ticks are cumulative, not a sampled utilization percentage.
+5. Under Instance, choose Instance status and load Host capacity and counters. The data describes the OS visible to IRIS. CPU ticks are cumulative, not a sampled utilization percentage.
 6. Host & devices provides process inspection and reviewed controls, device definitions and database inventory.
-7. Logs & evidence gathers a selected source; audit requests are polled to completion. Session operation history lasts only for the current gateway session.
-8. Read API catalog exposes additional native reads. Required query inputs come from the pinned specification.
+7. Logs normalizes loaded messages, alerts, audit records and task history, with severity/time/text filters, window comparison and CSV export. Filtering applies to the loaded window. Session history lasts only for the current gateway session.
+8. REST workbench exposes fixed native reads with contract-derived inputs, reusable query plans, captured results and comparison. It accepts no arbitrary URLs or writes.
 
 ## Development and verification
 

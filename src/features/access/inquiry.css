@@ -1,0 +1,114 @@
+.inquiry-workspace {
+  display: grid;
+  gap: 1rem;
+}
+.inquiry-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+.inquiry-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: center;
+}
+.inquiry-form .inquiry-actions {
+  grid-column: 1 / -1;
+}
+.inquiry-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+.inquiry-table {
+  border-collapse: collapse;
+  width: 100%;
+  text-align: left;
+  font-size: 0.87rem;
+}
+.inquiry-table th,
+.inquiry-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 0.75rem;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.inquiry-table th {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+.inquiry-table code {
+  white-space: normal;
+}
+.inquiry-table p {
+  margin: 0.3rem 0;
+  color: var(--muted);
+}
+.inquiry-list {
+  min-width: 0;
+}
+.inquiry-questions {
+  padding: 0;
+  list-style: none;
+}
+.inquiry-questions li {
+  display: flex;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--line);
+}
+.inquiry-questions li > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.inquiry-steps {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.inquiry-steps li {
+  padding: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.inquiry-steps li strong {
+  margin-right: 0.5rem;
+}
+.inquiry-steps li p {
+  margin-bottom: 0;
+  overflow-wrap: anywhere;
+}
+.inquiry-steps li[data-state='unknown'] {
+  border-style: dashed;
+}
+.inquiry-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.inquiry-checkbox input {
+  width: auto;
+}
+.inquiry-result details {
+  padding: 0.75rem 0;
+}
+@media (max-width: 720px) {
+  .inquiry-form,
+  .inquiry-steps {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .inquiry-questions li {
+    flex-wrap: wrap;
+  }
+  .inquiry-questions li > span {
+    flex-basis: 100%;
+  }
+  .inquiry-table {
+    min-width: 510px;
+  }
+}

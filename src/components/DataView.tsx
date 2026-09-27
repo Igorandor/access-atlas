@@ -49,7 +49,7 @@ function ExpandableValue({ name, value, level }: { name: string; value: any; lev
 }
 export function DataView({
   data,
-  title = 'Evidence',
+  title = 'Data',
   filename = 'atlas-evidence.json',
 }: {
   data: any;
@@ -82,7 +82,7 @@ export function DataView({
       <div className="section-heading">
         <h3>{title}</h3>
         <button onClick={() => download(filename, rows ? matches.map((item) => item.row) : data)}>
-          Export loaded evidence
+          Export loaded data
         </button>
       </div>
       {rows ? (

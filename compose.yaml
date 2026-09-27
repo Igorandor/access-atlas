@@ -20,14 +20,18 @@ services:
     environment:
       IRIS_URL: http://iris:52773
       IRIS_INSTANCE_ID: ${ATLAS_INSTANCE_ID:-atlas-local}
+      ATLAS_DATA_DIR: /app/data/campaigns
       HOST: 0.0.0.0
       PORT: 3100
       PUBLIC_ORIGIN: ${ATLAS_ORIGIN:-http://localhost:3200}
       COOKIE_SECURE: 'false'
     ports:
       - '127.0.0.1:${ATLAS_PORT:-3200}:3100'
+    volumes:
+      - atlas-campaigns:/app/data/campaigns
     depends_on:
       iris:
         condition: service_healthy
 volumes:
   iris-data:
+  atlas-campaigns:

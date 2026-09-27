@@ -5,12 +5,25 @@ import { download } from '../../api';
 import { DataView } from '../../components/DataView';
 import { ErrorBox } from '../../components/ui';
 
-export function DutyReview({ snapshot }: { snapshot: AccessSnapshot }) {
-  const [rules, setRules] = useState<DutyRule[]>([]),
+export function DutyReview({
+  snapshot,
+  rules: savedRules,
+  onRulesChange,
+  persisted = false,
+}: {
+  snapshot: AccessSnapshot;
+  rules?: DutyRule[];
+  onRulesChange?: (rules: DutyRule[]) => void;
+  persisted?: boolean;
+}) {
+  const [localRules, setLocalRules] = useState<DutyRule[]>([]),
     [title, setTitle] = useState('');
   const [left, setLeft] = useState(''),
     [right, setRight] = useState(''),
     [error, setError] = useState('');
+  const rules = savedRules ?? localRules;
+  const setRules = (next: DutyRule[]) =>
+    onRulesChange ? onRulesChange(next) : setLocalRules(next);
   const results = useMemo(() => checkDuties(snapshot, rules), [snapshot, rules]);
   function add() {
     try {
@@ -34,7 +47,10 @@ export function DutyReview({ snapshot }: { snapshot: AccessSnapshot }) {
       <p className="notice">
         These are local review rules, not IRIS enforcement. Ordinary inheritance and conditional
         escalation are distinguished. Disabled accounts are excluded; unreadable accounts remain
-        unknown. Rules stay in this view until sign-out or reload.
+        unknown.{' '}
+        {persisted
+          ? 'Rules are saved in this campaign.'
+          : 'Export rules before sign-out or reload.'}
       </p>
       <div className="duty-form">
         <label className="field">

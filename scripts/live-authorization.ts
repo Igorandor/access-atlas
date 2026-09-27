@@ -42,9 +42,24 @@ const admin = await login(username, password);
 const call = (session: Session, path: string, method = 'GET', query = {}, body?: unknown) =>
   request('iris', { path, method, query, body }, session);
 async function adminCall(path: string, method: string, query: object, body?: unknown) {
-  const r = await call(admin, path, method, query, body);
-  assert.equal(r.status, 200, JSON.stringify(r.data));
-  return r.data.data;
+  if (method === 'GET') {
+    const r = await call(admin, path, method, query, body);
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    return r.data.data;
+  }
+  const review = await request('changes/review', { path, method, query, body }, admin);
+  assert.equal(review.status, 200, JSON.stringify(review.data));
+  const applied = await request(
+    'changes/apply',
+    { id: review.data.id, confirmation: review.data.target },
+    admin,
+  );
+  assert.equal(applied.status, 200, JSON.stringify(applied.data));
+  assert.ok(
+    ['verified', 'acknowledged'].includes(applied.data.status),
+    JSON.stringify(applied.data),
+  );
+  return applied.data;
 }
 let createdRole = false,
   createdUser = false;
@@ -72,16 +87,25 @@ try {
   createdUser = true;
   const operator = await login(name, temporaryPassword);
   assert.equal((await call(operator, '/extension/telemetry')).status, 200);
-  const denied = await call(
+  const denied = await request(
+    'changes/review',
+    {
+      path: '/v2/security/role',
+      method: 'PUT',
+      query: { name: roleName },
+      body: { Resources: [{ Name: '%Admin_Secure', Permissions: 'U' }] },
+    },
+    operator,
+  );
+  assert.equal(denied.status, 403, JSON.stringify(denied.data));
+  const bypass = await call(
     operator,
     '/v2/security/role',
     'PUT',
     { name: roleName },
-    {
-      Resources: [{ Name: '%Admin_Secure', Permissions: 'U' }],
-    },
+    { Resources: [{ Name: '%Admin_Secure', Permissions: 'U' }] },
   );
-  assert.equal(denied.status, 403, JSON.stringify(denied.data));
+  assert.equal(bypass.status, 409, JSON.stringify(bypass.data));
   assert.deepEqual(
     (await adminCall('/v2/security/role', 'GET', { name: roleName })).Resources,
     resources,

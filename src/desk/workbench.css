@@ -1,0 +1,128 @@
+.query-workbench {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.query-index {
+  padding: 18px;
+}
+.query-index nav {
+  max-height: 670px;
+  overflow: auto;
+  display: grid;
+  gap: 7px;
+}
+.query-index nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  gap: 5px;
+  text-align: left;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.query-index nav button[aria-pressed='true'] {
+  background: var(--tint);
+  border-color: var(--accent);
+}
+.query-index small {
+  color: var(--muted);
+}
+.query-editor {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+.query-editor fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+  margin: 20px 0;
+}
+.query-plan {
+  padding-left: 24px;
+}
+.query-plan li {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-top: 1px solid var(--line);
+}
+.query-plan li > div:first-child {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.query-results {
+  margin-top: 24px;
+}
+.query-result-layout {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr);
+  gap: 20px;
+}
+.query-result-layout nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 650px;
+  overflow: auto;
+}
+.query-result-layout nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: start;
+  text-align: left;
+  gap: 6px;
+  flex-shrink: 0;
+  white-space: normal;
+}
+.query-result-layout nav button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--tint);
+}
+.query-compare {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  padding: 15px 0;
+}
+.query-fields {
+  columns: 3;
+  padding-left: 20px;
+}
+.query-fields li {
+  break-inside: avoid;
+  padding: 4px 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 950px) {
+  .query-workbench {
+    grid-template-columns: 1fr;
+  }
+  .query-index nav {
+    max-height: 300px;
+  }
+  .query-result-layout {
+    grid-template-columns: 1fr;
+  }
+  .query-result-layout nav {
+    max-height: 230px;
+  }
+}
+@media (max-width: 600px) {
+  .query-compare {
+    grid-template-columns: 1fr;
+  }
+  .query-plan li {
+    flex-direction: column;
+  }
+  .query-fields {
+    columns: 1;
+  }
+}

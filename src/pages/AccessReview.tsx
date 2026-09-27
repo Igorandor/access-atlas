@@ -1,4 +1,4 @@
-import { DataDiff } from '../components/DataView';
+import { DriftReview } from '../features/access/DriftReview';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
@@ -13,12 +13,14 @@ import {
 } from 'lucide-react';
 import { request, download } from '../api';
 import { Badge, ErrorBox, Loading, PageHeader } from '../components/ui';
-import { compareSnapshots, findings, type AccessSnapshot } from '../../shared/access-model';
+import { findings, type AccessSnapshot } from '../../shared/access-model';
 
 import { AccessMap } from '../features/access/AccessMap';
 import { ResourceMatrix } from '../features/access/ResourceMatrix';
 import { DutyReview } from '../features/access/DutyReview';
 import { ReviewQueue, type Decision } from '../features/access/ReviewQueue';
+import { Campaigns } from '../features/campaigns/Campaigns';
+import { AnalysisTools } from '../features/access/AnalysisTools';
 export function AccessReview({ navigate }: { navigate: (page: string) => void }) {
   const [snapshot, setSnapshot] = useState<AccessSnapshot>();
   const [baseline, setBaseline] = useState<AccessSnapshot>();
@@ -50,14 +52,6 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
   const items = useMemo(() => (snapshot ? findings(snapshot) : []), [snapshot]);
   const reviewed = items.filter((f) => decisions[f.id]?.fingerprint === f.fingerprint).length;
   const complete = !!snapshot && !snapshot.warnings.length;
-  const delta = useMemo(() => {
-    if (!baseline || !snapshot) return { rows: [], error: '' };
-    try {
-      return { rows: compareSnapshots(baseline, snapshot), error: '' };
-    } catch (e) {
-      return { rows: [], error: (e as Error).message };
-    }
-  }, [baseline, snapshot]);
   async function importBaseline(input: File | undefined) {
     if (!input) return;
     try {
@@ -153,6 +147,8 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
                 ['queue', 'Review queue', FileCheck2],
                 ['changes', 'Changes', GitCompareArrows],
                 ['duties', 'Duty rules', ShieldCheck],
+                ['campaigns', 'Campaigns', FileCheck2],
+                ['analysis', 'Analysis', Network],
               ].map(([id, label, Icon]) => (
                 <button
                   key={String(id)}
@@ -167,6 +163,8 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
               ))}
             </nav>
             <div className="atlas-review-content">
+              {view === 'campaigns' && <Campaigns navigate={navigate} />}
+              {view === 'analysis' && <AnalysisTools snapshot={snapshot} />}
               <div hidden={view !== 'duties'}>
                 <DutyReview snapshot={snapshot} />
               </div>
@@ -217,28 +215,7 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
                           Clear baseline
                         </button>
                       </div>
-                      {delta.error ? (
-                        <ErrorBox error={delta.error} />
-                      ) : (
-                        <>
-                          <p className="padded muted">
-                            {delta.rows.length} changed records. Capture again after an
-                            administrative change to compare. Review notes are excluded.
-                          </p>
-                          {delta.rows.map((d) => (
-                            <details className="drift-row" key={d.kind + ':' + d.name}>
-                              <summary>
-                                <Badge tone={d.change === 'removed' ? 'warning' : 'neutral'}>
-                                  {d.change}
-                                </Badge>
-                                <span>{d.kind}</span>
-                                <strong>{d.name}</strong>
-                              </summary>
-                              <DataDiff before={d.before} after={d.after} />
-                            </details>
-                          ))}
-                        </>
-                      )}
+                      <DriftReview before={baseline} after={snapshot} />
                     </>
                   ) : (
                     <div className="atlas-empty">
@@ -258,8 +235,10 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
           <p className="atlas-footnote">
             Configuration evidence, not a live authorization decision. Application roles,
             escalation, SQL/row policies and current sessions can change runtime access. Captures
-            are bounded and are not transactional. Data and review notes stay in memory until
-            exported.
+            are bounded and are not transactional.{' '}
+            {view === 'campaigns'
+              ? 'Campaign captures and decisions are saved on the gateway.'
+              : 'Ad hoc captures and notes stay in browser memory until exported.'}
           </p>
         </>
       )}

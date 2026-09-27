@@ -1,0 +1,304 @@
+import { useMemo, useState } from 'react';
+import { campaignFindings, type Campaign } from '../../../shared/campaign';
+import { draftRemediation, type RemediationRequest } from '../../../shared/remediation';
+import type { ChangeReview } from '../../../shared/change-review';
+import { DataDiff, DataValue } from '../../components/DataView';
+import { ErrorBox, Badge } from '../../components/ui';
+
+export function RemediationPanel({
+  campaign,
+  disabled,
+  submit,
+}: {
+  campaign: Campaign;
+  disabled: boolean;
+  submit: (action: string, payload: Record<string, unknown>) => Promise<any>;
+}) {
+  const findings = useMemo(() => campaignFindings(campaign), [campaign]);
+  const supported = findings.filter((finding) =>
+    ['user', 'resource', 'app'].includes(finding.kind),
+  );
+  const [selected, setSelected] = useState(supported[0]?.id || '');
+  const [action, setAction] = useState<RemediationRequest['action']>('remove-role');
+  const [role, setRole] = useState('');
+  const [reason, setReason] = useState('');
+  const [confirmation, setConfirmation] = useState('');
+  const [review, setReview] = useState<ChangeReview>();
+  const [error, setError] = useState('');
+  const [reconcile, setReconcile] = useState('');
+  const [reconcileNote, setReconcileNote] = useState('');
+  const snapshot = campaign.captures.at(-1)?.snapshot;
+  const finding = findings.find((item) => item.id === selected);
+  const account = snapshot?.users.find((user) => user.Name === finding?.target);
+  const actions: Array<[RemediationRequest['action'], string]> =
+    finding?.kind === 'user'
+      ? [
+          ['remove-role', 'Remove a direct role'],
+          ['disable-account', 'Disable account'],
+        ]
+      : finding?.kind === 'resource'
+        ? [['remove-public-write', 'Remove public write permission']]
+        : finding?.kind === 'app'
+          ? [
+              ['require-authentication', 'Remove unauthenticated entry'],
+              ['disable-application', 'Disable application'],
+            ]
+          : [];
+  const chosenAction = actions.some(([id]) => id === action) ? action : actions[0]?.[0];
+  const chosenRole = role || account?.Roles[0] || '';
+  const draft = useMemo(() => {
+    if (!snapshot || !finding || !chosenAction) return { error: '', data: undefined };
+    try {
+      return {
+        error: '',
+        data: draftRemediation(snapshot, finding, { action: chosenAction, role: chosenRole }),
+      };
+    } catch (failure) {
+      return { error: (failure as Error).message, data: undefined };
+    }
+  }, [snapshot, finding, chosenAction, chosenRole]);
+  async function prepare() {
+    if (!finding || !chosenAction) return;
+    setError('');
+    try {
+      const result = await submit('remediation-review', {
+        findingId: finding.id,
+        fingerprint: finding.fingerprint,
+        action: chosenAction,
+        role: chosenRole,
+        reason,
+      });
+      setReview(result.review);
+      setConfirmation('');
+    } catch (failure) {
+      setError((failure as Error).message);
+    }
+  }
+  async function apply() {
+    if (!review) return;
+    setError('');
+    try {
+      await submit('remediation-apply', { reviewId: review.id, confirmation });
+      setReview(undefined);
+      setConfirmation('');
+    } catch (failure) {
+      setError((failure as Error).message);
+    }
+  }
+  return (
+    <section className="panel padded remediation-panel">
+      <h2>Remediation</h2>
+      <p>
+        Prepare a change from a campaign finding. Atlas checks current fields again before writing
+        and records the result in this campaign.
+      </p>
+      {error && <ErrorBox error={error} />}
+      {!snapshot && <p>Capture access before preparing remediation.</p>}
+      {snapshot && supported.length === 0 && (
+        <p>
+          No current findings have an automatic remediation. Use the configuration register for
+          other changes.
+        </p>
+      )}
+      {snapshot && supported.length > 0 && (
+        <fieldset disabled={disabled || campaign.state !== 'active'}>
+          <label className="field">
+            Finding
+            <select
+              disabled={!!review}
+              value={selected}
+              onChange={(event) => {
+                setSelected(event.target.value);
+                setRole('');
+              }}
+            >
+              <option value="">Choose finding</option>
+              {supported.map((item) => (
+                <option value={item.id} key={item.id}>
+                  {item.target} · {item.title}
+                </option>
+              ))}
+            </select>
+          </label>
+          {finding && (
+            <>
+              <p>{finding.detail}</p>
+              <label className="field">
+                Proposed action
+                <select
+                  disabled={!!review}
+                  value={chosenAction}
+                  onChange={(event) =>
+                    setAction(event.target.value as RemediationRequest['action'])
+                  }
+                >
+                  {actions.map(([id, label]) => (
+                    <option value={id} key={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {chosenAction === 'remove-role' && (
+                <label className="field">
+                  Direct role to remove
+                  <select
+                    disabled={!!review}
+                    value={chosenRole}
+                    onChange={(event) => setRole(event.target.value)}
+                  >
+                    {account?.Roles.map((name) => (
+                      <option key={name}>{name}</option>
+                    ))}
+                  </select>
+                </label>
+              )}
+              {draft.error && <ErrorBox error={draft.error} />}
+              {draft.data && (
+                <>
+                  <h3>{draft.data.title}</h3>
+                  <DataDiff before={draft.data.baseline} after={draft.data.operation.body} />
+                  {draft.data.warnings.map((warning) => (
+                    <p className="notice" key={warning}>
+                      {warning}
+                    </p>
+                  ))}
+                  {draft.data.projection && (
+                    <details>
+                      <summary>
+                        Projected impact: {draft.data.projection.affected.length} accounts
+                      </summary>
+                      {draft.data.projection.affected.map((row) => (
+                        <article key={row.name}>
+                          <h4>{row.name}</h4>
+                          <p>
+                            %All: {row.broadBefore} → {row.broadAfter} · {row.resources.length}{' '}
+                            changed resource grants
+                          </p>
+                          {row.resources.length > 0 && <DataValue value={row.resources} />}
+                        </article>
+                      ))}
+                    </details>
+                  )}
+                  <label className="field">
+                    Reason for this change
+                    <textarea
+                      disabled={!!review}
+                      maxLength={2000}
+                      rows={3}
+                      value={reason}
+                      onChange={(event) => setReason(event.target.value)}
+                    />
+                  </label>
+                  {!review && (
+                    <button
+                      className="primary"
+                      disabled={!reason.trim()}
+                      onClick={() => void prepare()}
+                    >
+                      Check current state and review
+                    </button>
+                  )}
+                </>
+              )}
+            </>
+          )}
+          {review && (
+            <div className="remediation-confirmation">
+              <h3>Server-reviewed proposal</h3>
+              <p>{review.verification}</p>
+              <p>Expires {new Date(review.expiresAt).toLocaleTimeString()}</p>
+              <DataDiff before={review.before} after={review.expected} />
+              <label className="field">
+                Type {review.target} to confirm
+                <input
+                  autoComplete="off"
+                  value={confirmation}
+                  onChange={(event) => setConfirmation(event.target.value)}
+                />
+              </label>
+              <div className="inline-actions">
+                <button onClick={() => setReview(undefined)}>Leave proposal unsubmitted</button>
+                <button
+                  className="primary"
+                  disabled={confirmation !== review.target}
+                  onClick={() => void apply()}
+                >
+                  Apply this change once
+                </button>
+              </div>
+            </div>
+          )}
+        </fieldset>
+      )}
+      <h3>Remediation history</h3>
+      {!campaign.remediations.length && <p>No remediation proposals recorded.</p>}
+      {[...campaign.remediations].reverse().map((record) => (
+        <article key={record.id} className="remediation-record">
+          <div className="section-heading">
+            <h4>{record.title}</h4>
+            <Badge
+              tone={
+                record.status === 'verified'
+                  ? 'good'
+                  : ['failed', 'uncertain', 'different', 'dispatching'].includes(record.status)
+                    ? 'warning'
+                    : 'neutral'
+              }
+            >
+              {record.status}
+            </Badge>
+          </div>
+          <p>
+            {new Date(record.updatedAt).toLocaleString()} · {record.target}
+          </p>
+          <p>{record.reason}</p>
+          <p>{record.message}</p>
+          {record.checkedFields.length > 0 && (
+            <p>Checked fields: {record.checkedFields.join(', ')}</p>
+          )}
+          {record.reconciliation && <p>Reconciliation note: {record.reconciliation}</p>}
+          {record.status !== 'reviewed' && (
+            <button
+              disabled={disabled}
+              onClick={() => {
+                setReconcile(record.id);
+                setReconcileNote('');
+              }}
+            >
+              Read current state
+            </button>
+          )}
+          {reconcile === record.id && (
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                setError('');
+                void submit('remediation-reconcile', { reviewId: record.id, note: reconcileNote })
+                  .then(() => setReconcile(''))
+                  .catch((failure) => setError((failure as Error).message));
+              }}
+            >
+              <label className="field">
+                Reason for checking
+                <textarea
+                  maxLength={4000}
+                  required
+                  rows={3}
+                  value={reconcileNote}
+                  onChange={(event) => setReconcileNote(event.target.value)}
+                />
+              </label>
+              <p>
+                This reads the target and compares the proposed fields. It does not retry the write.
+              </p>
+              <button disabled={disabled || !reconcileNote.trim()}>
+                Check and record current state
+              </button>
+            </form>
+          )}
+        </article>
+      ))}
+    </section>
+  );
+}

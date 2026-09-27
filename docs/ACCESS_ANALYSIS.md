@@ -28,11 +28,11 @@ These configurations can be legitimate. The queue deliberately has no invented s
 
 ## Snapshot comparison
 
-The Changes view compares selected configuration fields, ignoring object ordering and unordered role/grant list ordering. It reports added, removed and changed records, with before/after JSON. It refuses comparisons between different configured instances or incomplete captures, so a denied list cannot masquerade as deleted accounts.
+The Changes view compares selected configuration fields, ignoring object ordering and unordered role/grant list ordering. It reports added, removed and changed records, field differences and inherited effects on accounts. Different configured instances are refused. Partial captures remain inspectable, but a missing object or finding in an incomplete capture is marked unknown, never a verified deletion. Grant totals exclude accounts with incomplete evidence. Reverse chronological comparisons are labelled.
 
 The baseline may be captured in memory or imported from an exported snapshot. Imports are capped at 2 MB and validated against a strict schema with collection bounds and unique identities. Imported data is never executed or submitted to IRIS. Snapshot files contain security metadata and should be handled according to your organization's policy.
 
-Instance matching uses the administrator-configured `IRIS_INSTANCE_ID` (or the upstream origin when omitted). Set a unique, stable value for each deployment; Compose exposes it as `ATLAS_INSTANCE_ID`. This is a configuration guard, not cryptographic server identity. Do not reuse the same label for different instances or compare files after repointing it to another server.
+Instance matching uses the administrator-configured `IRIS_INSTANCE_ID` (or the upstream origin when omitted). Set a unique, stable value for each deployment; Compose passes the same variable. The older `ATLAS_INSTANCE_ID` is a fallback for existing configurations. This is a configuration guard, not cryptographic server identity. Do not reuse the same label for different instances or compare files after repointing it to another server.
 
 ## Capture bounds and consistency
 
@@ -43,4 +43,10 @@ Instance matching uses the administrator-configured `IRIS_INSTANCE_ID` (or the u
 - Requests within one session share an in-flight capture. Captures are not shared between users and are rate-limited to one start per five seconds after completion.
 - Every failed or skipped read is reported. Missing privileges are unknown, never assumed denied.
 
-The start and end timestamps describe a **non-transactional** interval: another administrator can change configuration during collection. Refresh before making a decision. Snapshots and notes are held only in browser memory; navigating between administration and review keeps them, while reload or logout clears them. Export evidence before ending your session.
+The start and end timestamps describe a **non-transactional** interval: another administrator can change configuration during collection. Refresh before making a decision. Ad hoc snapshots and notes remain in browser memory until exported; campaigns retain their captures and decisions on the gateway under the reviewer and configured instance.
+
+## Inquiries and role candidates
+
+Explain access answers a bounded configuration question: one account, one resource and R/W/U, or one application entry point whose resource requires U. It never impersonates the account. Ordinary paths, escalation paths, public grants and %All are shown separately. Missing detail means unknown; a missing explicit grant is not a runtime denial. Disabled accounts and applications are labelled without assuming existing sessions have ended.
+
+Role candidates show roles with an explicit matching grant, their inherited path, escalation conditions, other captured resources and broad-role reachability. This is discovery, not an automatic least-privilege recommendation. Question lists contain at most 50 entries, are limited to 100 KB on import and are tied to the configured instance. They cannot invoke native operations. Results can be exported as JSON or spreadsheet-safe CSV.

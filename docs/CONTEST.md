@@ -1,6 +1,6 @@
 # Contest coverage and submission preparation
 
-Source: [contest announcement](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal), accessed September 26, 2026.
+Source: [contest announcement](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal), checked September 27, 2026. The contest does not require a LOC minimum or a product described as a local demo. Hosted access is an optional bonus; the supplied quick start and existing-instance gateway deployment are separate installation choices.
 
 | Required area                 | Atlas implementation                                                                          | Relevant APIs                                                                                                 |
 | ----------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -29,7 +29,7 @@ No claim is made for online hosting, published IPM packages, community ideas, ar
 
 ### Suggested Open Exchange description
 
-Access Atlas helps administrators understand and review declared access in InterSystems IRIS. Role-path explanations, local role-removal previews, a resource matrix and evidence-backed configuration comparisons form its main workflow. It brings web applications, permissions, wallet secrets, X.509/TLS/OAuth configuration, scheduled tasks, host resources and operational logs into a consistent React interface. A same-origin Node gateway preserves the operator's IRIS privileges; reviewable changes, typed confirmations and conflict checks support everyday administration. The included Docker stack and protected Embedded Python extension provide a reproducible local installation with real telemetry and log data.
+Access Atlas supports recurring reviews of declared access in InterSystems IRIS. Campaigns retain captures, policy findings, object certifications, decisions and verified remediation receipts. Account/resource inquiries, role-path explanations, grant-impact comparisons and offline review reports support each review period. It also manages applications, accounts, secrets, X.509/TLS/OAuth configuration, tasks, processes and devices, with log analysis and a read-only REST workbench. A same-origin gateway preserves native permissions and requires reviewed, single-use writes with conflict checks and readback. Docker provides a complete quick start or a gateway connected to an existing IRIS instance.
 
 ## Current review status
 
@@ -38,3 +38,5 @@ See [the latest authorization and readiness review](CONTEST_SECURITY_REVIEW.md).
 ## Original idea and current walkthrough
 
 The [original project idea](../IDEA.md) and the additional product-specific walkthrough in [README](../README.md) describe the current independent release. The official [contest page](https://openexchange.intersystems.com/contest/48), read September 26, lists the submission deadline as September 27, 2026, 23:59 EST. It also identifies complexity, clarity of instructions, developer experience, applicability and usability as judging criteria. No acceptance or bonus award is implied.
+
+The general terms also contain broad representations about assistance beyond organizer-provided prompt information, subject to contest-rule exceptions. Comparing public feature breadth and independently implementing operator needs does not itself resolve that clause or establish eligibility. No competitor code, interface text or implementation was copied. Participant eligibility, publication and organizer acceptance must still be established by the entrant.

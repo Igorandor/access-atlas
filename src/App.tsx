@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
 import {
   Activity,
   BookOpen,
@@ -15,6 +15,12 @@ import { ConfigurationDesk } from './desk/ConfigurationDesk';
 import { ReadDesk } from './desk/ReadDesk';
 import { request } from './api';
 import { ErrorBox, Loading, Modal } from './components/ui';
+const ApiWorkbench = lazy(() =>
+  import('./desk/ApiWorkbench').then((module) => ({ default: module.ApiWorkbench })),
+);
+const LogReview = lazy(() =>
+  import('./desk/LogReview').then((module) => ({ default: module.LogReview })),
+);
 
 const navigation = [
   { id: 'atlas', label: 'Access review', icon: Shield },
@@ -22,10 +28,10 @@ const navigation = [
   { id: 'apps', label: 'Application register', icon: Globe },
   { id: 'security', label: 'Security register', icon: Shield },
   { id: 'tasks', label: 'Task register', icon: Workflow },
-  { id: 'overview', label: 'Instance evidence', icon: LayoutDashboard },
+  { id: 'overview', label: 'Instance status', icon: LayoutDashboard },
   { id: 'system', label: 'Host & devices', icon: Server },
-  { id: 'logs', label: 'Logs & evidence', icon: Activity },
-  { id: 'explorer', label: 'Read API catalog', icon: BookOpen },
+  { id: 'logs', label: 'Logs', icon: Activity },
+  { id: 'explorer', label: 'REST workbench', icon: BookOpen },
 ];
 const readPage = () =>
   navigation.some((item) => item.id === location.hash.substring(1))
@@ -104,7 +110,7 @@ export default function App() {
           document.getElementById('main-content')?.focus();
         }}
       >
-        Skip to evidence
+        Skip to main content
       </a>
       <AtlasShell
         navigation={navigation}
@@ -123,12 +129,21 @@ export default function App() {
         {['permissions', 'apps', 'security', 'tasks', 'system'].includes(page) && (
           <ConfigurationDesk key={page} section={page} username={account.info.username} />
         )}
-        {['overview', 'logs', 'explorer'].includes(page) && (
-          <ReadDesk key={page} kind={page as 'overview' | 'logs' | 'explorer'} />
-        )}
+        {['overview', 'logs', 'explorer'].includes(page) &&
+          (page === 'explorer' ? (
+            <Suspense fallback={<Loading />}>
+              <ApiWorkbench />
+            </Suspense>
+          ) : page === 'logs' ? (
+            <Suspense fallback={<Loading />}>
+              <LogReview />
+            </Suspense>
+          ) : (
+            <ReadDesk key={page} kind="overview" />
+          ))}
       </AtlasShell>
       {switcher && (
-        <Modal title="Choose a workspace" onClose={() => showSwitcher(false)}>
+        <Modal title="Find a tool" onClose={() => showSwitcher(false)}>
           <nav className="atlas-switcher">
             {navigation.map((item) => (
               <button key={item.id} onClick={() => navigate(item.id)}>
@@ -166,9 +181,9 @@ function AtlasSignIn({ accept }: { accept: (session: any) => void }) {
   return (
     <main className="atlas-sign-in">
       <section>
-        <span className="eyebrow">InterSystems IRIS / Configuration evidence</span>
+        <span className="eyebrow">InterSystems IRIS</span>
         <h1>Access Atlas</h1>
-        <p>Understand access. Review a proposal. Verify the change.</p>
+        <p>Sign in to review access and manage this instance.</p>
         {error && <ErrorBox error={error} />}
         <form onSubmit={(event) => void connect(event)}>
           <fieldset disabled={pending}>
@@ -181,14 +196,11 @@ function AtlasSignIn({ accept }: { accept: (session: any) => void }) {
               <input name="password" autoComplete="current-password" type="password" required />
             </label>
             <button className="primary" type="submit">
-              {pending ? 'Checking your account…' : 'Open review workspace'}
+              {pending ? 'Checking your account…' : 'Sign in'}
             </button>
           </fieldset>
         </form>
-        <p className="muted">
-          Your account permissions apply to every request. Review captures remain in this browser
-          until exported.
-        </p>
+        <p className="muted">Your account permissions apply to every request.</p>
       </section>
     </main>
   );

@@ -82,11 +82,11 @@ export function resolveAccess(snapshot: AccessSnapshot, roots: string[]): Resolv
 
 export type Finding = {
   id: string;
-  category: 'Broad access' | 'Public access' | 'Application entry';
+  category: 'Broad access' | 'Public access' | 'Application entry' | 'Policy';
   target: string;
   title: string;
   detail: string;
-  kind: 'user' | 'resource' | 'app';
+  kind: 'user' | 'resource' | 'app' | 'role';
   fingerprint: string;
 };
 export function findings(snapshot: AccessSnapshot): Finding[] {

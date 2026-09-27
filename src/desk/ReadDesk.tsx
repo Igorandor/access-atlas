@@ -73,12 +73,12 @@ export function ReadDesk({ kind }: { kind: keyof typeof sources }) {
       <PageHeader
         title={
           kind === 'logs'
-            ? 'Operational evidence'
+            ? 'Logs'
             : kind === 'explorer'
               ? 'Read API catalog'
-              : 'Instance evidence'
+              : 'Instance status'
         }
-        description="Choose a source and collect a bounded view with your current IRIS privileges."
+        description="Choose a source to load its current data."
       />
       <div className="atlas-read-desk">
         <aside className="atlas-source-index">
@@ -148,7 +148,7 @@ export function ReadDesk({ kind }: { kind: keyof typeof sources }) {
                 </label>
               ))}
               <button className="primary" type="submit">
-                Collect evidence
+                Load source
               </button>
             </fieldset>
           </form>
@@ -171,7 +171,7 @@ export function ReadDesk({ kind }: { kind: keyof typeof sources }) {
                   free-only bytes.
                 </p>
               )}
-              <DataView data={result?.lines ?? result} title="Collected evidence" />
+              <DataView data={result?.lines ?? result} title="Result" />
             </>
           )}
         </section>

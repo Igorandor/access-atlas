@@ -1,0 +1,19 @@
+name: access-atlas-gateway
+services:
+  atlas:
+    build: .
+    environment:
+      IRIS_URL: ${IRIS_URL:?Set the existing IRIS server URL}
+      IRIS_INSTANCE_ID: ${IRIS_INSTANCE_ID:?Set a stable unique instance identifier}
+      PUBLIC_ORIGIN: ${PUBLIC_ORIGIN:?Set the exact HTTPS browser origin}
+      COOKIE_SECURE: 'true'
+      HOST: 0.0.0.0
+      PORT: 3100
+      ATLAS_DATA_DIR: /app/data/campaigns
+    ports:
+      - '127.0.0.1:${ATLAS_PORT:-3200}:3100'
+    volumes:
+      - campaigns:/app/data/campaigns
+    restart: unless-stopped
+volumes:
+  campaigns:

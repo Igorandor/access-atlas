@@ -30,7 +30,17 @@ Log reads use a fixed allowlist (`messages.log`, `alerts.log`), a maximum 1 MB t
 
 ## Operations
 
-Back up the IRIS data volume with an IRIS-supported backup procedure. Replacing the portal container does not change IRIS records. Replacing the IRIS image may require a supported IRIS upgrade path; pin and test upgrades. `docker compose down` keeps the volume. Removing the volume destroys the demonstration instance's data.
+Back up the IRIS data volume with an IRIS-supported backup procedure. Replacing the portal container does not change IRIS records. Replacing the IRIS image may require a supported IRIS upgrade path; pin and test upgrades. `docker compose down` keeps the volume. Removing the volume destroys the instance's data.
+
+## Gateway-only deployment and retained reviews
+
+`compose.gateway.yaml` starts Atlas against an existing IRIS server. Supply `IRIS_URL`, `IRIS_INSTANCE_ID` and an exact HTTPS `PUBLIC_ORIGIN`; it fixes `COOKIE_SECURE=true` and binds the published gateway port to `127.0.0.1`. Put a TLS reverse proxy on that same host and configure its routing and authentication policy. A remote IRIS connection should use HTTPS. Startup validates URL shape, origin, cookie mode and port values; the gateway does not disable certificate verification.
+
+Campaign files live at `ATLAS_DATA_DIR` (default `./data/campaigns`), on the `campaigns` volume in the gateway-only Compose file. Run one gateway writer for a data directory. Updates are serialized, revision checked and atomically replaced. Bounds are 100 campaigns per owner/instance, 12 captures per campaign, 1.5 MB per capture, 20 MB per document, 500 finding decisions, 2,000 certification decisions, 200 remediation records and 1,000 history entries. At a limit, export the campaign and begin a new period; records are not silently discarded. Back up this directory separately from IRIS using an access-controlled backup while the gateway is stopped. Do not change `IRIS_INSTANCE_ID` casually: it is part of the storage partition.
+
+Every campaign request rechecks native identity and current users/roles read permissions. Session change receipts recheck the native permission family for each retained source: Secure, Wallet, Manage, Operate/Task or OAuth Client as applicable. The OAuth resource-server family uses Secure, separately from OAuth client configuration. A failed permission probe refuses the list instead of exposing cached metadata. Already viewed or exported data cannot be revoked from the browser or a downloaded file.
+
+Reviewed native writes are single-use, session-bound proposals, with fresh same-field checks and target locks. Raw generic writes are refused. A timeout after dispatch creates uncertainty; there is no automatic replay. These gateway locks do not prevent another native administrator from changing the same object directly. Native IRIS auditing remains the authoritative administrative audit.
 
 `GET /api/health` reports gateway process availability, not successful IRIS authentication. The UI's refresh timestamps and individual API errors describe upstream availability. Use an authenticated external health probe if you need end-to-end monitoring.
 
