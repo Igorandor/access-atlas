@@ -20,7 +20,7 @@ Use HTTPS between the browser and gateway and between the gateway and a remote I
 
 Bind the server on a private interface or place it behind a trusted reverse proxy. Do not expose the included development credentials or IRIS development container. The example does not configure proxy trust; if your deployment terminates HTTPS at a proxy, pass `COOKIE_SECURE=true` explicitly and configure the public origin.
 
-Credentials remain in memory because HTTP Basic authentication is used against IRIS. This is an explicit design tradeoff: restarting the gateway signs everyone out; horizontal replicas require sticky sessions. A production multi-instance deployment should introduce a shared, encrypted short-lived token/session store and support the organization's identity policy. There is no claim that the example is a hardened multi-tenant service.
+Credentials remain in memory because HTTP Basic authentication is used against IRIS. Restarting the gateway signs everyone out. Deploy one Atlas gateway writer per campaign directory. Sticky sessions alone cannot coordinate campaign revisions or native-write target locks across replicas. Supporting replicas would require shared session handling, coordinated dispatch and transactional campaign storage; the current release does not provide those mechanisms.
 
 ## Extension
 
