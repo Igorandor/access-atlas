@@ -66,3 +66,7 @@ The React and TypeScript client talks to an Express gateway using an HttpOnly se
 A protected ObjectScript and Embedded Python extension supplies bounded log reads and host observations without invoking a shell. Linux counters describe the OS visible to IRIS, which may differ from container quotas. Campaign storage validates ownership and revisions; deployment requires one gateway writer per campaign directory.
 
 The September 27, 2026 checkpoint passed production builds and 218 Node tests. Separate native checks used IRIS Community 2026.2; IRIS for Health and complete external identity-provider flows remain unverified. Development used AI assistance, with implementation history and retained references documented in [provenance](https://github.com/Igorandor/access-atlas/blob/main/docs/PROVENANCE.md).
+
+## Video walkthrough
+
+[Watch the recorded workflow on YouTube](https://www.youtube.com/watch?v=5IzkxZosweA).
