@@ -21,7 +21,13 @@ import { DutyReview } from '../features/access/DutyReview';
 import { ReviewQueue, type Decision } from '../features/access/ReviewQueue';
 import { Campaigns } from '../features/campaigns/Campaigns';
 import { AnalysisTools } from '../features/access/AnalysisTools';
-export function AccessReview({ navigate }: { navigate: (page: string) => void }) {
+export function AccessReview({
+  navigate,
+  onManageAccount,
+}: {
+  navigate: (page: string) => void;
+  onManageAccount: (account: string) => void;
+}) {
   const [snapshot, setSnapshot] = useState<AccessSnapshot>();
   const [baseline, setBaseline] = useState<AccessSnapshot>();
   const [loading, setLoading] = useState(false),
@@ -163,14 +169,12 @@ export function AccessReview({ navigate }: { navigate: (page: string) => void })
               ))}
             </nav>
             <div className="atlas-review-content">
-              {view === 'campaigns' && <Campaigns navigate={navigate} />}
+              {view === 'campaigns' && <Campaigns onManageAccount={onManageAccount} />}
               {view === 'analysis' && <AnalysisTools snapshot={snapshot} />}
               <div hidden={view !== 'duties'}>
                 <DutyReview snapshot={snapshot} />
               </div>
-              {view === 'map' && (
-                <AccessMap snapshot={snapshot} onManage={() => navigate('permissions')} />
-              )}
+              {view === 'map' && <AccessMap snapshot={snapshot} onManage={onManageAccount} />}
               {view === 'matrix' && <ResourceMatrix snapshot={snapshot} />}
               {view === 'queue' && (
                 <ReviewQueue

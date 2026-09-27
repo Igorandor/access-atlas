@@ -42,6 +42,7 @@ export default function App() {
     [checking, setChecking] = useState(true);
   const [page, setPage] = useState(readPage),
     [switcher, showSwitcher] = useState(false);
+  const [accountTarget, setAccountTarget] = useState<string>();
   const [theme, setTheme] = useState(localStorage.getItem('atlas-theme') || 'light');
   const [error, setError] = useState(''),
     [leaving, setLeaving] = useState(false);
@@ -57,6 +58,7 @@ export default function App() {
       });
     const ended = () => {
       setAccount(null);
+      setAccountTarget(undefined);
       setError('');
     };
     const moved = () => setPage(readPage());
@@ -81,8 +83,15 @@ export default function App() {
     localStorage.setItem('atlas-theme', theme);
   }, [theme]);
   const navigate = (id: string) => {
+    setAccountTarget(undefined);
     location.hash = id;
     setPage(id);
+    showSwitcher(false);
+  };
+  const inspectAccount = (name: string) => {
+    setAccountTarget(name);
+    location.hash = 'permissions';
+    setPage('permissions');
     showSwitcher(false);
   };
   async function logout() {
@@ -92,6 +101,7 @@ export default function App() {
     try {
       await request('logout', {});
       setAccount(null);
+      setAccountTarget(undefined);
     } catch (failure) {
       setError('Sign out could not be confirmed. ' + (failure as Error).message);
     } finally {
@@ -124,10 +134,20 @@ export default function App() {
       >
         {error && <ErrorBox error={error} retry={() => void logout()} />}
         <div hidden={page !== 'atlas'}>
-          <AccessReview navigate={navigate} />
+          <AccessReview navigate={navigate} onManageAccount={inspectAccount} />
         </div>
         {['permissions', 'apps', 'security', 'tasks', 'system'].includes(page) && (
-          <ConfigurationDesk key={page} section={page} username={account.info.username} />
+          <>
+            {page === 'permissions' && accountTarget && (
+              <button onClick={() => navigate('atlas')}>Back to access review</button>
+            )}
+            <ConfigurationDesk
+              key={page}
+              section={page}
+              username={account.info.username}
+              initialAccount={page === 'permissions' ? accountTarget : undefined}
+            />
+          </>
         )}
         {['overview', 'logs', 'explorer'].includes(page) &&
           (page === 'explorer' ? (

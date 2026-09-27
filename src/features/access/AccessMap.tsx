@@ -7,7 +7,7 @@ export function AccessMap({
   onManage,
 }: {
   snapshot: AccessSnapshot;
-  onManage: () => void;
+  onManage: (account: string) => void;
 }) {
   const [search, setSearch] = useState(''),
     [selected, setSelected] = useState(''),
@@ -87,8 +87,8 @@ export function AccessMap({
                       ? 'Enabled'
                       : 'Disabled'}
                 </Badge>
-                <button onClick={onManage}>
-                  Manage accounts <ArrowRight size={14} />
+                <button onClick={() => onManage(user.Name)}>
+                  Inspect account <ArrowRight size={14} />
                 </button>
               </div>
             </div>

@@ -21,7 +21,7 @@ import {
 } from '../../../shared/campaign';
 import './campaigns.css';
 
-export function Campaigns({ navigate }: { navigate: (page: string) => void }) {
+export function Campaigns({ onManageAccount }: { onManageAccount: (account: string) => void }) {
   const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
   const [current, setCurrent] = useState<Campaign>();
   const [pending, setPending] = useState(false);
@@ -220,7 +220,7 @@ export function Campaigns({ navigate }: { navigate: (page: string) => void }) {
               pending={pending}
               change={change}
               reload={() => void open(current.id)}
-              navigate={navigate}
+              onManageAccount={onManageAccount}
               remediation={remediation}
               nextPeriod={nextPeriod}
             />
@@ -248,7 +248,7 @@ function CampaignDetail({
   pending,
   change,
   reload,
-  navigate,
+  onManageAccount,
   remediation,
   nextPeriod,
 }: {
@@ -256,7 +256,7 @@ function CampaignDetail({
   pending: boolean;
   change: (input: ChangePayload) => Promise<void>;
   reload: () => void;
-  navigate: (page: string) => void;
+  onManageAccount: (account: string) => void;
   remediation: (action: string, payload: Record<string, unknown>) => Promise<any>;
   nextPeriod: (input: PeriodInput) => Promise<void>;
 }) {
@@ -367,7 +367,7 @@ function CampaignDetail({
         <CampaignDecisions campaign={campaign} disabled={pending || !active} change={change} />
       )}
       {tab === 'map' && latest && (
-        <AccessMap snapshot={latest.snapshot} onManage={() => navigate('permissions')} />
+        <AccessMap snapshot={latest.snapshot} onManage={onManageAccount} />
       )}
       {tab === 'matrix' && latest && <ResourceMatrix snapshot={latest.snapshot} />}
       {tab === 'rules' && latest && (

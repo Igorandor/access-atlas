@@ -11,6 +11,8 @@ Campaigns store review work independently of the ad hoc access snapshot. A campa
 
 Finding decisions are tied to exact finding content. A changed finding requires another review. Captures are sequential reads, not transactions. An unchanged finding can retain its decision even when the capture changed; object certification uses stricter evidence comparison.
 
+In Access map, **Inspect account** opens a fresh read of that account in the configuration register. **Back to access review** returns to the same campaign, map and filter. This also works for the ad hoc access map. The shortcut does not create a proposal or change permissions; the register uses current native authorization rather than the saved capture.
+
 ## Object certification
 
 Enable certification in its scope panel. Choose accounts, roles, resources and applications, a name prefix and whether disabled objects are included. The scope may have a review due date. Select an object, inspect the captured facts and dependencies, and record retain, change, remove, investigate or exception with a reason.

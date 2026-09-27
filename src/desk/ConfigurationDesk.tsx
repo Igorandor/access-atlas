@@ -22,7 +22,15 @@ type Proposal = {
   editing: boolean;
 };
 
-export function ConfigurationDesk({ section, username }: { section: string; username: string }) {
+export function ConfigurationDesk({
+  section,
+  username,
+  initialAccount,
+}: {
+  section: string;
+  username: string;
+  initialAccount?: string;
+}) {
   const choices = register.filter((item) => item.section === section);
   const [selected, setSelected] = useState(choices[0].key);
   const entry = choices.find((item) => item.key === selected) ?? choices[0];
@@ -43,15 +51,28 @@ export function ConfigurationDesk({ section, username }: { section: string; user
           </button>
         ))}
       </div>
-      <Register key={entry.key} entry={entry} username={username} />
+      <Register
+        key={entry.key}
+        entry={entry}
+        username={username}
+        initialIdentity={entry.key === 'users' ? initialAccount : undefined}
+      />
     </>
   );
 }
 
-function Register({ entry, username }: { entry: RegisterEntry; username: string }) {
+function Register({
+  entry,
+  username,
+  initialIdentity,
+}: {
+  entry: RegisterEntry;
+  username: string;
+  initialIdentity?: string;
+}) {
   const scopes = useData<any[]>(entry.scope?.list ?? '');
   const [scope, setScope] = useState(''),
-    [filter, setFilter] = useState('');
+    [filter, setFilter] = useState(initialIdentity ?? '');
   const [query, setQuery] = useState<Record<string, string>>({});
   const selectedScope = scope || String(scopes.data?.[0]?.[entry.scope?.identity ?? ''] ?? '');
   const listQuery = {
@@ -125,6 +146,13 @@ function Register({ entry, username }: { entry: RegisterEntry; username: string 
       if (generation.current === version) setBusy(false);
     }
   }
+
+  useEffect(() => {
+    // A review link opens a fresh authorized read, never a copied snapshot or proposal.
+    if (initialIdentity && entry.key === 'users') {
+      void inspect({ [entry.identity]: initialIdentity });
+    }
+  }, [initialIdentity, entry.key]);
 
   function draft(create: boolean) {
     const method = create ? entry.create! : 'PUT';
