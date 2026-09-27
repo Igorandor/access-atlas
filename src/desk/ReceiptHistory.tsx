@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeReceipt } from '../../shared/change-review';
 import { receiptExplanation } from '../../shared/change-review';
-import { request, download } from '../api';
+import { download } from '../api';
+import { refreshEvidence } from '../saved-evidence';
 import { Badge, ErrorBox, Loading } from '../components/ui';
 import { DataValue } from '../components/DataView';
 
@@ -18,13 +19,19 @@ export function ReceiptHistory({ onClose }: { onClose: () => void }) {
     const token = ++sequence.current;
     setPending(true);
     setError('');
-    setReceipts([]);
-    setSelected('');
     try {
-      const loaded = await request<ChangeReceipt[]>('changes/receipts');
-      if (sequence.current === token) setReceipts(loaded);
-    } catch (failure) {
-      if (sequence.current === token) setError((failure as Error).message);
+      await refreshEvidence<ChangeReceipt[]>('changes/receipts', {
+        current: () => sequence.current === token,
+        received: (loaded) => {
+          setReceipts(loaded);
+          setSelected((id) => (loaded.some((receipt) => receipt.id === id) ? id : ''));
+        },
+        refused: () => {
+          setReceipts([]);
+          setSelected('');
+        },
+        failed: setError,
+      });
     } finally {
       if (sequence.current === token) setPending(false);
     }

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { request, download } from '../../api';
+import { refreshEvidence } from '../../saved-evidence';
 import { ErrorBox, Loading, Badge } from '../../components/ui';
 import { DriftReview, CaptureTrend } from '../access/DriftReview';
 import { AccessMap } from '../access/AccessMap';
@@ -36,10 +37,12 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     setPending(true);
     setError('');
     try {
-      const result = await request<CampaignSummary[]>('campaigns');
-      if (token === sequence.current) setCampaigns(result);
-    } catch (failure) {
-      if (token === sequence.current) setError((failure as Error).message);
+      await refreshEvidence<CampaignSummary[]>('campaigns', {
+        current: () => token === sequence.current,
+        received: setCampaigns,
+        refused: () => setCampaigns([]),
+        failed: setError,
+      });
     } finally {
       if (token === sequence.current) setPending(false);
     }
@@ -55,10 +58,15 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     setPending(true);
     setError('');
     try {
-      const result = await request<Campaign>('campaigns/' + id);
-      if (token === sequence.current) setCurrent(result);
-    } catch (failure) {
-      if (token === sequence.current) setError((failure as Error).message);
+      await refreshEvidence<Campaign>('campaigns/' + id, {
+        current: () => token === sequence.current,
+        received: setCurrent,
+        refused: () => {
+          setCurrent((previous) => (previous?.id === id ? undefined : previous));
+          setCampaigns((previous) => previous.filter((campaign) => campaign.id !== id));
+        },
+        failed: setError,
+      });
     } finally {
       if (token === sequence.current) setPending(false);
     }

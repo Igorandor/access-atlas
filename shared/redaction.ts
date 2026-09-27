@@ -9,6 +9,10 @@ const credentialName = (name: string) => {
     letters.endsWith('secrets')
   );
 };
+// These documented account-policy flags contain no credential material.
+const accountPolicyFlag = (name: string, value: unknown) =>
+  typeof value === 'boolean' &&
+  ['ChangePassword', 'PasswordNeverExpires', 'HOTPKeyDisplay'].includes(name);
 export function credentialValues(root: unknown, classified = false): string[] {
   const found: string[] = [],
     stack: Array<[unknown, boolean]> = [[root, classified]];
@@ -57,7 +61,7 @@ export function redact(root: any, known: readonly string[] = []): any {
       writable: true,
     });
     for (const [name, child] of Object.entries(source)) {
-      if (!Array.isArray(source) && credentialName(name))
+      if (!Array.isArray(source) && credentialName(name) && !accountPolicyFlag(name, child))
         Object.defineProperty(copy, name, {
           value: '[redacted]',
           enumerable: true,
