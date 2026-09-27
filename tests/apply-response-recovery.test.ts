@@ -28,6 +28,9 @@ const review = {
 // Invoke actual component callbacks with deterministic hook state; no copied apply logic.
 function harness(file: string, name: string, props: any, dependencies: Record<string, any>) {
   const slots: any[] = [];
+  const effects: Array<() => void> = [];
+  const focusEvents: string[] = [],
+    scrollEvents: string[] = [];
   let cursor = 0;
   const hooks = {
     useState(initial: any) {
@@ -47,7 +50,13 @@ function harness(file: string, name: string, props: any, dependencies: Record<st
     useMemo(calculate: () => unknown) {
       return calculate();
     },
-    useEffect() {},
+    useEffect(callback: () => void, dependencies: unknown[]) {
+      const i = cursor++;
+      if (!slots[i] || dependencies.some((value, index) => value !== slots[i][index])) {
+        slots[i] = dependencies;
+        effects.push(callback);
+      }
+    },
   };
   const require = createRequire(import.meta.url),
     module = { exports: {} as any };
@@ -81,6 +90,19 @@ function harness(file: string, name: string, props: any, dependencies: Record<st
     button: (label: string) =>
       nodes().find((node) => node.type === 'button' && text(node) === label),
     props,
+    focusEvents,
+    scrollEvents,
+    commitEffects() {
+      for (const node of nodes()) {
+        if (typeof node.type === 'string' && node.props.ref) {
+          node.props.ref.current = {
+            focus: () => focusEvents.push(node.props.role),
+            scrollIntoView: () => scrollEvents.push(node.props.role),
+          };
+        }
+      }
+      while (effects.length) effects.shift()!();
+    },
   };
 }
 
@@ -358,5 +380,44 @@ test('campaign exact 4xx remains explicit, and successful apply removes confirma
       );
       assert.equal(ui.button('Apply this change once').props.disabled, true);
     }
+  }
+});
+
+test('campaign failed apply focuses its recovery block once, without focus stealing on reload or rerender', async () => {
+  for (const failure of [new TypeError('Reply lost'), new RequestError('Exact refusal', 400)]) {
+    const ui = campaignPanel();
+    await ui.prepare();
+    ui.commitEffects();
+    assert.equal(ui.focusEvents.length, 0, 'preparing a proposal must not move focus to recovery');
+    ui.fail(failure);
+    ui.button('Apply this change once').props.onClick();
+    ui.commitEffects();
+    assert.equal(ui.focusEvents.length, 0, 'starting Apply is not a failure');
+    await tick();
+    ui.props.disabled = true;
+    ui.commitEffects();
+    assert.equal(ui.focusEvents.length, 0, 'wait for the parent request to settle');
+    ui.props.disabled = false;
+    ui.commitEffects();
+    const recovery = ui
+      .nodes()
+      .find((node) => node.type === 'aside' && node.props.role === 'status');
+    assert.equal(recovery.props.tabIndex, -1);
+    assert.equal(recovery.props['aria-label'], 'Submitted change recovery');
+    assert.deepEqual(ui.focusEvents, ['status']);
+    assert.deepEqual(ui.scrollEvents, ['status']);
+    ui.commitEffects();
+    ui.button('Reload remediation history').props.onClick();
+    ui.props.disabled = true;
+    ui.commitEffects();
+    ui.props.disabled = false;
+    ui.commitEffects();
+    assert.deepEqual(
+      ui.focusEvents,
+      ['status'],
+      'reading history must not refocus the old failure',
+    );
+    assert.deepEqual(ui.scrollEvents, ['status']);
+    assert.equal(ui.calls.filter((call) => call === 'remediation-apply').length, 1);
   }
 });

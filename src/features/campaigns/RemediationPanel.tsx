@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RequestError } from '../../api';
 import { campaignFindings, type Campaign } from '../../../shared/campaign';
 import { draftRemediation, type RemediationRequest } from '../../../shared/remediation';
@@ -32,6 +32,21 @@ export function RemediationPanel({
   const [reconcileNote, setReconcileNote] = useState('');
   const [applyAttempt, setApplyAttempt] = useState<{ id: string; uncertain: boolean }>();
   const submittedReviews = useRef(new Set<string>());
+  const recovery = useRef<HTMLElement>(null);
+  const focusedAttempt = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (
+      !disabled &&
+      error &&
+      applyAttempt &&
+      recovery.current &&
+      focusedAttempt.current !== applyAttempt.id
+    ) {
+      focusedAttempt.current = applyAttempt.id;
+      recovery.current.focus({ preventScroll: true });
+      recovery.current.scrollIntoView({ block: 'center' });
+    }
+  }, [disabled, error, applyAttempt]);
   const snapshot = campaign.captures.at(-1)?.snapshot;
   const finding = findings.find((item) => item.id === selected);
   const account = snapshot?.users.find((user) => user.Name === finding?.target);
@@ -112,7 +127,13 @@ export function RemediationPanel({
       </p>
       {error && <ErrorBox error={error} />}
       {applyAttempt && !disabled && (
-        <aside className="notice" role="status">
+        <aside
+          ref={recovery}
+          tabIndex={-1}
+          className="notice"
+          role="status"
+          aria-label="Submitted change recovery"
+        >
           <p>
             {applyAttempt.uncertain
               ? 'The apply response did not confirm an outcome. A failed response does not prove that the change was rejected. Reload this campaign to check its recorded remediation history, then use Read current state before preparing another proposal.'

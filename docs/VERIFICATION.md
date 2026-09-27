@@ -1,5 +1,11 @@
 # Verification record
 
+## Remediation recovery visibility — September 27, 2026
+
+A mobile reproduction showed that failed remediation left its recovery instructions above the viewport. The labelled recovery block now receives focus and scrolls into view once per failed review ID, after the request settles; reading history or rerendering does not steal focus. ConfigurationDesk's tested short proposal was already visible and is unchanged. One focused actual-component regression brings `npm run check` to **190 passing tests**, with production builds passing. See [the visibility finding and scope](APPLY_RESPONSE_RECOVERY.md#recovery-visibility-on-mobile).
+
+Production browser verification passed mobile 375×844 after a truncated established response and desktop 1265×900 after an exact HTTP 400 refusal. The recovery block was visible and focused; mobile Tab reached Reload remediation history, and its read-only reload displayed the verified record without focusing the block again. The respective fixtures recorded one accepted synthetic change and zero accepted changes, each from one Apply attempt; neither connected to IRIS. Evidence: `research/atlas-recovery-focus-browser.json` and `research/atlas-recovery-focus-mobile-state.json`, with visibility screenshots referenced in the recovery document.
+
 ## Lost apply response recovery — September 27, 2026
 
 Configuration and remediation Apply controls now prevent repeated submission of an attempted review ID. Missing/unreadable/5xx responses display uncertainty, the review ID and an explicit read-only recovery action; exact 4xx refusals remain distinct. Drafts are preserved and the remediation proposal is no longer called unsubmitted after an attempt. Five actual-component regression groups bring `npm run check` to **189 passing tests**, with production builds passing. See [recovery behavior and validation boundaries](APPLY_RESPONSE_RECOVERY.md). Browser integration uses synthetic accepted changes; no IRIS operations were performed.
