@@ -91,6 +91,14 @@ export function LogReview() {
       if (token === generation.current) {
         setError((failure as Error).message);
         if (failure instanceof RequestError && [401, 403].includes(failure.status)) setWatch(0);
+        if (failure instanceof RequestError && failure.status === 403) {
+          setCapture((current) => (current?.source === source ? undefined : current));
+          setBaseline((current) => (current?.source === source ? undefined : current));
+          setSelected('');
+          setNotes({});
+          setActor('');
+          setPage(0);
+        }
       }
     } finally {
       inFlight.current = false;
