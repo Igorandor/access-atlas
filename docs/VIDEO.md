@@ -1,20 +1,24 @@
 # Video publication kit
 
-## Prepared files
+## Current recording
 
-The revised Access Atlas walkthrough is 80 seconds long, with instrumental CC0 music and brief English captions. There is no spoken narration. The MP4, SRT and poster are delivered separately from this source repository. No public video URL or awarded bonus is claimed.
+The Access Atlas video now shows actual browser interactions: typing, navigation, changing results and saved workflow records. Duration: approximately 1:05. Instrumental CC0 music and short English captions remain; there is no narration.
 
-This is an edited sequence of actual application screens, not a continuous screen recording. Screens were captured from the running application after the scrollbar appearance update. The native IRIS operations shown are reads. Workflow records use an isolated presentation store; no production customer data is shown.
+This is an edited recording assembled from continuously captured browser frames during each interaction. Original timing is preserved within each clip; pauses between takes are removed. It is not a static screenshot presentation or a single uninterrupted take. The complete captured viewport remains visible. Login credentials are excluded.
+
+The native IRIS operations shown are reads. Investigation notes, campaign decisions and run records are saved in a separate presentation store. No native administration settings or existing user workflow data were changed.
+
+The MP4, SRT, poster and technical report are delivered separately from this repository. No public video URL or awarded bonus is claimed.
 
 ## Suggested YouTube title
 
-Access Atlas for InterSystems IRIS | Explain a grant. Preserve a decision.
+Access Atlas for InterSystems IRIS | Live workflow demonstration
 
 ## Suggested description
 
-Explain a grant. Preserve a decision..
+Trace a grant, preview role removal, update a review decision and inspect campaign readiness.
 
-An edited walkthrough of actual Access Atlas screens, with English on-screen captions and instrumental music. The demonstrated workflow reads an IRIS Community instance. No native administrative changes are performed.
+Recorded interactions with the running application, edited into short clips with original timing. English captions and instrumental music; no narration. The demonstrated workflow reads IRIS Community and stores review records in an isolated presentation workspace.
 
 Source and installation: https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas
 
@@ -24,41 +28,25 @@ Open Exchange: add the published application URL.
 
 Music: Poilo by James Gargette (cinameng) — CC0 1.0 — https://opengameart.org/content/poilo
 
-Music may be trimmed or looped, with loudness adjustment and fades. Source details and hashes are retained in [MUSIC_LICENSES.md](MUSIC_LICENSES.md).
+Music is trimmed or looped, normalized and faded. See [MUSIC_LICENSES.md](MUSIC_LICENSES.md) for primary sources and original file hashes.
 
 ## Before upload
 
-1. Watch and listen to the complete MP4. Replace the repository owner and add the real article/application links to the description.
-2. Upload the individual video, or use its chapter in the combined film. Review the publication settings yourself. Multiple uploads do not necessarily multiply the contest bonus.
-3. An English SRT is supplied. The brief captions are already part of the picture, so check for duplicate captions when enabling the optional subtitle track.
-4. Publish the chosen video, verify access without signing in, and add its actual URL to the Open Exchange YouTube field and repository README.
+1. Watch and listen to the entire MP4. Replace the repository owner and add actual article/application links.
+2. Upload the individual film or use its chapter in the combined film. Review publication settings yourself. Multiple uploads do not necessarily multiply the contest bonus.
+3. English SRT captions are supplied; short captions are already visible in the picture. Check for duplicate display when enabling subtitles.
+4. Verify the published video without signing in, then add its real URL to the Open Exchange YouTube field and repository README.
 
-## On-screen captions
+## Recorded clips
 
-### 1. What access is configured?
-
-Inspect captured accounts, roles and resources. Configuration is evidence, not a live authorization guarantee.
-
-### 2. Where did the grant come from?
-
-Follow a permission through its role path, without editing the account.
-
-### 3. What would removing a role change?
-
-Preview the configured grant changes. Reset the preview to return to the captured state. No IRIS write is sent.
-
-### 4. Keep the review across sessions
-
-A saved campaign retains its purpose, captures and recorded decisions.
-
-### 5. A finding starts a question
-
-Review findings against captured access. A prompt for review is not a verdict that a setting is wrong.
-
-### 6. Save the reason, too
-
-Mark an item as investigating and record the follow-up needed from its owner.
-
-### 7. Show the unfinished work
-
-Readiness checks keep undecided findings and open follow-ups visible. No permissions were changed.
+1. Find a resource in the captured access map.
+2. Expand a grant to see the account-to-role-to-resource path.
+3. Uncheck a role to preview which configured grants would change.
+4. Reset the preview; the IRIS account has not been modified.
+5. Move from ad hoc inspection to a saved review campaign.
+6. Reopen the quarterly review and its recorded decisions.
+7. Open the SuperUser finding and inspect its decision form.
+8. Record the ownership check needed before approving broad privileges.
+9. Save the review decision without changing IRIS permissions.
+10. Open the review report to see what still needs attention.
+11. The campaign keeps undecided findings and ongoing investigations visible.
