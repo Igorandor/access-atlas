@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
 import { download } from '../api';
+const ownValue = (record: any, key: string): unknown =>
+  record != null && Object.hasOwn(record, key) ? record[key] : undefined;
 export const caption = (name: string) =>
   name.replace(/([a-z\d])([A-Z])/g, '$1 $2').replace(/_/g, ' ');
 export function DataValue({ value, level = 0 }: { value: any; level?: number }) {
@@ -116,17 +118,20 @@ export function DataView({
                     <td>
                       <button onClick={() => select(index)}>Record {index + 1}</button>
                     </td>
-                    {keys.map((key) => (
-                      <td key={key}>
-                        {row?.[key] && typeof row[key] === 'object' ? (
-                          <span>
-                            {Array.isArray(row[key]) ? row[key].length + ' items' : 'Nested fields'}
-                          </span>
-                        ) : (
-                          <DataValue value={row?.[key]} />
-                        )}
-                      </td>
-                    ))}
+                    {keys.map((key) => {
+                      const value = ownValue(row, key);
+                      return (
+                        <td key={key}>
+                          {value && typeof value === 'object' ? (
+                            <span>
+                              {Array.isArray(value) ? value.length + ' items' : 'Nested fields'}
+                            </span>
+                          ) : (
+                            <DataValue value={value} />
+                          )}
+                        </td>
+                      );
+                    })}
                     {!keys.length && (
                       <td>
                         <DataValue value={row} />
@@ -168,15 +173,18 @@ export function DataDiff({ before, after }: { before: any; after: any }) {
         </thead>
         <tbody>
           {keys
-            .filter((key) => JSON.stringify(before?.[key]) !== JSON.stringify(after?.[key]))
+            .filter(
+              (key) =>
+                JSON.stringify(ownValue(before, key)) !== JSON.stringify(ownValue(after, key)),
+            )
             .map((key) => (
               <tr key={key}>
                 <th scope="row">{caption(key)}</th>
                 <td>
-                  <DataValue value={before?.[key]} />
+                  <DataValue value={ownValue(before, key)} />
                 </td>
                 <td>
-                  <DataValue value={after?.[key]} />
+                  <DataValue value={ownValue(after, key)} />
                 </td>
               </tr>
             ))}

@@ -1,5 +1,9 @@
 # Verification record
 
+## Evidence field lookups — September 27, 2026
+
+The evidence table and diff now distinguish missing fields from inherited JavaScript properties. The confirmed issue could display built-in functions or hide an added empty `__proto__` record. Three actual-component rendering regressions bring `npm run check` to **170 passing tests**, with production frontend/server builds passing. See [the correction and validation scope](EVIDENCE_FIELD_LOOKUPS.md). No native operations were performed.
+
 ## Client session boundaries — September 27, 2026
 
 Late responses from an earlier account can no longer replace the current CSRF token or expire a newer login. Async polling stops before sending a previous session's job request, and same-origin session signals remove protected views in other tabs without transmitting account data or tokens. Duplicate initial session discovery remains compatible with StrictMode. Eight regressions bring `npm run check` to **167 passing tests**, with TypeScript and frontend/server production builds passing. See [the confirmed race, boundaries and test coverage](SESSION_BOUNDARIES.md). Browser integration evidence is recorded separately; these checks did not mutate IRIS.
