@@ -3,6 +3,7 @@ import { certificationCoverage } from './certification.js';
 import { captureTimeline } from './access-drift.js';
 import { evaluatePolicies } from './review-policies.js';
 import { checkDuties } from './duty-rules.js';
+import { remediationNeedsReadback } from './remediation.js';
 
 export type AgendaItem = {
   id: string;
@@ -61,7 +62,6 @@ export type CampaignReport = {
   >;
 };
 
-const unresolvedStatuses = new Set(['dispatching', 'uncertain', 'unverified', 'different']);
 const terminalCertification = new Set(['retain', 'exception']);
 
 function overdue(date: string | undefined, today: string) {
@@ -127,7 +127,8 @@ export function campaignAgenda(campaign: Campaign, now = new Date()): AgendaItem
   }
   for (const record of campaign.remediations) {
     if (
-      !unresolvedStatuses.has(record.status) &&
+      !remediationNeedsReadback(record) &&
+      record.status !== 'different' &&
       record.status !== 'failed' &&
       record.status !== 'reviewed'
     )
@@ -140,11 +141,13 @@ export function campaignAgenda(campaign: Campaign, now = new Date()): AgendaItem
       state: record.status,
       note: record.message || record.reason,
       overdue: false,
-      nextStep: unresolvedStatuses.has(record.status)
+      nextStep: remediationNeedsReadback(record)
         ? 'Reconcile by reading the target. Do not replay a write with an unknown result.'
-        : record.status === 'reviewed'
-          ? 'Apply the reviewed proposal or leave it unexecuted; expired session tickets require a new review.'
-          : 'Inspect the failure and current target before preparing another proposal.',
+        : record.status === 'different'
+          ? 'Readback recorded a difference. Review the recorded explanation and final finding decision; another write is not implied.'
+          : record.status === 'reviewed'
+            ? 'Apply the reviewed proposal or leave it unexecuted; expired session tickets require a new review.'
+            : 'Inspect the failure and current target before preparing another proposal.',
     });
   }
   if (!latest)
@@ -186,9 +189,7 @@ export function buildCampaignReport(
   const policies = latest ? evaluatePolicies(latest.snapshot, campaign.policies) : [];
   const duties = latest ? checkDuties(latest.snapshot, campaign.rules) : [];
   const agenda = campaignAgenda(campaign, now);
-  const unresolved = campaign.remediations.filter((record) =>
-    unresolvedStatuses.has(record.status),
-  );
+  const unresolved = campaign.remediations.filter(remediationNeedsReadback);
   const limits = [
     'Configured access is not a runtime authorization decision. Active sessions, application roles and policies can alter access.',
     'Captures are sequential reads and may contain concurrent configuration changes.',
@@ -219,6 +220,11 @@ export function buildCampaignReport(
       label: 'Required changes addressed',
       satisfied: progress.openChanges === 0,
       detail: `${progress.openChanges} findings still require a change.`,
+    },
+    {
+      label: 'Investigations complete',
+      satisfied: progress.investigating === 0,
+      detail: `Findings still under investigation: ${progress.investigating}.`,
     },
     {
       label: 'Certification complete',

@@ -213,6 +213,7 @@ export function campaignProgress(campaign: Campaign, now = new Date()) {
     remaining: rows.filter((row) => !row.decision).length,
     overdue: rows.filter((row) => row.overdue).length,
     openChanges: rows.filter((row) => row.decision?.outcome === 'change-required').length,
+    investigating: rows.filter((row) => row.decision?.outcome === 'investigating').length,
     certificationIncomplete:
       campaign.certificationScope.enabled &&
       (!latest ||

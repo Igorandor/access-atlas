@@ -7,7 +7,11 @@ import { captureAccess } from './access-snapshot.js';
 import type { AtlasSession } from './atlas-sessions.js';
 import { findings } from '../shared/access-model.js';
 import { canonical } from '../shared/access-model.js';
-import { draftRemediation, remediationRequestSchema } from '../shared/remediation.js';
+import {
+  draftRemediation,
+  remediationRequestSchema,
+  remediationNeedsReadback,
+} from '../shared/remediation.js';
 import type { ReviewedChanges } from './reviewed-changes.js';
 import { certificationSubjects, carryCertifications } from '../shared/certification.js';
 import { nextPeriodSchema } from '../shared/campaign-period.js';
@@ -256,11 +260,17 @@ export function campaignRoutes(settings: {
                 progress.incomplete ||
                 progress.remaining ||
                 progress.openChanges ||
+                progress.investigating ||
                 progress.certificationIncomplete
               )
                 throw new ApiError(
                   409,
-                  'Complete the capture and review all findings before closing. Resolve change-required decisions first.',
+                  'Complete the capture and certification, and record a final decision for every finding before closing. Resolve change-required and investigating decisions first.',
+                );
+              if (campaign.remediations.some(remediationNeedsReadback))
+                throw new ApiError(
+                  409,
+                  'Read back submitted changes and record reconciliation before closing. A recorded difference can remain visible; it does not require replaying the write.',
                 );
             }
             campaign.state = input.state;

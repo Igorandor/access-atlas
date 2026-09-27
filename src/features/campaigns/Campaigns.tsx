@@ -87,19 +87,26 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       setPending(false);
     }
   }
-  async function change(input: Omit<CampaignChange, 'revision'>, expectedRevision?: number) {
+  async function change(
+    input: Omit<CampaignChange, 'revision'>,
+    expectedRevision?: number,
+    onRefused?: (message: string) => void,
+  ) {
     if (!current) return;
     setPending(true);
     setError('');
+    let applied = false;
     try {
       const result = await request<Campaign>('campaigns/' + current.id, {
         ...input,
         revision: expectedRevision ?? current.revision,
       });
+      applied = true;
       setCurrent(result);
       setCampaigns(await request('campaigns'));
     } catch (failure) {
-      setError((failure as Error).message);
+      if (!applied && onRefused) onRefused((failure as Error).message);
+      else setError((failure as Error).message);
     } finally {
       setPending(false);
     }
@@ -262,7 +269,11 @@ function CampaignDetail({
 }: {
   campaign: Campaign;
   pending: boolean;
-  change: (input: ChangePayload, expectedRevision?: number) => Promise<void>;
+  change: (
+    input: ChangePayload,
+    expectedRevision?: number,
+    onRefused?: (message: string) => void,
+  ) => Promise<void>;
   reload: () => void;
   onManageAccount: (account: string) => void;
   remediation: (action: string, payload: Record<string, unknown>) => Promise<any>;
@@ -271,6 +282,27 @@ function CampaignDetail({
   const [tab, setTab] = useState('decisions');
   const [label, setLabel] = useState('Access review ' + new Date().toISOString().slice(0, 10));
   const [reason, setReason] = useState('');
+  const [statusFailure, setStatusFailure] = useState<{ message: string }>();
+  const statusAlert = useRef<HTMLElement>(null);
+  const focusedFailure = useRef<typeof statusFailure>(undefined);
+  useEffect(() => {
+    if (
+      !pending &&
+      statusFailure &&
+      focusedFailure.current !== statusFailure &&
+      statusAlert.current
+    ) {
+      focusedFailure.current = statusFailure;
+      statusAlert.current.focus({ preventScroll: true });
+      statusAlert.current.scrollIntoView({ block: 'center' });
+    }
+  }, [pending, statusFailure]);
+  async function changeStatus(state: Campaign['state']) {
+    setStatusFailure(undefined);
+    await change({ action: 'state', state, reason }, undefined, (message) =>
+      setStatusFailure({ message }),
+    );
+  }
   const [title, setTitle] = useState(campaign.title);
   const [description, setDescription] = useState(campaign.description);
   const [detailsBase, setDetailsBase] = useState({
@@ -555,9 +587,10 @@ function CampaignDetail({
           </form>
           <h3>Review status</h3>
           <p>
-            Closing requires a complete capture, a decision for each current finding and no
-            change-required decisions. Archiving preserves an unfinished review without marking it
-            complete.
+            Closing requires a complete capture and certification, final decisions for all current
+            findings, and readback of submitted changes. Resolve investigating and change-required
+            decisions first. A recorded readback difference remains visible and does not require
+            another write. Archiving preserves an unfinished review without marking it complete.
           </p>
           <label className="field">
             Reason for status change
@@ -575,12 +608,24 @@ function CampaignDetail({
                 <button
                   key={state}
                   disabled={pending || !reason.trim()}
-                  onClick={() => void change({ action: 'state', state, reason })}
+                  onClick={() => void changeStatus(state)}
                 >
                   {state === 'active' ? 'Reopen' : state === 'closed' ? 'Close review' : 'Archive'}
                 </button>
               ))}
           </div>
+          {statusFailure && (
+            <aside
+              ref={statusAlert}
+              className="error-box"
+              role="alert"
+              tabIndex={-1}
+              aria-label="Campaign status change not completed"
+            >
+              <strong>Status change not completed</strong>
+              <p>{statusFailure.message}</p>
+            </aside>
+          )}
         </section>
       )}
     </>

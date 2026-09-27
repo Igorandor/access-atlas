@@ -7,7 +7,7 @@ import * as campaignModel from '../shared/campaign';
 import * as certification from '../shared/certification';
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
-type Scenario = 'settings' | 'scope';
+type Scenario = 'settings' | 'scope' | 'status';
 type Hooks = { slots: any[]; cursor: number; effects: Array<() => void> };
 
 // Real parent, detail, certification and saved-read callbacks, with independent
@@ -48,6 +48,10 @@ async function harness(scenario: Scenario) {
   };
   const writes: any[] = [];
   let applied = 0;
+  let refuseStatus = true;
+  let failList = false;
+  const focusEvents: string[] = [];
+  let scrolls = 0;
   class RequestError extends Error {
     constructor(
       message: string,
@@ -57,8 +61,10 @@ async function harness(scenario: Scenario) {
     }
   }
   async function request(path: string, body?: any) {
-    if (path === 'campaigns' && body === undefined)
+    if (path === 'campaigns' && body === undefined) {
+      if (failList) throw new RequestError('List refresh failed', 500);
       return [campaignModel.campaignSummary(structuredClone(stored))];
+    }
     assert.equal(path, 'campaigns/' + stored.id);
     if (body !== undefined) {
       writes.push(structuredClone(body));
@@ -68,7 +74,10 @@ async function harness(scenario: Scenario) {
         Object.assign(stored, { title: body.title, description: body.description });
       else if (body.action === 'certification-scope')
         stored.certificationScope = structuredClone(body.scope);
-      else throw new Error('Unexpected mutation');
+      else if (body.action === 'state') {
+        if (refuseStatus) throw new RequestError('Resolve investigating decisions first.', 409);
+        stored.state = body.state;
+      } else throw new Error('Unexpected mutation');
       stored.revision++;
       applied++;
     }
@@ -147,7 +156,19 @@ async function harness(scenario: Scenario) {
   function render(component: any, props: any, target: Hooks) {
     active = target;
     target.cursor = 0;
-    return walk(component(props));
+    const nodes = walk(component(props));
+    for (const node of nodes) {
+      if (node.props?.ref && node.props['aria-label'] === 'Campaign status change not completed')
+        node.props.ref.current = {
+          focus() {
+            focusEvents.push(node.props['aria-label']);
+          },
+          scrollIntoView() {
+            scrolls++;
+          },
+        };
+    }
+    return nodes;
   }
   const page = () => render(components.Campaigns, { onManageAccount() {} }, parent);
   const content = () => {
@@ -155,7 +176,7 @@ async function harness(scenario: Scenario) {
     return node ? render(node.type, node.props, detail) : [];
   };
   const formNodes = () => {
-    if (scenario === 'settings') return content();
+    if (scenario !== 'scope') return content();
     const node = content().find((node) => node.type?.name === 'CertificationReview');
     return node ? render(node.type, node.props, cert) : [];
   };
@@ -173,8 +194,8 @@ async function harness(scenario: Scenario) {
   };
   const input = () =>
     formNodes().find((node) =>
-      scenario === 'settings'
-        ? node.type === 'textarea' && node.props.rows === 4
+      scenario !== 'scope'
+        ? node.type === 'textarea' && node.props.rows === (scenario === 'status' ? 3 : 4)
         : node.type === 'input' && node.props.maxLength === 128,
     );
   flush();
@@ -183,13 +204,25 @@ async function harness(scenario: Scenario) {
     .find((node) => node.type === 'button' && text(node).includes('Original title'))
     .props.onClick();
   await tick();
-  button(scenario === 'settings' ? 'Settings' : 'Certification', content()).props.onClick();
+  button(scenario !== 'scope' ? 'Settings' : 'Certification', content()).props.onClick();
   flush();
   return {
     writes,
     button,
     input,
     flush,
+    focusEvents,
+    get scrolls() {
+      return scrolls;
+    },
+    localAlert: () =>
+      content().find(
+        (node) => node.props?.['aria-label'] === 'Campaign status change not completed',
+      ),
+    allowStatus(listFailure = false) {
+      refuseStatus = false;
+      failList = listFailure;
+    },
     get applied() {
       return applied;
     },
@@ -287,3 +320,50 @@ for (const scenario of ['settings', 'scope'] as const) {
     assert.equal(ui.applied, 1);
   });
 }
+
+test('status refusal focuses the local message once per attempt, preserves reason and does not refocus on reload', async () => {
+  const ui = await harness('status');
+  ui.edit('Keep this closure reason');
+  ui.button('Close review').props.onClick();
+  await ui.settle();
+  assert.equal(ui.localAlert().props.role, 'alert');
+  assert.equal(ui.localAlert().props.tabIndex, -1);
+  assert.equal(
+    ui.localAlert().props.children[1].props.children,
+    'Resolve investigating decisions first.',
+  );
+  assert.deepEqual(ui.focusEvents, ['Campaign status change not completed']);
+  assert.equal(ui.scrolls, 1);
+  assert.equal(ui.input().props.value, 'Keep this closure reason');
+  assert.equal(ui.stored.state, 'active');
+  assert.equal(ui.stored.revision, 1);
+  ui.flush();
+  await ui.reload();
+  assert.equal(ui.focusEvents.length, 1);
+  ui.button('Close review').props.onClick();
+  await ui.settle();
+  assert.equal(ui.focusEvents.length, 2);
+  assert.equal(ui.scrolls, 2);
+  assert.equal(ui.writes.length, 2);
+  ui.allowStatus();
+  ui.button('Close review').props.onClick();
+  await ui.settle();
+  assert.equal(ui.localAlert(), undefined);
+  assert.equal(ui.stored.state, 'closed');
+  assert.equal(ui.applied, 1);
+  assert.equal(ui.button('Reopen').props.disabled, false);
+  assert.equal(ui.focusEvents.length, 2);
+});
+
+test('successful status mutation followed by a failed list refresh is not reported as a local refusal', async () => {
+  const ui = await harness('status');
+  ui.edit('Archive completed review');
+  ui.allowStatus(true);
+  ui.button('Archive').props.onClick();
+  await ui.settle();
+  assert.equal(ui.stored.state, 'archived');
+  assert.equal(ui.applied, 1);
+  assert.equal(ui.localAlert(), undefined);
+  assert.equal(ui.focusEvents.length, 0);
+  assert.equal(ui.button('Reopen').props.disabled, false);
+});

@@ -198,3 +198,11 @@ export const remediationRecordSchema = z
   })
   .strict();
 export type RemediationRecord = z.infer<typeof remediationRecordSchema>;
+
+/** A submitted change needs a known readback before the review can close. */
+export function remediationNeedsReadback(record: RemediationRecord): boolean {
+  return (
+    ['dispatching', 'uncertain', 'unverified', 'acknowledged'].includes(record.status) ||
+    (record.status === 'different' && !record.reconciliation?.trim())
+  );
+}
