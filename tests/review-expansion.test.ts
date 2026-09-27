@@ -321,6 +321,74 @@ test('reports escape hostile notes and exclude optional sections without excludi
   assert.ok(report.limits.length);
   assert.match(campaignReportMarkdown(report), /\\<script\\>/);
 });
+test('HTML and Markdown distinguish certification scopes even when their captured objects match', () => {
+  const document = campaign();
+  document.certificationScope = {
+    enabled: true,
+    kinds: ['accounts'],
+    prefix: 'a',
+    includeDisabled: false,
+  };
+  const options = { authorNote: '', include: [] };
+  const at = new Date('2026-09-27T12:00:00Z');
+  const first = buildCampaignReport(document, options, at);
+  document.certificationScope = {
+    ...document.certificationScope,
+    prefix: 'alice',
+    includeDisabled: true,
+  };
+  const second = buildCampaignReport(document, options, at);
+  assert.deepEqual(first.counts, second.counts);
+  assert.deepEqual(first.latestCapture, second.latestCapture);
+  assert.equal(first.generatedAt, second.generatedAt);
+  assert.notEqual(campaignReportHtml(first), campaignReportHtml(second));
+  assert.notEqual(campaignReportMarkdown(first), campaignReportMarkdown(second));
+  assert.match(campaignReportHtml(first), /<dt>Name prefix<\/dt><dd>a<\/dd>/);
+  assert.match(campaignReportHtml(second), /<dt>Name prefix<\/dt><dd>alice<\/dd>/);
+  assert.match(campaignReportMarkdown(first), /Disabled accounts and applications: Excluded/);
+  assert.match(
+    campaignReportMarkdown(second),
+    /Disabled accounts and applications: Included when their object kind is selected/,
+  );
+});
+
+test('scope is always exported with kinds, unrestricted names, disabled state and review due date', () => {
+  const document = campaign();
+  document.certificationScope = {
+    enabled: false,
+    kinds: ['roles', 'applications'],
+    prefix: '',
+    includeDisabled: false,
+    dueDate: '2026-10-31',
+  };
+  const report = buildCampaignReport(document, { authorNote: '', include: [] });
+  for (const rendered of [campaignReportHtml(report), campaignReportMarkdown(report)]) {
+    for (const value of [
+      'Certification scope',
+      'Not enabled',
+      'roles, applications',
+      'All names',
+      'Excluded',
+      '2026-10-31',
+    ])
+      assert.ok(rendered.includes(value), value);
+  }
+});
+
+test('scope prefixes remain escaped data in HTML and Markdown exports', () => {
+  const document = campaign();
+  document.certificationScope.prefix =
+    '<img src=x onerror=alert(1)> & "team"\n## [Run](javascript:alert(1))';
+  const report = buildCampaignReport(document, { authorNote: '', include: [] });
+  const html = campaignReportHtml(report);
+  const markdown = campaignReportMarkdown(report);
+  assert.doesNotMatch(html, /<img|<script/);
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt; &amp; &quot;team&quot;/);
+  assert.ok(markdown.includes('\\<img'));
+  assert.ok(markdown.includes('\\#\\# \\[Run\\]\\(javascript:alert\\(1\\)\\)'));
+  assert.doesNotMatch(markdown, /\n## \[Run\]/);
+});
+
 test('follow-up deadlines do not silently revoke accepted certification', () => {
   const document = campaign();
   document.certifications.push({

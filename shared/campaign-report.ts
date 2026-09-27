@@ -330,9 +330,33 @@ function heading(text: string) {
   return '<h2>' + escapeHtml(text) + '</h2>';
 }
 
+function certificationScopeFacts(scope: CampaignReport['scope']): Array<[string, string]> {
+  return [
+    ['Certification', scope.enabled ? 'Required before campaign closure' : 'Not enabled'],
+    ['Object kinds', scope.kinds.join(', ') || 'None'],
+    ['Name prefix', scope.prefix || 'All names'],
+    [
+      'Disabled accounts and applications',
+      scope.includeDisabled ? 'Included when their object kind is selected' : 'Excluded',
+    ],
+    ['Review due date', scope.dueDate || 'Not set'],
+  ];
+}
+
 /** A standalone report contains escaped data, no scripts, forms, requests or external assets. */
 export function campaignReportHtml(report: CampaignReport): string {
   const sections: string[] = [];
+  sections.push(
+    heading('Certification scope'),
+    '<dl>' +
+      certificationScopeFacts(report.scope)
+        .map(
+          ([label, value]) =>
+            '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd>',
+        )
+        .join('') +
+      '</dl>',
+  );
   sections.push(
     heading('Review status'),
     table(
@@ -509,6 +533,14 @@ export function campaignReportMarkdown(report: CampaignReport) {
     '- Latest capture: ' + (report.latestCapture?.capturedAt || 'None'),
     '',
   ];
+  lines.push(
+    '## Certification scope',
+    '',
+    ...certificationScopeFacts(report.scope).map(
+      ([label, value]) => '- ' + label + ': ' + literal(value),
+    ),
+    '',
+  );
   if (report.authorNote) lines.push('## Reviewer note', '', literal(report.authorNote), '');
   lines.push('## Review status', '');
   for (const item of report.readiness)
