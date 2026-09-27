@@ -395,6 +395,7 @@ export function campaignRoutes(settings: {
                 ? failure.message
                 : 'The proposal could not be dispatched.';
           },
+          input.reviewId,
         );
         response.json({ campaign: failed });
         return;
@@ -412,6 +413,7 @@ export function campaignRoutes(settings: {
           record.message = receipt.message;
           record.checkedFields = receipt.checkedFields;
         },
+        input.reviewId,
       );
       response.json({ campaign: updated, receipt });
     } finally {
@@ -467,6 +469,7 @@ export function campaignRoutes(settings: {
           target.checkedFields = fields;
           target.reconciliation = input.note;
         },
+        input.reviewId,
       );
       response.json({ campaign: updated });
     } finally {

@@ -6,6 +6,7 @@ import { ApiError } from './atlas-errors.js';
 import { defaultCertificationScope } from '../shared/certification.js';
 import { nextPeriodSettings, type NextPeriod } from '../shared/campaign-period.js';
 import { canonical } from '../shared/access-model.js';
+import { remediationStorageBounds } from '../shared/remediation.js';
 import {
   campaignBounds,
   campaignSummary,
@@ -14,6 +15,75 @@ import {
 } from '../shared/campaign.js';
 
 export type CampaignScope = { instance: string; owner: string };
+
+const unresolvedRemediation = new Set([
+  'uncertain',
+  'unverified',
+  'different',
+  'acknowledged',
+  'failed',
+]);
+// A JSON-escaped control character costs six bytes per permitted UTF-16 unit.
+const reservedMessage = '\0'.repeat(remediationStorageBounds.message);
+const reservedFields = Array(remediationStorageBounds.checkedFields).fill(
+  '\0'.repeat(remediationStorageBounds.checkedFieldLength),
+);
+const reservedReconciliation = '\0'.repeat(remediationStorageBounds.reconciliation);
+const reservedTimestamp = new Date(8.64e15).toISOString();
+const encodedBytes = (value: unknown) => Buffer.byteLength(JSON.stringify(value));
+
+/** Keep bounded finalization/recovery room inside the existing document caps. */
+function requireRemediationCapacity(campaign: Campaign) {
+  const pending = campaign.remediations.flatMap((record) => {
+    if (record.status === 'dispatching') return [{ record, events: 2 }];
+    if (unresolvedRemediation.has(record.status) && !record.reconciliation)
+      return [{ record, events: 1 }];
+    return [];
+  });
+  if (!pending.length) return;
+  const events = pending.reduce((sum, item) => sum + item.events, 0);
+  if (campaign.history.length + events > campaignBounds.history)
+    throw new ApiError(
+      409,
+      'This campaign has no history capacity for the remediation result and one reconciliation. Export it and start another campaign.',
+    );
+  let bytes = encodedBytes(campaign);
+  let revision = campaign.revision;
+  for (const { record, events: count } of pending) {
+    bytes += Math.max(
+      0,
+      encodedBytes({
+        ...record,
+        status: 'acknowledged',
+        updatedAt: reservedTimestamp,
+        message: reservedMessage,
+        checkedFields: reservedFields,
+        reconciliation: reservedReconciliation,
+      }) - encodedBytes(record),
+    );
+    for (let event = 0; event < count; event++) {
+      revision++;
+      bytes +=
+        1 +
+        encodedBytes({
+          revision,
+          at: reservedTimestamp,
+          actor: campaign.owner,
+          // Longest of the finalization/reconciliation action names; UUID detail
+          // also bounds the shorter result status recorded by finalization.
+          action: 'remediation-reconciled',
+          detail: record.id,
+        });
+    }
+  }
+  bytes += String(revision).length - String(campaign.revision).length;
+  bytes += Math.max(0, encodedBytes(reservedTimestamp) - encodedBytes(campaign.updatedAt));
+  if (bytes > campaignBounds.fileBytes)
+    throw new ApiError(
+      413,
+      'This campaign has no storage capacity for the remediation result and one reconciliation. Export it and start another campaign.',
+    );
+}
 
 /** Private single-process document repository. No filenames come from request bodies. */
 export class CampaignStore {
@@ -183,6 +253,7 @@ export class CampaignStore {
     action: string,
     detail: string,
     apply: (campaign: Campaign) => void,
+    completionId?: string,
   ) {
     return this.exclusive(async () => {
       const campaign = await this.load(scope, id);
@@ -195,6 +266,18 @@ export class CampaignStore {
         throw new ApiError(
           409,
           'Campaign history limit reached. Export it and start a new campaign.',
+        );
+      const dispatching = campaign.remediations.filter((record) => record.status === 'dispatching');
+      if (
+        dispatching.length &&
+        (!['remediation-result', 'remediation-not-sent', 'remediation-reconciled'].includes(
+          action,
+        ) ||
+          dispatching.some((record) => record.id !== completionId))
+      )
+        throw new ApiError(
+          409,
+          'Reconcile the interrupted remediation before editing this campaign.',
         );
       const previousDecisions = new Map(
         campaign.decisions.map((decision) => [decision.findingId, canonical(decision)]),
@@ -237,6 +320,7 @@ export class CampaignStore {
             }
           : {}),
       });
+      requireRemediationCapacity(campaign);
       await this.save(scope, campaign);
       return campaign;
     });

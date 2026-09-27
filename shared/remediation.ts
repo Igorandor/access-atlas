@@ -149,6 +149,13 @@ export function draftRemediation(
   throw new Error('Choose a supported remediation for this finding type.');
 }
 
+export const remediationStorageBounds = {
+  message: 2000,
+  checkedFields: 100,
+  checkedFieldLength: 256,
+  reconciliation: 4000,
+} as const;
+
 export const remediationRecordSchema = z
   .object({
     id: z.string().uuid(),
@@ -172,9 +179,11 @@ export const remediationRecordSchema = z
     ]),
     path: z.string().max(160),
     method: z.string().max(10),
-    message: z.string().max(2000),
-    checkedFields: z.array(z.string().max(256)).max(100),
-    reconciliation: z.string().max(4000).optional(),
+    message: z.string().max(remediationStorageBounds.message),
+    checkedFields: z
+      .array(z.string().max(remediationStorageBounds.checkedFieldLength))
+      .max(remediationStorageBounds.checkedFields),
+    reconciliation: z.string().max(remediationStorageBounds.reconciliation).optional(),
     expected: z
       .record(
         z.string().max(100),
