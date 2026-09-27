@@ -406,7 +406,12 @@ function CampaignDetail({
         />
       )}
       {tab === 'remediation' && (
-        <RemediationPanel campaign={campaign} disabled={pending} submit={remediation} />
+        <RemediationPanel
+          campaign={campaign}
+          disabled={pending}
+          submit={remediation}
+          reload={reload}
+        />
       )}
       {tab === 'analysis' && latest && <AnalysisTools snapshot={latest.snapshot} />}
       {tab === 'policies' && latest && (

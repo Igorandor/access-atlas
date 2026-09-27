@@ -1,5 +1,11 @@
 # Verification record
 
+## Lost apply response recovery — September 27, 2026
+
+Configuration and remediation Apply controls now prevent repeated submission of an attempted review ID. Missing/unreadable/5xx responses display uncertainty, the review ID and an explicit read-only recovery action; exact 4xx refusals remain distinct. Drafts are preserved and the remediation proposal is no longer called unsubmitted after an attempt. Five actual-component regression groups bring `npm run check` to **189 passing tests**, with production builds passing. See [recovery behavior and validation boundaries](APPLY_RESPONSE_RECOVERY.md). Browser integration uses synthetic accepted changes; no IRIS operations were performed.
+
+Production browser checks on the isolated port 3439 fixture passed configuration receipt recovery and campaign history reload after a truncated HTTP 200 response. Drafts and consumed-review guards survived the reads; desktop/mobile layout passed. The final integration artifact `research/atlas-apply-established-response-browser.json` records two apply requests for two distinct accepted synthetic changes, with zero native connections. The earlier pre-header disconnect observation is explicitly distinguished in the recovery document.
+
 ## Find a tool search — September 27, 2026
 
 The existing tool dialog now opens with a labelled search input and filters the nine destinations by name and a short explicit keyword list. Matching ignores case and surrounding/repeated whitespace; empty results explain how to change the search. Query state belongs to the dialog and resets on close without browser persistence. Typing never navigates or executes an operation. The existing native dialog retains its focus containment and Escape behavior. `npm run check` passes production builds and the existing **182 tests**; browser verification of focus, matching, reset and responsive layout is recorded separately by integration. No mirror test or new dependency was added for this presentation change.

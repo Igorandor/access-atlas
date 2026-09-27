@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
+import { RequestError } from '../../api';
 import { campaignFindings, type Campaign } from '../../../shared/campaign';
 import { draftRemediation, type RemediationRequest } from '../../../shared/remediation';
 import type { ChangeReview } from '../../../shared/change-review';
@@ -9,10 +10,12 @@ export function RemediationPanel({
   campaign,
   disabled,
   submit,
+  reload,
 }: {
   campaign: Campaign;
   disabled: boolean;
   submit: (action: string, payload: Record<string, unknown>) => Promise<any>;
+  reload: () => void;
 }) {
   const findings = useMemo(() => campaignFindings(campaign), [campaign]);
   const supported = findings.filter((finding) =>
@@ -27,6 +30,8 @@ export function RemediationPanel({
   const [error, setError] = useState('');
   const [reconcile, setReconcile] = useState('');
   const [reconcileNote, setReconcileNote] = useState('');
+  const [applyAttempt, setApplyAttempt] = useState<{ id: string; uncertain: boolean }>();
+  const submittedReviews = useRef(new Set<string>());
   const snapshot = campaign.captures.at(-1)?.snapshot;
   const finding = findings.find((item) => item.id === selected);
   const account = snapshot?.users.find((user) => user.Name === finding?.target);
@@ -69,20 +74,33 @@ export function RemediationPanel({
         reason,
       });
       setReview(result.review);
+      setApplyAttempt(undefined);
       setConfirmation('');
     } catch (failure) {
       setError((failure as Error).message);
     }
   }
   async function apply() {
-    if (!review) return;
+    if (!review || submittedReviews.current.has(review.id)) return;
+    const id = review.id;
+    submittedReviews.current.add(id);
+    setApplyAttempt({ id, uncertain: false });
     setError('');
     try {
-      await submit('remediation-apply', { reviewId: review.id, confirmation });
+      await submit('remediation-apply', { reviewId: id, confirmation });
+      setApplyAttempt(undefined);
       setReview(undefined);
       setConfirmation('');
     } catch (failure) {
       setError((failure as Error).message);
+      setApplyAttempt({
+        id,
+        uncertain: !(
+          failure instanceof RequestError &&
+          failure.status >= 400 &&
+          failure.status < 500
+        ),
+      });
     }
   }
   return (
@@ -93,6 +111,19 @@ export function RemediationPanel({
         and records the result in this campaign.
       </p>
       {error && <ErrorBox error={error} />}
+      {applyAttempt && !disabled && (
+        <aside className="notice" role="status">
+          <p>
+            {applyAttempt.uncertain
+              ? 'The apply response did not confirm an outcome. A failed response does not prove that the change was rejected. Reload this campaign to check its recorded remediation history, then use Read current state before preparing another proposal.'
+              : 'This submission returned an error. Its review cannot be sent again. Reload this campaign and inspect the error and current state before preparing another proposal.'}
+          </p>
+          <p>
+            Review ID: <code>{applyAttempt.id}</code>
+          </p>
+          <button onClick={reload}>Reload remediation history</button>
+        </aside>
+      )}
       {!snapshot && <p>Capture access before preparing remediation.</p>}
       {snapshot && supported.length === 0 && (
         <p>
@@ -212,16 +243,21 @@ export function RemediationPanel({
               <label className="field">
                 Type {review.target} to confirm
                 <input
+                  disabled={applyAttempt?.id === review.id}
                   autoComplete="off"
                   value={confirmation}
                   onChange={(event) => setConfirmation(event.target.value)}
                 />
               </label>
               <div className="inline-actions">
-                <button onClick={() => setReview(undefined)}>Leave proposal unsubmitted</button>
+                <button onClick={() => setReview(undefined)}>
+                  {applyAttempt?.id === review.id
+                    ? 'Return to draft'
+                    : 'Leave proposal unsubmitted'}
+                </button>
                 <button
                   className="primary"
-                  disabled={confirmation !== review.target}
+                  disabled={applyAttempt?.id === review.id || confirmation !== review.target}
                   onClick={() => void apply()}
                 >
                   Apply this change once

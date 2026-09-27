@@ -3,7 +3,7 @@ import { register, type RegisterEntry } from '../../shared/register';
 import { bodySchema, parameters, spec } from '../../shared/schema';
 import { taskDefaults } from '../../shared/task-defaults';
 import { redact } from '../../shared/redaction';
-import { iris, request } from '../api';
+import { iris, request, RequestError } from '../api';
 import type { ChangeReview, ChangeReceipt } from '../../shared/change-review';
 import { useData } from '../hooks';
 import { DataDiff, DataValue, caption } from '../components/DataView';
@@ -91,7 +91,10 @@ function Register({
   const [serverReview, setServerReview] = useState<ChangeReview>();
   const [receipt, setReceipt] = useState<ChangeReceipt>();
   const [receiptHistory, setReceiptHistory] = useState(false);
+  const [receiptHistoryVersion, setReceiptHistoryVersion] = useState(0);
   const [execution, setExecution] = useState<any>();
+  const [applyAttempt, setApplyAttempt] = useState<{ id: string; uncertain: boolean }>();
+  const submittedReviews = useRef(new Set<string>());
   const generation = useRef(0);
   useEffect(
     () => () => {
@@ -120,6 +123,7 @@ function Register({
     setConfirmation('');
     setError('');
     setNotice('');
+    setApplyAttempt(undefined);
   };
 
   async function inspect(row: any) {
@@ -216,6 +220,7 @@ function Register({
           : {}),
       });
       setServerReview(prepared);
+      setApplyAttempt(undefined);
       setReview(true);
       setConfirmation('');
     } catch (failure) {
@@ -226,25 +231,38 @@ function Register({
   }
 
   async function apply() {
-    if (!proposal || !serverReview) return;
-    const current = proposal,
+    if (!proposal || !serverReview || submittedReviews.current.has(serverReview.id)) return;
+    const id = serverReview.id,
       version = generation.current;
+    submittedReviews.current.add(id);
+    setApplyAttempt({ id, uncertain: false });
     setBusy(true);
     setError('');
     try {
       const outcome = await request<ChangeReceipt>('changes/apply', {
-        id: serverReview.id,
+        id,
         confirmation,
       });
       if (version !== generation.current) return;
       setReceipt(outcome);
+      setApplyAttempt(undefined);
       setNotice(outcome.message);
       setProposal(undefined);
       setRecord(undefined);
       setIdentity('');
       inventory.refresh();
     } catch (failure) {
-      if (version === generation.current) setError((failure as Error).message);
+      if (version === generation.current) {
+        setError((failure as Error).message);
+        setApplyAttempt({
+          id,
+          uncertain: !(
+            failure instanceof RequestError &&
+            failure.status >= 400 &&
+            failure.status < 500
+          ),
+        });
+      }
     } finally {
       if (version === generation.current) setBusy(false);
     }
@@ -317,7 +335,9 @@ function Register({
           {notice}
         </p>
       )}
-      {receiptHistory && <ReceiptHistory onClose={() => setReceiptHistory(false)} />}
+      {receiptHistory && (
+        <ReceiptHistory key={receiptHistoryVersion} onClose={() => setReceiptHistory(false)} />
+      )}
       {receipt && (
         <section className="panel padded">
           <h3>Change result: {receipt.status}</h3>
@@ -452,6 +472,26 @@ function Register({
             <section className="atlas-proposal">
               <h2>{proposal.title}</h2>
               <p className="muted">Only fields included in this proposal are sent to IRIS.</p>
+              {applyAttempt && !busy && (
+                <aside className="notice" role="status">
+                  <p>
+                    {applyAttempt.uncertain
+                      ? 'The apply response did not confirm an outcome. A failed response does not prove that the change was rejected. Check session receipts and read the target before preparing another proposal.'
+                      : 'This submission returned an error. Its review cannot be sent again; inspect the error and current state before preparing another proposal.'}
+                  </p>
+                  <p>
+                    Review ID: <code>{applyAttempt.id}</code>
+                  </p>
+                  <button
+                    onClick={() => {
+                      setReceiptHistoryVersion((version) => version + 1);
+                      setReceiptHistory(true);
+                    }}
+                  >
+                    Check session receipts
+                  </button>
+                </aside>
+              )}
               {review ? (
                 <>
                   <DataDiff
@@ -487,6 +527,7 @@ function Register({
                     <label className="field">
                       Type {serverReview.target} to confirm
                       <input
+                        disabled={busy || applyAttempt?.id === serverReview.id}
                         autoComplete="off"
                         value={confirmation}
                         onChange={(event) => setConfirmation(event.target.value)}
@@ -499,7 +540,12 @@ function Register({
                     </button>
                     <button
                       className="primary"
-                      disabled={busy || !serverReview || confirmation !== serverReview.target}
+                      disabled={
+                        busy ||
+                        !serverReview ||
+                        applyAttempt?.id === serverReview.id ||
+                        confirmation !== serverReview.target
+                      }
                       onClick={() => void apply()}
                     >
                       Apply reviewed proposal
