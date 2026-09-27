@@ -1,20 +1,20 @@
 # Video publication kit
 
-## Status
+## Prepared files
 
-An English narrated video and subtitles have been prepared locally as `access-atlas-walkthrough.mp4` and `access-atlas-walkthrough.srt`. They are delivered separately from the source repository. No YouTube URL is available yet, and no video bonus is claimed. A combined three-project film is also available in the delivery bundle.
+The revised Access Atlas walkthrough is 80 seconds long, with instrumental CC0 music and brief English captions. There is no spoken narration. The MP4, SRT and poster are delivered separately from this source repository. No public video URL or awarded bonus is claimed.
 
-The video is an edited sequence of actual application screens, with offline synthesized English narration. It is not a continuous screen recording. Native IRIS operations in the shown workflow are reads; demonstration workflow records were saved in a separate temporary gateway store. Screens contain bundled instance data, not a production customer's records.
+This is an edited sequence of actual application screens, not a continuous screen recording. Screens were captured from the running application after the scrollbar appearance update. The native IRIS operations shown are reads. Workflow records use an isolated presentation store; no production customer data is shown.
 
 ## Suggested YouTube title
 
-Access Atlas for InterSystems IRIS | Guided product walkthrough
+Access Atlas for InterSystems IRIS | Explain a grant. Preserve a decision.
 
 ## Suggested description
 
-Explain a configured permission, preview a role removal without applying it, and retain an access-review campaign in Access Atlas for InterSystems IRIS.
+Explain a grant. Preserve a decision..
 
-This is an edited, narrated walkthrough of actual application screens. It uses synthesized English narration and English subtitles. The demonstrated workflow reads a running IRIS Community instance; it does not perform native administrative changes.
+An edited walkthrough of actual Access Atlas screens, with English on-screen captions and instrumental music. The demonstrated workflow reads an IRIS Community instance. No native administrative changes are performed.
 
 Source and installation: https://github.com/YOUR_GITHUB_ACCOUNT/access-atlas
 
@@ -22,39 +22,43 @@ Companion article: add the published Developer Community URL.
 
 Open Exchange: add the published application URL.
 
+Music: Poilo by James Gargette (cinameng) — CC0 1.0 — https://opengameart.org/content/poilo
+
+Music may be trimmed or looped, with loudness adjustment and fades. Source details and hashes are retained in [MUSIC_LICENSES.md](MUSIC_LICENSES.md).
+
 ## Before upload
 
-1. Watch the complete MP4 and review the English subtitles. Replace the repository owner and add the real article/application links in the description.
-2. Upload the individual video, or use the relevant chapter of the combined video. Review YouTube's requested publication settings yourself. Do not assume multiple uploads multiply the contest bonus.
-3. Add the SRT as English captions if desired; readable captions are already burned into the prepared picture. Check for duplicate displayed captions when previewing.
-4. Publish the chosen video, verify that viewers can open it, and add its actual URL to the Open Exchange YouTube field and this repository's README. A local MP4 alone is not a published contest video.
+1. Watch and listen to the complete MP4. Replace the repository owner and add the real article/application links to the description.
+2. Upload the individual video, or use its chapter in the combined film. Review the publication settings yourself. Multiple uploads do not necessarily multiply the contest bonus.
+3. An English SRT is supplied. The brief captions are already part of the picture, so check for duplicate captions when enabling the optional subtitle track.
+4. Publish the chosen video, verify access without signing in, and add its actual URL to the Open Exchange YouTube field and repository README.
 
-## Scene transcript
+## On-screen captions
 
-### 1. Begin with captured access configuration
+### 1. What access is configured?
 
-Access Atlas explains configured access in InterSystems IRIS. This walkthrough uses actual application screens and a dedicated demonstration campaign store. The capture lists accounts, role definitions, and resources, together with its completeness indicator. These are configuration observations, not a guarantee about a live authorization decision.
+Inspect captured accounts, roles and resources. Configuration is evidence, not a live authorization guarantee.
 
-### 2. Follow the grant to its source
+### 2. Where did the grant come from?
 
-Select the Admin account and filter for the operate resource. Expanding the grant reveals its path: the account inherits the permission through the Manager role. This makes a broad permissions list easier to explain during a review, without editing the account.
+Follow a permission through its role path, without editing the account.
 
-### 3. Preview a role removal without applying it
+### 3. What would removing a role change?
 
-Uncheck the Manager role to preview the effect on declared grants. Atlas marks this as a preview and shows fourteen resource grant sets changing in the captured configuration. No write is sent to IRIS. Reset preview returns to the original projection.
+Preview the configured grant changes. Reset the preview to return to the captured state. No IRIS write is sent.
 
-### 4. Save a recurring review
+### 4. Keep the review across sessions
 
-Campaigns retain evidence and decisions beyond the current browser session. Create a named quarterly review, describe its purpose, and label the next capture. The demonstration saves a new campaign in its own temporary store, without changing existing review records.
+A saved campaign retains its purpose, captures and recorded decisions.
 
-### 5. Capture evidence before deciding
+### 5. A finding starts a question
 
-Capture access saves the configuration and produces findings that need human review. In this example, a broad administrative account needs an owner and a reason for its privileges. A finding is a review prompt. It is not an automatic declaration that the configuration is wrong.
+Review findings against captured access. A prompt for review is not a verdict that a setting is wrong.
 
-### 6. Preserve the reason for a decision
+### 6. Save the reason, too
 
-Record Investigating and explain the follow-up: confirm the account owner and the operational need for broad privileges. Filtering the list now brings that unresolved item into focus. The decision is attached to the captured finding, so changed evidence can require a fresh review.
+Mark an item as investigating and record the follow-up needed from its owner.
 
-### 7. Show what still needs attention
+### 7. Show the unfinished work
 
-Report and follow-ups shows readiness checks and the remaining work. This campaign still has undecided findings and an open investigation, so the report does not claim completion. No permissions were changed. The repository and companion article cover installation, campaigns, certification, and reviewed remediation.
+Readiness checks keep undecided findings and open follow-ups visible. No permissions were changed.
