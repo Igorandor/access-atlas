@@ -1,5 +1,9 @@
 # Verification record
 
+## Find a tool search — September 27, 2026
+
+The existing tool dialog now opens with a labelled search input and filters the nine destinations by name and a short explicit keyword list. Matching ignores case and surrounding/repeated whitespace; empty results explain how to change the search. Query state belongs to the dialog and resets on close without browser persistence. Typing never navigates or executes an operation. The existing native dialog retains its focus containment and Escape behavior. `npm run check` passes production builds and the existing **182 tests**; browser verification of focus, matching, reset and responsive layout is recorded separately by integration. No mirror test or new dependency was added for this presentation change.
+
 ## Individual read cancellation — September 27, 2026
 
 Premature client disconnection now cancels the individual native GET issued through `/api/iris`, while normal completion and audit POST retain their existing behavior. The caller signal preserves the 20-second deadline and is not propagated to shared captures or reviewed writes/readback. Five router/transport regressions bring `npm run check` to **182 passing tests**, with production builds passing. See [the confirmed wasted-read case, limits and exclusions](READ_CANCELLATION.md). All native responses were synthetic; no IRIS, trickling-stream or load tests were used.
@@ -80,3 +84,5 @@ See PROVENANCE.md, CONTEST_SECURITY_REVIEW.md and DEPLOYMENT.md for origins, bou
 ## Final independent release verification
 
 September 27 addition: five duty-rule regressions cover inherited paths, cycles, conditional escalation, unreadable accounts, absent definitions, disabled accounts and bounded rule validation. The complete set now has 95 tests. The form was exercised on a real capture and inspected at desktop and 390 × 844 widths. Rules are local configuration evidence, not access enforcement. Existing fixture write/conflict/logout results and native access-graph tests remain complementary evidence.
+
+Integration browser result: production client passed wallet keyword matching, mixed case and extra spaces, no-results feedback, Escape/reopen reset, actual initial input focus, Ctrl K and explicit navigation. Escape restored focus to the opener. Desktop1280×900 and phone390×844 passed (phone document/scroll width375/375). The synthetic session/read fixture performed zero native operations or writes; this is a bounded interaction check, not a complete accessibility audit.

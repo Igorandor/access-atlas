@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type FormEvent } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   Activity,
   BookOpen,
@@ -23,15 +23,40 @@ const LogReview = lazy(() =>
 );
 
 const navigation = [
-  { id: 'atlas', label: 'Access review', icon: Shield },
-  { id: 'permissions', label: 'Account register', icon: Users },
-  { id: 'apps', label: 'Application register', icon: Globe },
-  { id: 'security', label: 'Security register', icon: Shield },
-  { id: 'tasks', label: 'Task register', icon: Workflow },
-  { id: 'overview', label: 'Instance status', icon: LayoutDashboard },
-  { id: 'system', label: 'Host & devices', icon: Server },
-  { id: 'logs', label: 'Logs', icon: Activity },
-  { id: 'explorer', label: 'REST workbench', icon: BookOpen },
+  {
+    id: 'atlas',
+    label: 'Access review',
+    icon: Shield,
+    keywords: 'campaign certification inheritance simulation',
+  },
+  {
+    id: 'permissions',
+    label: 'Account register',
+    icon: Users,
+    keywords: 'users roles resources permissions',
+  },
+  { id: 'apps', label: 'Application register', icon: Globe, keywords: 'web applications routes' },
+  {
+    id: 'security',
+    label: 'Security register',
+    icon: Shield,
+    keywords: 'wallet secrets certificates tls ssl oauth',
+  },
+  { id: 'tasks', label: 'Task register', icon: Workflow, keywords: 'tasks schedules jobs' },
+  {
+    id: 'overview',
+    label: 'Instance status',
+    icon: LayoutDashboard,
+    keywords: 'dashboard monitor health performance telemetry',
+  },
+  {
+    id: 'system',
+    label: 'Host & devices',
+    icon: Server,
+    keywords: 'databases storage processes devices',
+  },
+  { id: 'logs', label: 'Logs', icon: Activity, keywords: 'messages alerts audit history journals' },
+  { id: 'explorer', label: 'REST workbench', icon: BookOpen, keywords: 'api endpoints queries' },
 ];
 const readPage = () =>
   navigation.some((item) => item.id === location.hash.substring(1))
@@ -162,18 +187,54 @@ export default function App() {
             <ReadDesk key={page} kind="overview" />
           ))}
       </AtlasShell>
-      {switcher && (
-        <Modal title="Find a tool" onClose={() => showSwitcher(false)}>
-          <nav className="atlas-switcher">
-            {navigation.map((item) => (
-              <button key={item.id} onClick={() => navigate(item.id)}>
-                {item.label}
-              </button>
-            ))}
-          </nav>
-        </Modal>
-      )}
+      {switcher && <ToolFinder navigate={navigate} onClose={() => showSwitcher(false)} />}
     </div>
+  );
+}
+function ToolFinder({
+  navigate,
+  onClose,
+}: {
+  navigate: (id: string) => void;
+  onClose: () => void;
+}) {
+  const [query, setQuery] = useState('');
+  const search = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    search.current?.focus();
+  }, []);
+  const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const matches = navigation.filter((item) => {
+    const text = (item.label + ' ' + item.keywords).toLowerCase();
+    return words.every((word) => text.includes(word));
+  });
+  return (
+    <Modal title="Find a tool" onClose={onClose}>
+      <label className="field">
+        Search tools
+        <input
+          ref={search}
+          autoFocus
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Name or keyword, e.g. wallet"
+        />
+      </label>
+      {matches.length ? (
+        <nav className="atlas-switcher" aria-label="Matching tools">
+          {matches.map((item) => (
+            <button key={item.id} onClick={() => navigate(item.id)}>
+              {item.label}
+            </button>
+          ))}
+        </nav>
+      ) : (
+        <p role="status">
+          No tools match this search. Try a name such as Logs or a keyword such as wallet.
+        </p>
+      )}
+    </Modal>
   );
 }
 function AtlasSignIn({ accept }: { accept: (session: any) => void }) {
