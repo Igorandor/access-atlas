@@ -24,7 +24,7 @@ Source and installation: https://github.com/Igorandor/access-atlas
 
 Companion article: add the published Developer Community URL.
 
-Open Exchange: add the published application URL.
+Open Exchange: https://openexchange.intersystems.com/package/Access-Atlas
 
 Music: Poilo by James Gargette (cinameng) — CC0 1.0 — https://opengameart.org/content/poilo
 
