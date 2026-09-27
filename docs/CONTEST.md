@@ -1,5 +1,9 @@
 # Contest coverage and submission preparation
 
+## Developer Community article draft
+
+[ARTICLE.md](ARTICLE.md) contains an unpublished English feature walkthrough. Replace `YOUR_GITHUB_ACCOUNT` with the public repository owner, review the text, and publish it on Developer Community to request the article bonus. A file in this repository does not constitute a published Community article or an awarded bonus.
+
 Source: [contest announcement](https://community.intersystems.com/post/intersystems-programming-contest-build-your-own-management-portal), checked September 27, 2026. The contest does not require a LOC minimum or a product described as a local demo. Hosted access is an optional bonus; the supplied quick start and existing-instance gateway deployment are separate installation choices.
 
 | Required area                 | Atlas implementation                                                                          | Relevant APIs                                                                                                 |
