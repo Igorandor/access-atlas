@@ -239,7 +239,10 @@ export function CertificationReview({
                 key={JSON.stringify([row.subject.kind, row.subject.name])}
                 aria-pressed={selected === JSON.stringify([row.subject.kind, row.subject.name])}
                 onClick={() => {
-                  setSelected(JSON.stringify([row.subject.kind, row.subject.name]));
+                  const next = JSON.stringify([row.subject.kind, row.subject.name]);
+                  // Reselecting the open object must not replace an unsaved review.
+                  if (next === selected) return;
+                  setSelected(next);
                   setOutcome(row.decision?.outcome || 'retain');
                   setNote(row.decision?.note || '');
                   setDueDate(row.decision?.dueDate || '');

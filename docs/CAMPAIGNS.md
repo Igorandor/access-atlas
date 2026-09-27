@@ -15,6 +15,8 @@ Finding decisions are tied to exact finding content. A changed finding requires 
 
 Enable certification in its scope panel. Choose accounts, roles, resources and applications, a name prefix and whether disabled objects are included. The scope may have a review due date. Select an object, inspect the captured facts and dependencies, and record retain, change, remove, investigate or exception with a reason.
 
+Selecting the already open object keeps its unfinished decision. A rejected save also leaves the draft in the form. If another session changed the campaign, reload it, check the current evidence and explicitly save again. Save before selecting a different object or leaving Certification; unfinished drafts are not stored persistently in the browser.
+
 Only retained or excepted objects with known evidence satisfy certification. Changed or removed objects cannot silently inherit a prior decision. After another capture, Carry forward compares object and dependency evidence; it transfers only equal, complete evidence. The original human review date is preserved and the carry action is recorded in campaign activity. Carry-forward is not a second human approval.
 
 Follow-up dates schedule work. They do not automatically expire exceptions, remove privileges or close a campaign. Overdue follow-ups appear in Report & follow-ups. A campaign cannot close while certification has pending or unresolved subjects, the capture is incomplete, findings lack current decisions or changes remain required.
