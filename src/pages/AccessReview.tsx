@@ -35,6 +35,7 @@ export function AccessReview({
     [view, setView] = useState('map');
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const generation = useRef(0),
+    baselineGeneration = useRef(0),
     file = useRef<HTMLInputElement>(null);
   async function capture() {
     const id = ++generation.current;
@@ -53,6 +54,7 @@ export function AccessReview({
     void capture();
     return () => {
       generation.current++;
+      baselineGeneration.current++;
     };
   }, []);
   const items = useMemo(() => (snapshot ? findings(snapshot) : []), [snapshot]);
@@ -60,17 +62,21 @@ export function AccessReview({
   const complete = !!snapshot && !snapshot.warnings.length;
   async function importBaseline(input: File | undefined) {
     if (!input) return;
+    const id = ++baselineGeneration.current;
     try {
       if (input.size > 2_000_000) throw new Error('Snapshot files are limited to 2 MB.');
       const { parseSnapshot } = await import('../../shared/snapshot-schema');
-      const parsed = parseSnapshot(JSON.parse(await input.text()));
+      const contents = await input.text();
+      if (id !== baselineGeneration.current) return;
+      const parsed = parseSnapshot(JSON.parse(contents));
       if (snapshot && parsed.instance !== snapshot.instance)
         throw new Error('This file belongs to a different configured instance.');
       setBaseline(parsed);
       setView('changes');
       setError('');
     } catch (e) {
-      setError('Could not import the baseline: ' + (e as Error).message);
+      if (id === baselineGeneration.current)
+        setError('Could not import the baseline: ' + (e as Error).message);
     }
   }
   return (
@@ -207,7 +213,13 @@ export function AccessReview({
                   <p>Compare two captures from the same configured instance.</p>
                 </div>
                 <div className="inline-actions">
-                  <button disabled={!complete} onClick={() => setBaseline(snapshot)}>
+                  <button
+                    disabled={!complete}
+                    onClick={() => {
+                      baselineGeneration.current++;
+                      setBaseline(snapshot);
+                    }}
+                  >
                     Use current as baseline
                   </button>
                   <button onClick={() => file.current?.click()}>
@@ -229,7 +241,13 @@ export function AccessReview({
                 <>
                   <div className="baseline-strip">
                     <span>Baseline: {new Date(baseline.capturedAt).toLocaleString()}</span>
-                    <button className="text-link" onClick={() => setBaseline(undefined)}>
+                    <button
+                      className="text-link"
+                      onClick={() => {
+                        baselineGeneration.current++;
+                        setBaseline(undefined);
+                      }}
+                    >
                       Clear baseline
                     </button>
                   </div>
