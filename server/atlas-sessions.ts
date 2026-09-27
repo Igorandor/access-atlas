@@ -30,6 +30,14 @@ export class AtlasSessionVault {
   private expired(session: AtlasSession) {
     return this.clock() - session.touched > 1800000 || this.clock() - session.issued > 28800000;
   }
+  replacementGuard(id?: string) {
+    const previous = id ? this.accounts.get(id) : undefined;
+    if (!previous || this.expired(previous)) return () => {};
+    return () => {
+      if (this.accounts.get(id!) !== previous || this.expired(previous))
+        throw new ApiError(409, 'The session changed during sign-in. Sign in again.');
+    };
+  }
   create(auth: string, info: any, replaces?: string) {
     for (const [id, session] of this.accounts) if (this.expired(session)) this.accounts.delete(id);
     if (replaces) this.accounts.delete(replaces);

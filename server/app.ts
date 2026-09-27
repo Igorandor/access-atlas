@@ -104,10 +104,12 @@ export function createApp(options: AppOptions) {
   api.post('/login', async (request, response) => {
     const credentials = loginInput.parse(request.body);
     vault.budget(request.ip ?? 'local');
+    const requireUnchangedSession = vault.replacementGuard(request.cookies[cookie]);
     const authorization =
       'Basic ' + Buffer.from(credentials.username + ':' + credentials.password).toString('base64');
     const { data } = await transport.request(authorization, { path: '/info', method: 'GET' });
     verifyIdentity(data);
+    requireUnchangedSession();
     const { id, session } = vault.create(authorization, data, request.cookies[cookie]);
     response.cookie(cookie, id, {
       httpOnly: true,
