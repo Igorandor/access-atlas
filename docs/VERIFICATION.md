@@ -1,5 +1,9 @@
 # Verification record
 
+## Client session boundaries — September 27, 2026
+
+Late responses from an earlier account can no longer replace the current CSRF token or expire a newer login. Async polling stops before sending a previous session's job request, and same-origin session signals remove protected views in other tabs without transmitting account data or tokens. Duplicate initial session discovery remains compatible with StrictMode. Eight regressions bring `npm run check` to **167 passing tests**, with TypeScript and frontend/server production builds passing. See [the confirmed race, boundaries and test coverage](SESSION_BOUNDARIES.md). Browser integration evidence is recorded separately; these checks did not mutate IRIS.
+
 ## Standalone report scope — September 27, 2026
 
 HTML and Markdown reports now preserve certification boundaries that were previously present only in the report model and JSON: selected object kinds, name prefix, disabled accounts/applications, required status and review due date. Three regressions cover distinct scopes and escaping; `npm run check` passes production builds and **159 tests**. See [the confirmed omission, correction and validation scope](REPORT_SCOPE_EXPORT.md). Certification and date semantics are unchanged.

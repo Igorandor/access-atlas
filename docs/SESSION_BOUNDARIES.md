@@ -1,0 +1,20 @@
+# Client session boundaries
+
+Verified September 27, 2026.
+
+The confirmed race was a protected request started by account A returning 401 after A had logged out and B had signed in. Its global session-ended event incorrectly removed B's authenticated view. An old session-discovery response could also replace the current CSRF token. In another tab, the shared session cookie could change while an already mounted protected view retained the previous account's evidence and export controls.
+
+Each Atlas request now belongs to a client session generation. Successful login, logout, a current protected-request 401, and a session-change signal from another tab invalidate earlier requests. Generation checks run before parsing, after parsing, and on parse failure, so obsolete replies cannot return protected data, replace CSRF, or emit a current-session expiration event. Discarded replies produce an explicit error and are never replayed automatically.
+
+Async native-job polling also belongs to its original generation. A change during the polling delay prevents the next request from being sent under the replacement session. This does not cancel a native operation that has already been dispatched.
+
+Atlas uses its own same-origin BroadcastChannel. Successful login/logout and a current protected-request 401 send only the fixed `atlas-session-changed` string. A receiving tab clears its token, invalidates pending requests, and removes its authenticated view through the existing session-ended handler. It neither sends another signal nor silently adopts the replacement account. No account data or tokens are broadcast. Browsers without BroadcastChannel, or contexts that prohibit opening it, retain same-tab generation protection, but cannot receive this cross-tab invalidation signal.
+
+Initial session discovery is not a new login boundary. Two identical discovery responses, including the two effects started in React StrictMode, can both complete. A discovery response cannot replace a different existing token, and a discovery request from before an explicit session boundary is discarded.
+
+Eight regression tests in `tests/client-session-boundary.test.ts` exercise real request callbacks with delayed fetch/JSON responses: both initial-discovery orders, old 401, old 200/CSRF, changes during parsing, current JSON/non-JSON 401, delayed async polling, two independent channel contexts with no rebroadcast, and a browser rejecting channel construction. The StrictMode regression models disposed/live effect callbacks; it is not a mounted browser test. `npm run check` passes TypeScript, frontend/server production builds, and **167 tests**.
+
+The App's existing account reset unmounts protected components. Browser persistence contains the appearance preference, not a protected evidence cache. This fix does not revoke previously downloaded files or redesign server sessions/cookies. Browser validation of the production bundle is recorded separately by integration using the isolated shared session-boundary fixture; no IRIS mutation was required for these regressions.
+
+Integration browser verification on 27 September 2026 used the current production client in two same-origin tabs with synthetic accounts FixtureA/FixtureB. Logout in the second tab removed the first tab's protected view; a new login did not silently restore the other tab. A deliberately held old read was released with401 after logout/new login and did not end the new session. A current401 removed the protected view on phone390×844 (client/scroll390/390). Desktop1280×900 also passed. Evidence outside the submission: research/session-boundary-browser.json and the project-specific session-boundary-desktop/mobile.png. The fixture had no native connection or applied writes and was stopped afterward. Existing gateway rebuilt with native data/volumes preserved. This validates client transitions; it does not revoke already downloaded files or cancel native operations already dispatched.
+After rebuilding only the existing gateways, ordinary SuperUser sign-in also passed in the live browser for all three configured IRIS instances. No native configuration or policy was changed.

@@ -12,9 +12,55 @@ export interface ApiResult<T = any> {
   console: string[];
   asyncId?: string;
 }
-class AtlasConnection {
+type SessionSignal = Pick<BroadcastChannel, 'postMessage' | 'addEventListener'>;
+const sessionSignal = 'atlas-session-changed';
+function sessionChannel(): SessionSignal | undefined {
+  try {
+    if (typeof window !== 'undefined' && typeof BroadcastChannel !== 'undefined')
+      return new BroadcastChannel('access-atlas-session');
+  } catch {
+    // Restricted browser contexts can expose the API but forbid opening it.
+    // Same-tab generation protection must remain available in those contexts.
+  }
+  return undefined;
+}
+
+export class AtlasConnection {
   private token = '';
+  private generation = 0;
+  constructor(
+    private channel: SessionSignal | undefined = sessionChannel(),
+    private notifySessionEnded: () => void = () => window.dispatchEvent(new Event('session-ended')),
+  ) {
+    this.channel?.addEventListener('message', (event) => {
+      if (event.data !== sessionSignal) return;
+      this.endSession();
+      this.notifySessionEnded();
+    });
+  }
+  currentGeneration() {
+    return this.generation;
+  }
+  requireGeneration(expected: number) {
+    if (expected !== this.generation)
+      throw new RequestError(
+        'A response from an earlier Atlas session was discarded. Nothing was retried.',
+        409,
+      );
+  }
+  private endSession(announce = false) {
+    this.token = '';
+    this.generation++;
+    if (announce) this.channel?.postMessage(sessionSignal);
+  }
+  private rejectSession(resource: string, status: number) {
+    if (status === 401 && !['login', 'session'].includes(resource)) {
+      this.endSession(true);
+      this.notifySessionEnded();
+    }
+  }
   async send<T>(resource: string, payload?: unknown): Promise<T> {
+    const generation = this.generation;
     const options: RequestInit =
       payload === undefined
         ? { method: 'GET' }
@@ -24,22 +70,33 @@ class AtlasConnection {
             body: JSON.stringify(payload),
           };
     const response = await fetch('/api/' + resource, options);
+    this.requireGeneration(generation);
     let document: any;
     try {
       document = await response.json();
     } catch {
+      this.requireGeneration(generation);
+      this.rejectSession(resource, response.status);
       throw new RequestError('Atlas received an unreadable gateway reply.', response.status);
     }
+    this.requireGeneration(generation);
     if (!response.ok) {
-      if (response.status === 401 && !['login', 'session'].includes(resource))
-        window.dispatchEvent(new Event('session-ended'));
+      this.rejectSession(resource, response.status);
       throw new RequestError(
         document?.error || 'Atlas could not complete this request.',
         response.status,
       );
     }
-    if (typeof document?.csrf === 'string') this.token = document.csrf;
-    if (resource === 'logout') this.token = '';
+    if (typeof document?.csrf === 'string') {
+      // StrictMode may run initial session discovery twice. Adopting the same
+      // existing session is not a login boundary and must not stale its sibling read.
+      if (resource === 'session' && this.token && document.csrf !== this.token)
+        throw new RequestError('The discovered Atlas session changed. Sign in again.', 409);
+      if (resource === 'login') this.generation++;
+      this.token = document.csrf;
+    }
+    if (resource === 'login') this.channel?.postMessage(sessionSignal);
+    if (resource === 'logout') this.endSession(true);
     return document;
   }
 }
@@ -52,10 +109,12 @@ export async function iris<T = any>(
   method: 'GET' | 'PUT' | 'POST' | 'DELETE' = 'GET',
   body?: Record<string, any>,
 ): Promise<ApiResult<T>> {
+  const generation = connection.currentGeneration();
   const initial = await request<ApiResult<T>>('iris', { path, query, method, body });
   if (!initial.asyncId) return initial;
   for (let remaining = 20; remaining > 0; remaining--) {
     await new Promise((resolve) => setTimeout(resolve, 700));
+    connection.requireGeneration(generation);
     const job = await request<ApiResult>('iris', {
       path: '/v2/async-result',
       method: 'GET',
