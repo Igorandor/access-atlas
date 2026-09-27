@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Campaign } from '../../../shared/campaign';
 import {
   certificationCoverage,
@@ -11,6 +11,17 @@ import { download } from '../../api';
 import { DataValue } from '../../components/DataView';
 import { Badge } from '../../components/ui';
 
+function sameScope(left: CertificationScope, right: CertificationScope) {
+  return (
+    left.enabled === right.enabled &&
+    left.prefix === right.prefix &&
+    left.includeDisabled === right.includeDisabled &&
+    (left.dueDate || '') === (right.dueDate || '') &&
+    left.kinds.length === right.kinds.length &&
+    left.kinds.every((kind) => right.kinds.includes(kind))
+  );
+}
+
 export function CertificationReview({
   campaign,
   scope,
@@ -22,10 +33,21 @@ export function CertificationReview({
   scope: CertificationScope;
   decisions: Certification[];
   disabled: boolean;
-  save: (input: Record<string, unknown>) => Promise<void>;
+  save: (input: Record<string, unknown>, expectedRevision?: number) => Promise<void>;
 }) {
   const latest = campaign.captures.at(-1);
   const [scopeDraft, setScopeDraft] = useState(scope);
+  const [scopeBase, setScopeBase] = useState({ revision: campaign.revision, scope });
+  const scopeDirty = !sameScope(scopeDraft, scopeBase.scope);
+  const scopeConflict = scopeDirty && scopeBase.revision !== campaign.revision;
+  function useSavedScope() {
+    setScopeDraft(scope);
+    setScopeBase({ revision: campaign.revision, scope });
+  }
+  useEffect(() => {
+    if (scopeBase.revision !== campaign.revision && (!scopeDirty || sameScope(scopeDraft, scope)))
+      useSavedScope();
+  }, [campaign.revision, scope, scopeBase, scopeDirty, scopeDraft]);
   const [kind, setKind] = useState('all');
   const [state, setState] = useState('pending');
   const [search, setSearch] = useState('');
@@ -147,9 +169,23 @@ export function CertificationReview({
               }
             />
           </label>
+          {scopeConflict && (
+            <p className="notice" role="status">
+              This campaign changed after you started editing. Your draft is preserved. Use saved
+              scope to discard it and edit the current revision.
+            </p>
+          )}
+          {scopeConflict && (
+            <button type="button" onClick={useSavedScope}>
+              Use saved scope
+            </button>
+          )}
           <button
-            disabled={!scopeDraft.kinds.length}
-            onClick={() => void save({ action: 'certification-scope', scope: scopeDraft })}
+            disabled={!scopeDraft.kinds.length || scopeConflict}
+            onClick={() => {
+              if (!scopeConflict)
+                void save({ action: 'certification-scope', scope: scopeDraft }, scopeBase.revision);
+            }}
           >
             Save scope
           </button>

@@ -87,14 +87,14 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       setPending(false);
     }
   }
-  async function change(input: Omit<CampaignChange, 'revision'>) {
+  async function change(input: Omit<CampaignChange, 'revision'>, expectedRevision?: number) {
     if (!current) return;
     setPending(true);
     setError('');
     try {
       const result = await request<Campaign>('campaigns/' + current.id, {
         ...input,
-        revision: current.revision,
+        revision: expectedRevision ?? current.revision,
       });
       setCurrent(result);
       setCampaigns(await request('campaigns'));
@@ -262,7 +262,7 @@ function CampaignDetail({
 }: {
   campaign: Campaign;
   pending: boolean;
-  change: (input: ChangePayload) => Promise<void>;
+  change: (input: ChangePayload, expectedRevision?: number) => Promise<void>;
   reload: () => void;
   onManageAccount: (account: string) => void;
   remediation: (action: string, payload: Record<string, unknown>) => Promise<any>;
@@ -273,6 +273,37 @@ function CampaignDetail({
   const [reason, setReason] = useState('');
   const [title, setTitle] = useState(campaign.title);
   const [description, setDescription] = useState(campaign.description);
+  const [detailsBase, setDetailsBase] = useState({
+    revision: campaign.revision,
+    title: campaign.title,
+    description: campaign.description,
+  });
+  const detailsDirty = title !== detailsBase.title || description !== detailsBase.description;
+  const detailsConflict = detailsDirty && detailsBase.revision !== campaign.revision;
+  function useSavedDetails() {
+    setTitle(campaign.title);
+    setDescription(campaign.description);
+    setDetailsBase({
+      revision: campaign.revision,
+      title: campaign.title,
+      description: campaign.description,
+    });
+  }
+  useEffect(() => {
+    if (
+      detailsBase.revision !== campaign.revision &&
+      (!detailsDirty || (title === campaign.title && description === campaign.description))
+    )
+      useSavedDetails();
+  }, [
+    campaign.revision,
+    campaign.title,
+    campaign.description,
+    detailsBase,
+    detailsDirty,
+    title,
+    description,
+  ]);
   const progress = useMemo(() => campaignProgress(campaign), [campaign]);
   const active = campaign.state === 'active';
   const latest = campaign.captures.at(-1);
@@ -402,7 +433,7 @@ function CampaignDetail({
           scope={campaign.certificationScope}
           decisions={campaign.certifications}
           disabled={pending || !active}
-          save={(input) => change(input as ChangePayload)}
+          save={(input, revision) => change(input as ChangePayload, revision)}
         />
       )}
       {tab === 'remediation' && (
@@ -485,7 +516,8 @@ function CampaignDetail({
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              void change({ action: 'details', title, description });
+              if (!detailsConflict)
+                void change({ action: 'details', title, description }, detailsBase.revision);
             }}
           >
             <fieldset disabled={pending || !active}>
@@ -507,7 +539,18 @@ function CampaignDetail({
                   onChange={(event) => setDescription(event.target.value)}
                 />
               </label>
-              <button disabled={!title.trim()}>Save details</button>
+              {detailsConflict && (
+                <p className="notice" role="status">
+                  This campaign changed after you started editing. Your draft is preserved. Use
+                  saved details to discard it and edit the current revision.
+                </p>
+              )}
+              {detailsConflict && (
+                <button type="button" onClick={useSavedDetails}>
+                  Use saved details
+                </button>
+              )}
+              <button disabled={!title.trim() || detailsConflict}>Save details</button>
             </fieldset>
           </form>
           <h3>Review status</h3>
