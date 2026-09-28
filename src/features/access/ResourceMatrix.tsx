@@ -6,8 +6,14 @@ import {
   type AccessSnapshot,
   type AccessUser,
 } from '../../../shared/access-model';
-export function ResourceMatrix({ snapshot }: { snapshot: AccessSnapshot }) {
-  const [search, setSearch] = useState('%Admin'),
+export function ResourceMatrix({
+  snapshot,
+  initialResourceSearch = '%Admin',
+}: {
+  snapshot: AccessSnapshot;
+  initialResourceSearch?: string;
+}) {
+  const [search, setSearch] = useState(initialResourceSearch),
     [page, setPage] = useState(0),
     [account, setAccount] = useState('');
   const [cell, setCell] = useState<{ user: AccessUser; resource: string }>();
@@ -61,7 +67,12 @@ export function ResourceMatrix({ snapshot }: { snapshot: AccessSnapshot }) {
           </button>
         </div>
       </div>
-      <div className="table-scroll">
+      <div
+        className="table-scroll"
+        role="region"
+        aria-label="Declared resource access matrix"
+        tabIndex={0}
+      >
         <table className="access-matrix">
           <thead>
             <tr>

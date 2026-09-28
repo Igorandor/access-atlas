@@ -6,7 +6,9 @@ Built for the [InterSystems Programming Contest: Build Your Own Management Porta
 
 ![Access Atlas reviewing real IRIS configuration](docs/images/overview.png)
 
-Try the [first access review](docs/FIRST_REVIEW.md), or inspect an [example exported review report](docs/examples/access-review.md) before installing. The report includes open investigations and missing decisions rather than presenting an unfinished review as complete.
+Try the [interactive access example](https://igorandor.github.io/access-atlas/) without installing anything. It uses synthetic training data to show two grant paths, a role-removal preview and separate public permissions. No IRIS connection, credentials or saved campaign are involved. [Example scope and build instructions](docs/INTERACTIVE_EXAMPLE.md).
+
+For your own instance, follow the [first access review](docs/FIRST_REVIEW.md). You can also inspect an [exported review report](docs/examples/access-review.md) with open investigations and missing decisions.
 
 [Watch the extended walkthrough (MP4, 2:08)](https://github.com/Igorandor/access-atlas/releases/download/v1.0.0/access-atlas-walkthrough.mp4). It follows inherited access through a saved campaign, certification and report preview. The [latest release](https://github.com/Igorandor/access-atlas/releases/latest) provides the source package; [video downloads](https://github.com/Igorandor/access-atlas/releases/tag/v1.0.0) include English captions and a transcript.
 
@@ -45,7 +47,7 @@ See [how to interpret API results](docs/API_BEHAVIOR.md) before acting on an inc
 
 For namespace-specific access, open **Access review → SQL privileges**. Inspect object and administrative grants for an account or role, retain partial results when one source fails, and export the evidence with its scope and read times. See [the SQL review guide and limits](docs/SQL_EVIDENCE.md); these separate reads do not extend the resource graph or establish runtime access.
 
-The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. Native API values are never replaced with sample data.
+The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. In the installed portal, native API values are never replaced with sample data.
 
 Switching tools keeps the current access review open. Refresh instance data when you need a new observation.
 

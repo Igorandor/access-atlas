@@ -1,0 +1,55 @@
+.guided-example {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 30px;
+}
+.example-header h1 {
+  margin: 12px 0;
+}
+.example-header > p {
+  max-width: 78ch;
+}
+.example-label {
+  color: var(--accent);
+  font-weight: 650;
+}
+.example-guide {
+  padding: 20px 24px;
+  margin: 24px 0;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+.example-guide > summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+.example-guide li {
+  margin: 8px 0;
+}
+.example-guide p,
+.example-limits {
+  color: var(--muted);
+}
+.example-limits {
+  margin-top: 24px;
+  max-width: 100ch;
+}
+.example-scroll-hint {
+  display: none;
+}
+@media (max-width: 600px) {
+  .example-scroll-hint {
+    display: block;
+    color: var(--muted);
+  }
+  .guided-example {
+    padding: 18px 12px;
+  }
+  .example-guide {
+    padding: 16px;
+  }
+  .example-guide ol {
+    padding-left: 22px;
+  }
+}

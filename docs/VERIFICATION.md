@@ -1,5 +1,13 @@
 # Verification record
 
+## Isolated interactive access example — September 28, 2026
+
+Release 1.2.0 adds a separate static example using the actual AccessMap and ResourceMatrix components with a validated synthetic snapshot. Removing SupportTeam removes W while ReportingReader retains R; reset restores RW. The matrix retains the original capture and separates public permissions from explicit account grants. The example has no login, native API client or campaign persistence. The installed portal does not fall back to training data.
+
+Normal build and276 tests pass, including three example regressions for alternate grant paths, public permissions and the dependency boundary. The example build succeeds. Ten built-artifact browser checks cover role removal, both paths, reset, original-matrix retention, explanation dialogs and zero attempted backend requests. Final manual desktop and390px checks cover keyboard activation, the remaining read path, reset, public-permission explanation and dialog dismissal. The phone document measures390px client/scroll width; the named matrix region scrolls from0 to535px using arrows, exposing the final column. An initially expanded guide placed the controls below the first screen; it is now a closed, keyboard-accessible walkthrough.
+
+The example dependency graph excludes the connected App, API, hooks and server modules. Production assets contain no training account/resource identifiers. The static artifact uses local assets, includes dependency license notices, and sets connect-src and form-action to none. Only dist-example is published. These are synthetic browser checks, not native authorization or physical-device certification.
+
 ## Narrow HTML report tables — September 28, 2026
 
 Release 1.1.8 gives wide standalone HTML report tables a minimum readable column width on screens up to600px. Each wide table has a named focusable scrolling region and a narrow-screen hint. Three-column review status, desktop widths, print width rules, report values and CSP remain unchanged.

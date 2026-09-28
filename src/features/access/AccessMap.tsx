@@ -7,7 +7,7 @@ export function AccessMap({
   onManage,
 }: {
   snapshot: AccessSnapshot;
-  onManage: (account: string) => void;
+  onManage?: (account: string) => void;
 }) {
   const [search, setSearch] = useState(''),
     [selected, setSelected] = useState(''),
@@ -29,6 +29,9 @@ export function AccessMap({
     .sort(([a], [b]) => a.localeCompare(b));
   const changed = [...original.grants].filter(
     ([name, grant]) => grant.permissions !== (access.grants.get(name)?.permissions ?? ''),
+  ).length;
+  const publicResourceCount = snapshot.resources.filter((r) =>
+    permissions(r.PublicPermission),
   ).length;
   return (
     <div className="access-workbench">
@@ -87,9 +90,11 @@ export function AccessMap({
                       ? 'Enabled'
                       : 'Disabled'}
                 </Badge>
-                <button onClick={() => onManage(user.Name)}>
-                  Inspect account <ArrowRight size={14} />
-                </button>
+                {onManage && (
+                  <button onClick={() => onManage(user.Name)}>
+                    Inspect account <ArrowRight size={14} />
+                  </button>
+                )}
               </div>
             </div>
             {user.unavailable !== undefined ? (
@@ -121,7 +126,10 @@ export function AccessMap({
                   </div>
                   {omitted.length > 0 && (
                     <div className="simulation-note">
-                      <strong>Preview only</strong> · {changed} resource grant sets change.{' '}
+                      <strong>Preview only</strong> · {changed}{' '}
+                      {changed === 1
+                        ? 'resource grant set changes.'
+                        : 'resource grant sets change.'}{' '}
                       {original.broadAccess && !access.broadAccess
                         ? 'The declared path to %All is also removed.'
                         : ''}
@@ -221,8 +229,9 @@ export function AccessMap({
                 <div className="public-note">
                   <strong>Public permissions apply separately</strong>
                   <span>
-                    {snapshot.resources.filter((r) => permissions(r.PublicPermission)).length}{' '}
-                    resources have public permissions. Inspect them in Resource matrix.
+                    {publicResourceCount}{' '}
+                    {publicResourceCount === 1 ? 'resource has' : 'resources have'} public
+                    permissions. Inspect them in Resource matrix.
                   </span>
                 </div>
               </>

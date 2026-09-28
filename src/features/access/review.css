@@ -325,6 +325,10 @@
 .access-matrix {
   min-width: 900px;
 }
+.matrix-panel .table-scroll:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
 .access-matrix th {
   max-width: 180px;
   white-space: normal;
