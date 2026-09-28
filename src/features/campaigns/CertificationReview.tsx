@@ -3,6 +3,7 @@ import type { Campaign } from '../../../shared/campaign';
 import {
   certificationCoverage,
   certificationEvidence,
+  planCertificationCarry,
   type CertificationScope,
   type CertificationKind,
   type Certification,
@@ -91,6 +92,27 @@ export function CertificationReview({
     dueDate: initialRow?.decision?.dueDate || '',
   });
   const [carryFrom, setCarryFrom] = useState(campaign.captures.at(-2)?.id || '');
+  const [carryPage, setCarryPage] = useState(0);
+  const carrySource = campaign.captures.find((capture) => capture.id === carryFrom);
+  const carryPlan = useMemo(() => {
+    const previous = campaign.captures.find((capture) => capture.id === carryFrom);
+    if (!previous || !latest || previous.id === latest.id) return undefined;
+    return planCertificationCarry({
+      before: previous.snapshot,
+      after: latest.snapshot,
+      previousCaptureId: previous.id,
+      currentCaptureId: latest.id,
+      scope,
+      decisions,
+    });
+  }, [campaign.captures, carryFrom, latest, scope, decisions]);
+  useEffect(() => setCarryPage(0), [carryFrom, campaign.revision]);
+  const activeCarryPage = Math.min(
+    carryPage,
+    Math.max(0, Math.ceil((carryPlan?.rows.length || 0) / 10) - 1),
+  );
+  const shownCarry = carryPlan?.rows.slice(activeCarryPage * 10, activeCarryPage * 10 + 10) || [];
+
   const visible =
     coverage?.rows.filter(
       (row) =>
@@ -552,7 +574,11 @@ export function CertificationReview({
               </p>
               <label className="field">
                 Previous capture
-                <select value={carryFrom} onChange={(event) => setCarryFrom(event.target.value)}>
+                <select
+                  disabled={disabled}
+                  value={carryFrom}
+                  onChange={(event) => setCarryFrom(event.target.value)}
+                >
                   <option value="">Choose capture</option>
                   {campaign.captures.slice(0, -1).map((capture) => (
                     <option value={capture.id} key={capture.id}>
@@ -561,13 +587,81 @@ export function CertificationReview({
                   ))}
                 </select>
               </label>
+              {carryPlan && (
+                <section className="certification-carry-preview" aria-label="Carry-forward preview">
+                  <p role="status">
+                    {carryPlan.blocked ? (
+                      'Eligibility unavailable.'
+                    ) : (
+                      <>
+                        <strong>{carryPlan.eligible}</strong> eligible -{' '}
+                        {carryPlan.rows.length - carryPlan.eligible} skipped.
+                      </>
+                    )}{' '}
+                    Compared with the latest capture using the saved scope.
+                  </p>
+                  <p>
+                    From <strong>{carrySource?.label}</strong> to <strong>{latest!.label}</strong>.
+                    <br />
+                    Captured: {carrySource?.snapshot.capturedAt} to {latest!.snapshot.capturedAt}.
+                  </p>
+                  {scopeDirty && (
+                    <p className="notice">
+                      Unsaved scope changes are not included in this preview.
+                    </p>
+                  )}
+                  {carryPlan.blocked && <p className="notice">{carryPlan.blocked}</p>}
+                  {!carryPlan.rows.length && <p>No saved certification decisions to carry.</p>}
+                  {!carryPlan.blocked && (
+                    <ul className="certification-carry-rows">
+                      {shownCarry.map(({ decision, eligible, reason }) => (
+                        <li key={JSON.stringify([decision.kind, decision.name])}>
+                          <strong>{decision.name}</strong>
+                          <span>
+                            {decision.kind} - {decision.outcome}
+                          </span>
+                          <span>{eligible ? 'Eligible - evidence unchanged.' : reason}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {!carryPlan.blocked && carryPlan.rows.length > 10 && (
+                    <div className="inline-actions">
+                      <button
+                        type="button"
+                        disabled={activeCarryPage === 0}
+                        onClick={() => setCarryPage(activeCarryPage - 1)}
+                      >
+                        Previous decisions
+                      </button>
+                      <span>
+                        {activeCarryPage * 10 + 1}-
+                        {Math.min(carryPlan.rows.length, activeCarryPage * 10 + 10)} of{' '}
+                        {carryPlan.rows.length}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={(activeCarryPage + 1) * 10 >= carryPlan.rows.length}
+                        onClick={() => setCarryPage(activeCarryPage + 1)}
+                      >
+                        Next decisions
+                      </button>
+                    </div>
+                  )}
+                </section>
+              )}
               <button
-                disabled={disabled || !carryFrom}
-                onClick={() =>
-                  void save({ action: 'carry-certifications', fromCaptureId: carryFrom })
-                }
+                disabled={disabled || !carryPlan?.eligible || Boolean(carryPlan.blocked)}
+                onClick={() => {
+                  if (!disabled && carryPlan?.eligible && !carryPlan.blocked)
+                    void save(
+                      { action: 'carry-certifications', fromCaptureId: carryFrom },
+                      campaign.revision,
+                    );
+                }}
               >
-                Compare and carry forward
+                Carry {carryPlan?.eligible || 0}{' '}
+                {carryPlan?.eligible === 1 ? 'decision' : 'decisions'}
               </button>
             </details>
           )}

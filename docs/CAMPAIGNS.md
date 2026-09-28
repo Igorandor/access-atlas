@@ -23,6 +23,8 @@ Selecting the already open object keeps its unfinished decision. A rejected save
 
 Only retained or excepted objects with known evidence satisfy certification. Changed or removed objects cannot silently inherit a prior decision. After another capture, Carry forward compares object and dependency evidence; it transfers only equal, complete evidence. The original human review date is preserved and the carry action is recorded in campaign activity. Carry-forward is not a second human approval.
 
+Expand **Carry forward unchanged decisions** and choose **Previous capture** to inspect the eligible count and each saved decision's result before carrying it. Skipped rows explain changed or missing evidence, decisions on a different capture, or outcomes that still need review. The preview uses the saved scope; save scope edits first if they should affect eligibility. For larger sets, use the previous/next decision controls. The carry button records only the eligible decisions in the current comparison.
+
 Follow-up dates schedule work. They do not automatically expire exceptions, remove privileges or close a campaign. Overdue follow-ups appear in Report & follow-ups. A campaign cannot close while certification has pending or unresolved subjects, the capture is incomplete, findings lack final current decisions (including investigations still in progress), changes remain required, or submitted changes still need readback. A recorded readback difference with an explanation can remain visible after closure; it is not verification of success. Unsubmitted proposals and failed records alone do not block closure. Archiving can preserve unfinished work without marking it complete.
 
 ## Remediation

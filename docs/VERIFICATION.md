@@ -1,5 +1,11 @@
 # Verification record
 
+## Certification carry-forward preview — September 28, 2026
+
+Release 1.2.4 previews eligible decisions and reasons for omissions before carrying them to the latest capture. The preview and mutation share the same eligibility planner; saved scope, capture identity, evidence completeness, unchanged configuration/dependencies and retain/exception outcomes remain required. Original human review dates and revision protection are preserved. Incomplete captures show a single explanation without presenting an assessed count.
+
+Build and 292 tests pass, plus 17 actual-component browser checks covering no automatic save, source selection, unchanged evidence, omitted outcomes, current decisions, refused and pending saves, revision binding, preserved review dates, repeated actions, saved versus edited scope and pagination. Manual desktop and 390px checks confirm readable preview/reasons, retained state after refusal, successful carry, and ten-row pagination for 31 decisions. Incomplete evidence blocks carry with one global warning. Client/scroll widths are 1280/1280 and 390/390. All records and transport are synthetic with no native or durable writes; these are responsive-browser checks, not physical-device or native-authorization certification.
+
 ## Remediation proposal basis — September 28, 2026
 
 Release 1.2.3 binds prepared remediation to the returned campaign, capture and revision. Changed evidence clears confirmation and blocks the old proposal synchronously; returning old data does not reactivate it. The reviewed values remain separate from the recalculated draft, with the target and reason visible. Explicit return preserves the reason and focuses the remediation heading. Consumed reviews keep their separate result-recovery controls. Proposed-value columns are labelled explicitly in remediation and the configuration register; actual drift comparisons retain their existing labels.

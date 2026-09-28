@@ -11,6 +11,7 @@ import { buildDriftReport, captureTimeline, driftCsv } from '../shared/access-dr
 import { reviewDateSchema } from '../shared/review-date';
 import {
   carryCertifications,
+  planCertificationCarry,
   certificationCoverage,
   certificationScopeSchema,
 } from '../shared/certification';
@@ -461,4 +462,89 @@ test('next-period settings copy only selected definitions and clear old due date
   next.rules[0].title = 'Changed';
   assert.equal(document.rules[0].title, 'Duty');
   assert.throws(() => nextPeriodSettings(document, { ...input, revision: 999 }), /changed/);
+});
+
+function carryOptions() {
+  const document = campaign();
+  const capture = document.captures[0];
+  return {
+    before: capture.snapshot,
+    after: structuredClone(capture.snapshot),
+    previousCaptureId: capture.id,
+    currentCaptureId: randomUUID(),
+    scope: document.certificationScope,
+    decisions: [
+      {
+        kind: 'accounts' as const,
+        name: 'alice',
+        captureId: capture.id,
+        outcome: 'retain' as const,
+        note: 'Required access',
+        reviewedAt: '2026-09-25T00:00:00.000Z',
+        dueDate: '2026-10-01',
+      },
+    ],
+    at: '2026-10-01T00:00:00.000Z',
+  };
+}
+test('carry preview and mutation agree and preserve original decision metadata', () => {
+  const options = carryOptions();
+  const original = structuredClone(options);
+  const plan = planCertificationCarry(options);
+  const result = carryCertifications(options);
+  assert.equal(plan.eligible, 1);
+  assert.equal(result.carried, plan.eligible);
+  assert.deepEqual(result.decisions[0], {
+    ...options.decisions[0],
+    captureId: options.currentCaptureId,
+  });
+  assert.deepEqual(options, original);
+});
+test('carry preview explains changed dependencies, unresolved outcomes and out-of-scope objects', () => {
+  const options = carryOptions();
+  options.after.roles[1].Resources[0].Permissions = 'RWU';
+  assert.match(planCertificationCarry(options).rows[0].reason!, /evidence changed/);
+  assert.equal(carryCertifications(options).carried, 0);
+  const unresolved = carryOptions();
+  const options2 = {
+    ...unresolved,
+    decisions: [{ ...unresolved.decisions[0], outcome: 'investigate' as const }],
+  };
+  assert.match(planCertificationCarry(options2).rows[0].reason!, /Only retain or exception/);
+  assert.equal(carryCertifications(options2).carried, 0);
+  unresolved.scope.prefix = 'other';
+  assert.match(planCertificationCarry(unresolved).rows[0].reason!, /outside the saved scope/);
+  assert.equal(carryCertifications(unresolved).carried, 0);
+});
+test('carry preview separates already current and decisions from another source capture', () => {
+  const options = carryOptions();
+  options.decisions[0].captureId = options.currentCaptureId;
+  assert.match(planCertificationCarry(options).rows[0].reason!, /Decision already belongs/);
+  assert.equal(carryCertifications(options).carried, 0);
+  options.decisions[0].captureId = randomUUID();
+  assert.match(planCertificationCarry(options).rows[0].reason!, /another capture/);
+  assert.equal(carryCertifications(options).carried, 0);
+});
+test('carry preview reports incomplete captures and instance mismatch without throwing', () => {
+  const options = carryOptions();
+  options.after.warnings = ['Role source unavailable'];
+  assert.equal(planCertificationCarry(options).eligible, 0);
+  assert.match(planCertificationCarry(options).blocked!, /Both captures must be complete/);
+  assert.throws(() => carryCertifications(options), /Both captures must be complete/);
+  options.after.instance = 'different';
+  assert.match(planCertificationCarry(options).blocked!, /different instances/);
+  assert.throws(() => carryCertifications(options), /different instances/);
+});
+test('carry preview reports missing prior evidence and incomplete current dependencies', () => {
+  const options = carryOptions();
+  options.before.users = [];
+  assert.match(planCertificationCarry(options).rows[0].reason!, /Object evidence is missing/);
+  assert.equal(carryCertifications(options).carried, 0);
+  const incomplete = carryOptions();
+  incomplete.after.roles = [];
+  assert.match(
+    planCertificationCarry(incomplete).rows[0].reason!,
+    /Current evidence is incomplete/,
+  );
+  assert.equal(carryCertifications(incomplete).carried, 0);
 });

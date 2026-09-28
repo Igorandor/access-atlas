@@ -227,39 +227,59 @@ export function certificationCoverage(
   };
 }
 
-export function carryCertifications(options: {
+type CarryCertificationOptions = {
   before: AccessSnapshot;
   after: AccessSnapshot;
   previousCaptureId: string;
   currentCaptureId: string;
   scope: CertificationScope;
   decisions: Certification[];
-  at: string;
-}) {
-  if (options.before.instance !== options.after.instance)
-    throw new Error('Captures belong to different instances.');
-  if (options.before.warnings.length || options.after.warnings.length)
-    throw new Error('Both captures must be complete before carrying decisions forward.');
+};
+
+/** The preview and mutation share the same eligibility checks. */
+export function planCertificationCarry(options: CarryCertificationOptions) {
+  const blocked =
+    options.before.instance !== options.after.instance
+      ? 'Captures belong to different instances.'
+      : options.before.warnings.length || options.after.warnings.length
+        ? 'Both captures must be complete before carrying decisions forward.'
+        : undefined;
   const subjects = certificationSubjects(options.after, options.scope);
   const subjectsByKey = new Map(
     subjects.map((subject) => [JSON.stringify([subject.kind, subject.name]), subject]),
   );
-  let carried = 0;
-  const decisions = options.decisions.map((decision) => {
+  const rows = options.decisions.map((decision) => {
     const subject = subjectsByKey.get(JSON.stringify([decision.kind, decision.name]));
-    if (
-      !subject ||
-      subject.unknown.length ||
-      decision.captureId !== options.previousCaptureId ||
-      !['retain', 'exception'].includes(decision.outcome)
-    )
-      return decision;
-    const before = certificationEvidence(options.before, decision.kind, decision.name);
-    const after = certificationEvidence(options.after, decision.kind, decision.name);
-    if (before === undefined || after === undefined || canonical(before) !== canonical(after))
-      return decision;
-    carried++;
-    return { ...decision, captureId: options.currentCaptureId };
+    let reason: string | undefined;
+    if (blocked) reason = blocked;
+    else if (!subject) reason = 'Object is missing or outside the saved scope.';
+    else if (subject.unknown.length) reason = 'Current evidence is incomplete.';
+    else if (decision.captureId !== options.previousCaptureId)
+      reason =
+        decision.captureId === options.currentCaptureId
+          ? 'Decision already belongs to the current capture.'
+          : 'Decision belongs to another capture.';
+    else if (!['retain', 'exception'].includes(decision.outcome))
+      reason = 'Only retain or exception decisions can be carried.';
+    else {
+      const before = certificationEvidence(options.before, decision.kind, decision.name);
+      const after = certificationEvidence(options.after, decision.kind, decision.name);
+      if (before === undefined || after === undefined) reason = 'Object evidence is missing.';
+      else if (canonical(before) !== canonical(after))
+        reason = 'Configuration or dependency evidence changed.';
+    }
+    return { decision, eligible: !reason, reason };
   });
-  return { carried, decisions };
+  return { blocked, rows, eligible: rows.filter((row) => row.eligible).length };
+}
+
+export function carryCertifications(options: CarryCertificationOptions & { at: string }) {
+  const plan = planCertificationCarry(options);
+  if (plan.blocked) throw new Error(plan.blocked);
+  return {
+    carried: plan.eligible,
+    decisions: plan.rows.map(({ decision, eligible }) =>
+      eligible ? { ...decision, captureId: options.currentCaptureId } : decision,
+    ),
+  };
 }

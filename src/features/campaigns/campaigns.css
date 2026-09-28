@@ -268,3 +268,15 @@
     flex-grow: 1;
   }
 }
+
+.certification-carry-rows {
+  list-style: none;
+  padding: 0;
+}
+.certification-carry-rows li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
