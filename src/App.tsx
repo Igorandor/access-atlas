@@ -175,7 +175,7 @@ export default function App() {
             {page === 'permissions' && accountTarget && (
               <button onClick={() => navigate('atlas')}>Back to access review</button>
             )}
-            <DeferredWorkspace>
+            <DeferredWorkspace key={page}>
               <ConfigurationDesk
                 key={page}
                 section={page}
@@ -187,15 +187,15 @@ export default function App() {
         )}
         {['overview', 'logs', 'explorer'].includes(page) &&
           (page === 'explorer' ? (
-            <DeferredWorkspace>
+            <DeferredWorkspace key={page}>
               <ApiWorkbench />
             </DeferredWorkspace>
           ) : page === 'logs' ? (
-            <DeferredWorkspace>
+            <DeferredWorkspace key={page}>
               <LogReview />
             </DeferredWorkspace>
           ) : (
-            <DeferredWorkspace>
+            <DeferredWorkspace key={page}>
               <ReadDesk key={page} kind="overview" />
             </DeferredWorkspace>
           ))}

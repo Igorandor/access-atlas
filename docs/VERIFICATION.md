@@ -1,5 +1,11 @@
 # Verification record
 
+## Workspace failure isolation — September 28, 2026
+
+A controlled Logs rendering failure exposed a navigation bug: switching to the otherwise healthy REST workbench retained the previous error boundary state. Each transient workspace now has its own boundary identity. The retained access review remains mounted separately so ordinary navigation still preserves its capture.
+
+An isolated browser fixture used the actual App, shell, lazy loading and error boundary with synthetic workspace components and no API calls. Before the fix, Logs → REST workbench still showed the error. After the fix, the REST workspace rendered successfully without reloading the application, on desktop and in a 390px frame. The error remains visible when the failing workspace itself is selected.
+
 ## Certification follow-up navigation — September 28, 2026
 
 The follow-up agenda now opens the exact certification subject, including an existing decision and its follow-up date. The list shows all objects on that entry path so an already reviewed subject remains visible. Returning preserves the report search and source filter. Switching objects protects edited decisions; returning also protects a changed certification scope. Keeping or discarding a draft performs no save or native operation.
