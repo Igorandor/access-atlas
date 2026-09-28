@@ -22,7 +22,7 @@ import {
   campaignAgenda,
 } from '../shared/campaign-report';
 import { nextPeriodSettings } from '../shared/campaign-period';
-import { validateCampaign, type Campaign } from '../shared/campaign';
+import { validateCampaign, campaignFindings, type Campaign } from '../shared/campaign';
 import type { AccessSnapshot } from '../shared/access-model';
 
 function snapshot(): AccessSnapshot {
@@ -547,4 +547,113 @@ test('carry preview reports missing prior evidence and incomplete current depend
     /Current evidence is incomplete/,
   );
   assert.equal(carryCertifications(incomplete).carried, 0);
+});
+
+test('Markdown includes exact review dates and capture identity for selected decisions', () => {
+  const document = campaign();
+  const capture = document.captures[0];
+  capture.label = 'Capture [label](https://invalid.example)';
+  capture.snapshot.users[0].Roles = ['%All'];
+  const finding = campaignFindings(document)[0];
+  document.decisions = [
+    {
+      findingId: finding.id,
+      fingerprint: finding.fingerprint,
+      outcome: 'accepted',
+      note: 'Reviewed finding reason',
+      captureId: capture.id,
+      reviewedAt: '2026-09-20T12:05:00.000Z',
+      dueDate: '2026-10-03',
+    },
+  ];
+  document.certifications = [
+    {
+      kind: 'accounts',
+      name: 'alice',
+      captureId: capture.id,
+      outcome: 'retain',
+      note: 'Original human approval',
+      reviewedAt: '2026-09-20T12:06:00.000Z',
+      dueDate: '2026-10-04',
+    },
+  ];
+  const report = buildCampaignReport(
+    document,
+    { authorNote: '', include: ['findings', 'certifications'] },
+    new Date('2026-09-29T00:00:00Z'),
+  );
+  const markdown = campaignReportMarkdown(report);
+  for (const value of [
+    document.id,
+    capture.id,
+    'Capture \\[label\\]\\(https://invalid\\.example\\)',
+    capture.snapshot.startedAt,
+    'Human review date: 2026-09-20T12:05:00.000Z',
+    'Human review date: 2026-09-20T12:06:00.000Z',
+    'Follow-up: 2026-10-03',
+    'Follow-up: 2026-10-04',
+  ])
+    assert.ok(markdown.includes(value), value);
+  assert.equal(report.activity, undefined);
+  const without = campaignReportMarkdown(
+    buildCampaignReport(document, { authorNote: '', include: [] }),
+  );
+  assert.doesNotMatch(without, /Human review date:/);
+});
+test('Markdown preserves outdated decision labels and incomplete subject evidence', () => {
+  const document = campaign();
+  const capture = document.captures[0];
+  capture.snapshot.users[0].Roles = ['%All'];
+  const finding = campaignFindings(document)[0];
+  const newer = structuredClone(capture);
+  newer.id = randomUUID();
+  document.captures.push(newer);
+  newer.snapshot.users.push({
+    Name: 'unreadable-account',
+    Enabled: true,
+    Roles: ['Missing[Role]'],
+    EscalationRoles: [],
+  });
+  document.decisions = [
+    {
+      findingId: finding.id,
+      fingerprint: 'older evidence',
+      outcome: 'accepted',
+      note: 'Prior finding',
+      captureId: capture.id,
+      reviewedAt: '2026-09-20T12:05:00.000Z',
+    },
+  ];
+  document.certifications = [
+    {
+      kind: 'accounts',
+      name: 'alice',
+      captureId: capture.id,
+      outcome: 'retain',
+      note: 'Prior certification',
+      reviewedAt: '2026-09-20T12:06:00.000Z',
+    },
+    {
+      kind: 'accounts',
+      name: 'unreadable-account',
+      captureId: newer.id,
+      outcome: 'investigate',
+      note: 'Owner confirmation needed.',
+      reviewedAt: '2026-09-28T12:00:00.000Z',
+    },
+  ];
+  const report = buildCampaignReport(document, {
+    authorNote: '',
+    include: ['findings', 'certifications'],
+  });
+  const markdown = campaignReportMarkdown(report);
+  assert.equal(markdown.match(/Decision: Outdated decision/g)?.length, 2);
+  assert.match(markdown, /Human review date: Not reviewed on this capture/);
+  assert.match(markdown, /Decision capture ID: No current decision/);
+  const unknown = report.certifications!.find((row) => row.subject.name === 'unreadable-account')!
+    .subject.unknown[0];
+  assert.ok(markdown.includes(unknown.replace(/[.\[\]]/g, '\\$&')));
+  assert.doesNotMatch(markdown, /Warnings: .*Missing\[Role\]/);
+  assert.match(markdown, /Owner confirmation needed/);
+  assert.doesNotMatch(markdown, /Human review date: 2026-09-20/);
 });

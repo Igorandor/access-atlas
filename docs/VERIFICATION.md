@@ -1,5 +1,13 @@
 # Verification record
 
+## Certification export context — September 29, 2026
+
+The standalone certification JSON now includes campaign identity and revision, export time, capture label/start time, exact source warnings and relevant limits. Existing keys and coverage remain intact; it exports the saved scope rather than unsaved scope edits. A before test reproduced complete:false with only a generic unknown-source notice while the exact application-inventory refusal was omitted.
+
+Markdown finding and certification sections retain human review dates, decision capture IDs and follow-up dates. Outdated decisions are explicitly labelled, and per-object evidence warnings remain present alongside saved reasoning. This also works with Activity excluded. Carried decisions keep their original human review dates; no new approval is inferred. Before evidence showed these details in HTML/JSON but absent from Markdown.
+
+Production build and 294 tests pass, including Markdown dates, outdated decisions, unknown evidence and escaping. Ten actual-component browser checks verify generated JSON/Markdown payloads, source warnings, identity/timing, saved rather than dirty scope, original carried review dates, escaped labels and optional-section exclusion. Run `node scripts/test-export-context-browser.mjs` and open its printed URL. Manual desktop and 390px checks exercise both export buttons and inspect the generated text; client/scroll widths match at1280px and390px. Transport and records are synthetic; no native calls or durable writes occurred. Downloads were intercepted as generated Blobs for inspection, not certified as browser file-save completion.
+
 ## Recovering campaign creation — September 29, 2026
 
 Release 1.2.5 retains the attempted campaign title and next-period source when creation cannot be confirmed. Both creation entry points remain blocked until an explicit history read and operator acknowledgement. The existing campaign list is refreshed with filters cleared and archived records included; no record is automatically selected or matched. Failed or malformed history cannot authorize another creation. A later ordinary list refresh invalidates the previous acknowledgement, including on failure. Known successful creation followed by a failed list refresh remains reported as saved.

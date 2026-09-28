@@ -49,6 +49,8 @@ Report & follow-ups contains readiness checks, a follow-up agenda, a searchable 
 
 For a finding in the follow-up agenda, choose **Open finding** to open its exact decision form. Save any edits, then use **Back to follow-ups** to return to the same search and source filter. Opening a finding does not save a decision or change native permissions.
 
+The separate **Export certification report** JSON includes the saved scope, campaign ID and revision, capture identity and timing, and source warnings alongside coverage. A report can remain incomplete even when every visible object has a decision; inspect its warnings before treating the review as finished. Markdown decision sections retain the original human review date, follow-up date, capture ID and evidence warnings. Carrying a certification forward does not create a new human review date.
+
 **Preview report** opens the selected sections before downloading. Printable HTML uses escaped values, no scripts and no external assets. Open it in a browser and print to PDF when needed. JSON, Markdown and CSV provide editable records, not signed compliance attestations. CSV cells that could be formulas are neutralized. Treat exports as security configuration data.
 
 ## Next period and retention

@@ -605,10 +605,14 @@ export function campaignReportMarkdown(report: CampaignReport) {
     '',
     '- Instance: ' + literal(report.campaign.instance),
     '- Reviewer: ' + literal(report.campaign.owner),
+    '- Campaign ID: ' + literal(report.campaign.id),
     '- Campaign revision: ' + report.campaign.revision,
     '- State: ' + report.campaign.state,
     '- Generated: ' + report.generatedAt,
     '- Latest capture: ' + (report.latestCapture?.capturedAt || 'None'),
+    '- Capture ID: ' + literal(report.latestCapture?.id || 'None'),
+    '- Capture label: ' + literal(report.latestCapture?.label || 'None'),
+    '- Capture started: ' + (report.latestCapture?.startedAt || 'None'),
     '',
   ];
   lines.push(
@@ -647,7 +651,11 @@ export function campaignReportMarkdown(report: CampaignReport) {
       lines.push(
         '### ' + literal(row.finding.target + ' · ' + row.finding.title),
         '',
-        'Decision: ' + literal(row.decision?.outcome || 'Not reviewed'),
+        '- Decision: ' +
+          literal(row.decision?.outcome || (row.outdated ? 'Outdated decision' : 'Not reviewed')),
+        '- Human review date: ' + (row.decision?.reviewedAt || 'Not reviewed on this evidence'),
+        '- Decision capture ID: ' + literal(row.decision?.captureId || 'No current decision'),
+        '- Follow-up: ' + (row.decision?.dueDate || 'Not set'),
         '',
         literal(row.decision?.note || row.finding.detail),
         '',
@@ -657,10 +665,16 @@ export function campaignReportMarkdown(report: CampaignReport) {
     lines.push('## Certification', '');
     for (const row of report.certifications)
       lines.push(
-        '- ' +
-          literal(
-            `${row.subject.kind} ${row.subject.name}: ${row.decision?.outcome || 'Not reviewed'} · ${row.decision?.note || ''}`,
-          ),
+        '### ' + literal(`${row.subject.kind} ${row.subject.name}`),
+        '',
+        '- Decision: ' +
+          literal(row.decision?.outcome || (row.outdated ? 'Outdated decision' : 'Not reviewed')),
+        '- Human review date: ' + (row.decision?.reviewedAt || 'Not reviewed on this capture'),
+        '- Decision capture ID: ' + literal(row.decision?.captureId || 'No current decision'),
+        '- Follow-up: ' + (row.decision?.dueDate || 'Not set'),
+        '- Reason: ' + literal(row.decision?.note || 'Not recorded'),
+        '- Warnings: ' + literal(row.subject.unknown.join(' | ') || 'None reported'),
+        '',
       );
     lines.push('');
   }

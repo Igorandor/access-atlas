@@ -221,9 +221,21 @@ export function CertificationReview({
               download('atlas-certification-report.json', {
                 instance: campaign.instance,
                 campaign: campaign.title,
+                campaignId: campaign.id,
+                campaignRevision: campaign.revision,
+                generatedAt: new Date().toISOString(),
                 scope,
                 captureId: latest?.id,
+                captureLabel: latest?.label,
+                captureStartedAt: latest?.snapshot.startedAt,
                 capturedAt: latest?.snapshot.capturedAt,
+                warnings: latest?.snapshot.warnings || [],
+                limits: [
+                  'Captures are sequential reads and may contain concurrent configuration changes.',
+                  'Configured access is not a runtime authorization decision. Active sessions, application roles and policies can alter access.',
+                  'Carried decisions retain the original human review date; carrying them does not record a new human approval.',
+                  'Follow-up dates schedule review work. They do not expire exceptions or revoke permissions.',
+                ],
                 coverage,
               })
             }
