@@ -644,6 +644,7 @@ function CampaignDecisions({
   const progress = useMemo(() => campaignProgress(campaign), [campaign]);
   const [filter, setFilter] = useState('all');
   const [selectedId, setSelectedId] = useState('');
+  const [focusRequest, setFocusRequest] = useState(0);
   const selected = progress.rows.find((row) => row.finding.id === selectedId);
   const visible = progress.rows.filter(
     (row) =>
@@ -692,7 +693,13 @@ function CampaignDecisions({
               </p>
             )}
           </div>
-          <button disabled={disabled} onClick={() => setSelectedId(row.finding.id)}>
+          <button
+            disabled={disabled}
+            onClick={() => {
+              setSelectedId(row.finding.id);
+              setFocusRequest((request) => request + 1);
+            }}
+          >
             Review
           </button>
         </article>
@@ -701,6 +708,7 @@ function CampaignDecisions({
         <DecisionForm
           key={selected.finding.id + ':' + campaign.revision}
           row={selected}
+          focusRequest={focusRequest}
           disabled={disabled}
           save={async (input) => {
             await change(input);
@@ -714,11 +722,13 @@ function CampaignDecisions({
 
 function DecisionForm({
   row,
+  focusRequest,
   disabled,
   save,
   cancel,
 }: {
   row: ReturnType<typeof campaignProgress>['rows'][number];
+  focusRequest: number;
   disabled: boolean;
   save: (input: ChangePayload) => Promise<void>;
   cancel: () => void;
@@ -726,6 +736,11 @@ function DecisionForm({
   const [outcome, setOutcome] = useState<ReviewOutcome>(row.decision?.outcome || 'investigating');
   const [note, setNote] = useState(row.decision?.note || '');
   const [dueDate, setDueDate] = useState(row.decision?.dueDate || '');
+  const heading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: 'start' });
+  }, [focusRequest]);
   return (
     <form
       className="campaign-decision-form"
@@ -741,7 +756,18 @@ function DecisionForm({
         });
       }}
     >
-      <h4>Review {row.finding.target}</h4>
+      <h4 ref={heading} tabIndex={-1}>
+        Review {row.finding.target}
+      </h4>
+      {row.decision && !row.outdated && (
+        <p role="status">
+          Saved decision: {row.decision.outcome} ·{' '}
+          <time dateTime={row.decision.reviewedAt}>
+            {new Date(row.decision.reviewedAt).toLocaleString()}
+          </time>
+          {row.decision.dueDate ? ' · Follow-up ' + row.decision.dueDate : ''}
+        </p>
+      )}
       <fieldset disabled={disabled}>
         <label className="field">
           Decision

@@ -1,5 +1,11 @@
 # Verification record
 
+## Review form navigation — September 28, 2026
+
+Opening a finding decision or account certification now focuses its heading and brings the form into view. Previously the form appeared below the full results list, often outside the viewport. Reopening the selected item preserves its draft. Current saved decisions display their outcome, timestamp and follow-up date beside the form; stale decisions are not labelled current. Native writes and campaign authorization are unchanged.
+
+Production build and the existing 218 tests passed. Browser checks exercised the retained campaign against the isolated presentation gateway: desktop heading focus/visibility, a 390×844 same-origin frame with no horizontal overflow, and preserving an unsaved finding note when reopening its item. The frame was used because the browser tool ignored its viewport override; this is responsive-layout testing, not a physical touchscreen test. Test notes were cancelled, not saved into the campaign.
+
 ## Saved campaign entry after capture failure — September 27, 2026
 
 The existing Access review navigation now keeps Campaigns available before any ad hoc snapshot succeeds. Other tabs remain disabled until a snapshot is returned, and the capture error and explicit retry remain visible. This addresses whole-request failures, including a browser reload during the session's five-second capture cooldown; individual native-source failures already return a partial snapshot with warnings and did not cause this navigation block. No campaign backend or permission checks changed.

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Campaign } from '../../../shared/campaign';
 import {
   certificationCoverage,
@@ -53,6 +53,13 @@ export function CertificationReview({
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
   const [selected, setSelected] = useState('');
+  const [focusRequest, setFocusRequest] = useState(0);
+  const selectedHeading = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (!selected) return;
+    selectedHeading.current?.focus({ preventScroll: true });
+    selectedHeading.current?.scrollIntoView({ block: 'start' });
+  }, [selected, focusRequest]);
   const [outcome, setOutcome] = useState<Certification['outcome']>('retain');
   const [note, setNote] = useState('');
   const [dueDate, setDueDate] = useState('');
@@ -279,9 +286,12 @@ export function CertificationReview({
                   // Reselecting the open object must not replace an unsaved review.
                   if (next === selected) return;
                   setSelected(next);
-                  setOutcome(row.decision?.outcome || 'retain');
-                  setNote(row.decision?.note || '');
-                  setDueDate(row.decision?.dueDate || '');
+                  setFocusRequest((request) => request + 1);
+                  if (next !== selected) {
+                    setOutcome(row.decision?.outcome || 'retain');
+                    setNote(row.decision?.note || '');
+                    setDueDate(row.decision?.dueDate || '');
+                  }
                 }}
               >
                 <span>
@@ -312,8 +322,21 @@ export function CertificationReview({
           </div>
           {selectedRow && (
             <section className="certification-details">
-              <h3>{selectedRow.subject.name}</h3>
+              <h3 ref={selectedHeading} tabIndex={-1}>
+                {selectedRow.subject.name}
+              </h3>
               <p>{selectedRow.subject.description}</p>
+              {selectedRow.decision && !selectedRow.outdated && (
+                <p role="status">
+                  Saved decision: {selectedRow.decision.outcome} ·{' '}
+                  <time dateTime={selectedRow.decision.reviewedAt}>
+                    {new Date(selectedRow.decision.reviewedAt).toLocaleString()}
+                  </time>
+                  {selectedRow.decision.dueDate
+                    ? ' · Follow-up ' + selectedRow.decision.dueDate
+                    : ''}
+                </p>
+              )}
               <dl>
                 {selectedRow.subject.facts.map((fact) => (
                   <div key={fact.label}>

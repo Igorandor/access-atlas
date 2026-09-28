@@ -127,6 +127,10 @@
   border-top: 2px solid var(--accent);
   padding-top: 16px;
 }
+.campaign-decision-form h4,
+.certification-details h3 {
+  scroll-margin-top: 96px;
+}
 .campaign-history {
   padding-left: 22px;
 }
