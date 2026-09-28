@@ -45,9 +45,11 @@ const sections: Array<{ id: ReportSection; title: string; description: string }>
 export function CampaignReport({
   campaign,
   onReviewFinding,
+  onReviewCertification,
 }: {
   campaign: Campaign;
   onReviewFinding?: (findingId: string) => void;
+  onReviewCertification?: (subjectKey: string) => void;
 }) {
   const [note, setNote] = useState('');
   const [include, setInclude] = useState<ReportSection[]>(sections.map((section) => section.id));
@@ -176,7 +178,13 @@ export function CampaignReport({
           </details>
         </section>
       )}
-      {tab === 'agenda' && <Agenda items={report.agenda} onReviewFinding={onReviewFinding} />}
+      {tab === 'agenda' && (
+        <Agenda
+          items={report.agenda}
+          onReviewFinding={onReviewFinding}
+          onReviewCertification={onReviewCertification}
+        />
+      )}
       {tab === 'decisions' && (
         <DecisionRegister
           report={buildCampaignReport(
@@ -278,9 +286,11 @@ function ReportMetric({ value, label }: { value: string; label: string }) {
 function Agenda({
   items,
   onReviewFinding,
+  onReviewCertification,
 }: {
   items: AgendaItem[];
   onReviewFinding?: (findingId: string) => void;
+  onReviewCertification?: (subjectKey: string) => void;
 }) {
   const [source, setSource] = useState('all');
   const [search, setSearch] = useState('');
@@ -375,6 +385,16 @@ function Agenda({
                   onClick={() => onReviewFinding(item.id.slice('finding:'.length))}
                 >
                   Open finding
+                </button>
+              </div>
+            )}
+            {item.source === 'certification' && onReviewCertification && (
+              <div className="inquiry-actions">
+                <button
+                  aria-label={`Open certification: ${item.title} (${item.target})`}
+                  onClick={() => onReviewCertification(item.id.slice('certification:'.length))}
+                >
+                  Open certification
                 </button>
               </div>
             )}

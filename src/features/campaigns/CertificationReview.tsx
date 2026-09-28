@@ -9,7 +9,7 @@ import {
 } from '../../../shared/certification';
 import { download } from '../../api';
 import { DataValue } from '../../components/DataView';
-import { Badge } from '../../components/ui';
+import { Badge, Modal } from '../../components/ui';
 
 function sameScope(left: CertificationScope, right: CertificationScope) {
   return (
@@ -28,14 +28,28 @@ export function CertificationReview({
   decisions,
   disabled,
   save,
+  initialSubject = '',
+  onBackToFollowups,
+  backDisabled = false,
 }: {
   campaign: Campaign;
   scope: CertificationScope;
   decisions: Certification[];
   disabled: boolean;
   save: (input: Record<string, unknown>, expectedRevision?: number) => Promise<void>;
+  initialSubject?: string;
+  onBackToFollowups?: () => void;
+  backDisabled?: boolean;
 }) {
   const latest = campaign.captures.at(-1);
+  const coverage = useMemo(
+    () =>
+      latest ? certificationCoverage(latest.snapshot, latest.id, scope, decisions) : undefined,
+    [latest, scope, decisions],
+  );
+  const initialRow = coverage?.rows.find(
+    (row) => JSON.stringify([row.subject.kind, row.subject.name]) === initialSubject,
+  );
   const [scopeDraft, setScopeDraft] = useState(scope);
   const [scopeBase, setScopeBase] = useState({ revision: campaign.revision, scope });
   const scopeDirty = !sameScope(scopeDraft, scopeBase.scope);
@@ -49,10 +63,11 @@ export function CertificationReview({
       useSavedScope();
   }, [campaign.revision, scope, scopeBase, scopeDirty, scopeDraft]);
   const [kind, setKind] = useState('all');
-  const [state, setState] = useState('pending');
+  const [state, setState] = useState(initialRow ? 'all' : 'pending');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(0);
-  const [selected, setSelected] = useState('');
+  const [selected, setSelected] = useState(initialRow ? initialSubject : '');
+  const [pendingNavigation, setPendingNavigation] = useState<() => void>();
   const [focusRequest, setFocusRequest] = useState(0);
   const selectedHeading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
@@ -60,15 +75,12 @@ export function CertificationReview({
     selectedHeading.current?.focus({ preventScroll: true });
     selectedHeading.current?.scrollIntoView({ block: 'start' });
   }, [selected, focusRequest]);
-  const [outcome, setOutcome] = useState<Certification['outcome']>('retain');
-  const [note, setNote] = useState('');
-  const [dueDate, setDueDate] = useState('');
-  const [carryFrom, setCarryFrom] = useState(campaign.captures.at(-2)?.id || '');
-  const coverage = useMemo(
-    () =>
-      latest ? certificationCoverage(latest.snapshot, latest.id, scope, decisions) : undefined,
-    [latest, scope, decisions],
+  const [outcome, setOutcome] = useState<Certification['outcome']>(
+    initialRow?.decision?.outcome || 'retain',
   );
+  const [note, setNote] = useState(initialRow?.decision?.note || '');
+  const [dueDate, setDueDate] = useState(initialRow?.decision?.dueDate || '');
+  const [carryFrom, setCarryFrom] = useState(campaign.captures.at(-2)?.id || '');
   const visible =
     coverage?.rows.filter(
       (row) =>
@@ -83,6 +95,16 @@ export function CertificationReview({
   const selectedRow = coverage?.rows.find(
     (row) => JSON.stringify([row.subject.kind, row.subject.name]) === selected,
   );
+  const decisionDirty = Boolean(
+    selectedRow &&
+    (outcome !== (selectedRow.decision?.outcome || 'retain') ||
+      note !== (selectedRow.decision?.note || '') ||
+      dueDate !== (selectedRow.decision?.dueDate || '')),
+  );
+  function navigate(next: () => void, includeScope = false) {
+    if (decisionDirty || (includeScope && scopeDirty)) setPendingNavigation(() => next);
+    else next();
+  }
   const evidence = useMemo(
     () =>
       latest && selectedRow
@@ -286,13 +308,13 @@ export function CertificationReview({
                   const next = JSON.stringify([row.subject.kind, row.subject.name]);
                   // Reselecting the open object must not replace an unsaved review.
                   if (next === selected) return;
-                  setSelected(next);
-                  setFocusRequest((request) => request + 1);
-                  if (next !== selected) {
+                  navigate(() => {
+                    setSelected(next);
+                    setFocusRequest((request) => request + 1);
                     setOutcome(row.decision?.outcome || 'retain');
                     setNote(row.decision?.note || '');
                     setDueDate(row.decision?.dueDate || '');
-                  }
+                  });
                 }}
               >
                 <span>
@@ -447,6 +469,31 @@ export function CertificationReview({
             </details>
           )}
         </>
+      )}
+      {onBackToFollowups && (
+        <button disabled={backDisabled} onClick={() => navigate(onBackToFollowups, true)}>
+          Back to follow-ups
+        </button>
+      )}
+      {pendingNavigation && (
+        <Modal
+          title="Discard unsaved certification changes?"
+          onClose={() => setPendingNavigation(undefined)}
+        >
+          <p>Your changes have not been saved.</p>
+          <div className="inline-actions">
+            <button onClick={() => setPendingNavigation(undefined)}>Keep editing</button>
+            <button
+              onClick={() => {
+                const next = pendingNavigation;
+                setPendingNavigation(undefined);
+                next();
+              }}
+            >
+              Discard draft
+            </button>
+          </div>
+        </Modal>
       )}
     </section>
   );

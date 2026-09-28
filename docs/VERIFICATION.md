@@ -1,5 +1,11 @@
 # Verification record
 
+## Certification follow-up navigation — September 28, 2026
+
+The follow-up agenda now opens the exact certification subject, including an existing decision and its follow-up date. The list shows all objects on that entry path so an already reviewed subject remains visible. Returning preserves the report search and source filter. Switching objects protects edited decisions; returning also protects a changed certification scope. Keeping or discarding a draft performs no save or native operation.
+
+Production build and all 225 tests pass. Three added regressions cover saved-value initialization (including a colon in the object name), unchanged return, keeping/discarding edited decisions, scope protection and an absent subject. Browser checks exercised the real campaign detail, report, certification component and shared model with synthetic accounts, on desktop and in a 390px frame. Both opened AccountA with its saved note/date and focused heading, preserved an edited note with Keep editing, and returned to the original single-row filter after explicit discard. Save calls remained zero. No global navigation or physical-touchscreen coverage is claimed.
+
 ## Unsaved finding decisions — September 28, 2026
 
 Cancelling a finding decision, opening another finding, or returning to follow-ups now asks whether to keep editing or discard a changed draft. Reopening the same finding keeps its draft without a prompt. Closing the dialog or pressing Escape keeps the draft; discarding never saves. This guard does not cover global workspace/campaign navigation or browser unload, so the guide still instructs reviewers to save before leaving those views.

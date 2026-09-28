@@ -282,6 +282,7 @@ function CampaignDetail({
   const [tab, setTab] = useState('decisions');
   const [reportVisited, setReportVisited] = useState(false);
   const [followupFinding, setFollowupFinding] = useState('');
+  const [followupCertification, setFollowupCertification] = useState('');
   const reportRegion = useRef<HTMLDivElement>(null);
   const returnToReport = useRef(false);
   useEffect(() => {
@@ -501,6 +502,10 @@ function CampaignDetail({
               setFollowupFinding(id);
               setTab('decisions');
             }}
+            onReviewCertification={(key) => {
+              setFollowupCertification(key);
+              setTab('certification');
+            }}
           />
         </div>
       )}
@@ -513,6 +518,16 @@ function CampaignDetail({
           scope={campaign.certificationScope}
           decisions={campaign.certifications}
           disabled={pending || !active}
+          initialSubject={followupCertification}
+          backDisabled={pending}
+          onBackToFollowups={
+            followupCertification
+              ? () => {
+                  returnToReport.current = true;
+                  setTab('report');
+                }
+              : undefined
+          }
           save={(input, revision) => change(input as ChangePayload, revision)}
         />
       )}
