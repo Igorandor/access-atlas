@@ -8,6 +8,8 @@ Built for the [InterSystems Programming Contest: Build Your Own Management Porta
 
 Try the [first access review](docs/FIRST_REVIEW.md), or inspect an [example exported review report](docs/examples/access-review.md) before installing. The report includes open investigations and missing decisions rather than presenting an unfinished review as complete.
 
+[Watch the extended walkthrough (MP4, 2:08)](https://github.com/Igorandor/access-atlas/releases/download/v1.0.0/access-atlas-walkthrough.mp4). It follows inherited access through a saved campaign, certification and report preview. [Release downloads](https://github.com/Igorandor/access-atlas/releases/tag/v1.0.0) include the source package, English captions and transcript.
+
 The top navigation separates **Review**, **Administration** and **Instance**. Review has its own tool rail for the access map, resource matrix, review queue and changes. Administration contains accounts, applications, security and tasks; Instance contains the overview, host resources, logs and REST explorer. Switching sections preserves the captured review until logout or reload.
 
 ## The access-review workflow
