@@ -43,6 +43,8 @@ Every write has a separate review step. Execution and destructive controls requi
 
 See [how to interpret API results](docs/API_BEHAVIOR.md) before acting on an incomplete capture, an accepted background job or an uncertain change.
 
+For namespace-specific access, open **Access review → SQL privileges**. Inspect object and administrative grants for an account or role, retain partial results when one source fails, and export the evidence with its scope and read times. See [the SQL review guide and limits](docs/SQL_EVIDENCE.md); these separate reads do not extend the resource graph or establish runtime access.
+
 The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. Native API values are never replaced with sample data.
 
 Switching tools keeps the current access review open. Refresh instance data when you need a new observation.

@@ -8,6 +8,8 @@ The access map traces captured account roles, inherited roles, resource permissi
 
 See [analysis semantics](ACCESS_ANALYSIS.md), the [collector](../server/access-snapshot.ts) and [capture validation tests](../tests/capture-validation.test.ts). The platform documents [resource-based authorization](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=AAUTHZ) and [SQL privilege checks](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=RSQL_checkpriv) separately.
 
+For a separate current read of namespace-specific grants, use [SQL privileges](SQL_EVIDENCE.md). Its source status and timestamps are independent of the resource capture. It does not resolve row policies or establish runtime access.
+
 ## 2. A reviewed proposal can become outdated
 
 Before submitting a change, Atlas reads the target again. An edit is refused if a field being changed no longer matches the review; deletion checks the full captured object. Prepare a new proposal after inspecting the current configuration. Another administrator's unrelated edit is preserved when only your changed fields are submitted.
@@ -18,12 +20,12 @@ This is not an atomic lock on IRIS. A change outside Atlas can still occur betwe
 
 Read the result, not just the HTTP status:
 
-| Result | What to do |
-| --- | --- |
-| Verified | Inspect the checked fields; the subsequent read matched those values. This does not verify unrelated settings. |
-| Acknowledged | The request was accepted, but completion or the value cannot be established by this read-back. Password changes, task launches and background work can have this outcome. |
-| Different / unverified | Inspect the mismatch or restore permission to read the target before deciding what to do next. |
-| Uncertain | Retrieve the receipt and inspect native state before preparing another write. A lost response does not establish that nothing happened. |
+| Result                 | What to do                                                                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Verified               | Inspect the checked fields; the subsequent read matched those values. This does not verify unrelated settings.                                                            |
+| Acknowledged           | The request was accepted, but completion or the value cannot be established by this read-back. Password changes, task launches and background work can have this outcome. |
+| Different / unverified | Inspect the mismatch or restore permission to read the target before deciding what to do next.                                                                            |
+| Uncertain              | Retrieve the receipt and inspect native state before preparing another write. A lost response does not establish that nothing happened.                                   |
 
 Atlas does not automatically replay an uncertain write. A failed response in the browser preserves the draft and offers a read-only recovery path. See [receipt status tests](../tests/reviewed-changes.test.ts) and [apply-response recovery](APPLY_RESPONSE_RECOVERY.md).
 

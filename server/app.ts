@@ -55,6 +55,7 @@ function verifyIdentity(data: any) {
 
 export function createApp(options: AppOptions) {
   const app = express();
+  const instance = options.instanceId || new URL(options.irisUrl).origin;
   const clock = options.now ?? Date.now;
   const vault = new AtlasSessionVault(clock);
   const transport = options.client ?? new IrisClient(options.irisUrl);
@@ -118,7 +119,7 @@ export function createApp(options: AppOptions) {
       maxAge: 28800000,
       path: '/',
     });
-    response.json({ info: session.info, csrf: session.csrf });
+    response.json({ info: session.info, csrf: session.csrf, instance });
   });
   api.use((request, response, next) => {
     const token = ['GET', 'HEAD'].includes(request.method)
@@ -129,7 +130,7 @@ export function createApp(options: AppOptions) {
   });
   api.get('/session', (_request, response) => {
     const session = readSession(response);
-    response.json({ info: session.info, csrf: session.csrf });
+    response.json({ info: session.info, csrf: session.csrf, instance });
   });
   api.post('/logout', (request, response) => {
     vault.forget(request.cookies[cookie]);

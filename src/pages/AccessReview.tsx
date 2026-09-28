@@ -1,3 +1,4 @@
+import { SqlEvidence } from '../features/access/SqlEvidence';
 import { DriftReview } from '../features/access/DriftReview';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -85,74 +86,82 @@ export function AccessReview({
         title="Access review"
         description="Role inheritance, resource grants and configuration changes."
       >
-        <button
-          disabled={!snapshot}
-          onClick={() => snapshot && download('atlas-access-snapshot.json', snapshot)}
-        >
-          <Download size={16} /> Snapshot
-        </button>
-        <button className="primary" disabled={loading} onClick={() => void capture()}>
-          <RefreshCw size={16} className={loading ? 'spin' : ''} />
-          {loading ? 'Reading configuration…' : 'Capture again'}
-        </button>
+        {view !== 'sql' && (
+          <>
+            <button
+              disabled={!snapshot}
+              onClick={() => snapshot && download('atlas-access-snapshot.json', snapshot)}
+            >
+              <Download size={16} /> Snapshot
+            </button>
+            <button className="primary" disabled={loading} onClick={() => void capture()}>
+              <RefreshCw size={16} className={loading ? 'spin' : ''} />
+              {loading ? 'Reading configuration…' : 'Capture again'}
+            </button>
+          </>
+        )}
       </PageHeader>
-      <div className="atlas-context">
-        <span className="context-dot" />
-        <strong>{snapshot?.instance ?? 'Connected IRIS'}</strong>
-        <span>
-          {snapshot
-            ? 'Captured ' + new Date(snapshot.capturedAt).toLocaleString()
-            : loading
-              ? 'Preparing configuration evidence'
-              : 'No configuration capture loaded'}
-        </span>
-        <Badge tone={complete ? 'good' : 'warning'}>
-          {snapshot
-            ? complete
-              ? 'Complete within capture limits'
-              : 'Incomplete evidence'
-            : 'Read-only capture'}
-        </Badge>
-      </div>
-      {error && <ErrorBox error={error} />}
-      {loading && !snapshot && <Loading />}
-      {snapshot && (
+      {view !== 'sql' && (
         <>
-          {snapshot.warnings.length > 0 && (
-            <details className="notice" open>
-              <summary>
-                {snapshot.warnings.length} capture warnings · missing data is unknown, not denied
-                access
-              </summary>
-              <ul>
-                {snapshot.warnings.map((s, i) => (
-                  <li key={i}>{s}</li>
-                ))}
-              </ul>
-            </details>
-          )}
-          <div className="atlas-summary">
-            <div>
-              <Users size={19} />
-              <strong>{snapshot.users.length}</strong>
-              <span>accounts</span>
-            </div>
-            <div>
-              <Layers size={19} />
-              <strong>{snapshot.roles.length}</strong>
-              <span>role definitions</span>
-            </div>
-            <div>
-              <ShieldCheck size={19} />
-              <strong>{snapshot.resources.length}</strong>
-              <span>resources</span>
-            </div>
-            <div>
-              <FileCheck2 size={19} />
-              <strong>{items.length - reviewed}</strong>
-              <span>review items left</span>
-            </div>
+          <div className="atlas-context">
+            <span className="context-dot" />
+            <strong>{snapshot?.instance ?? 'Connected IRIS'}</strong>
+            <span>
+              {snapshot
+                ? 'Captured ' + new Date(snapshot.capturedAt).toLocaleString()
+                : loading
+                  ? 'Preparing configuration evidence'
+                  : 'No configuration capture loaded'}
+            </span>
+            <Badge tone={complete ? 'good' : 'warning'}>
+              {snapshot
+                ? complete
+                  ? 'Complete within capture limits'
+                  : 'Incomplete evidence'
+                : 'Read-only capture'}
+            </Badge>
           </div>
+          {error && <ErrorBox error={error} />}
+          {loading && !snapshot && <Loading />}
+          {snapshot && (
+            <>
+              {snapshot.warnings.length > 0 && (
+                <details className="notice" open>
+                  <summary>
+                    {snapshot.warnings.length} capture warnings · missing data is unknown, not
+                    denied access
+                  </summary>
+                  <ul>
+                    {snapshot.warnings.map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+              <div className="atlas-summary">
+                <div>
+                  <Users size={19} />
+                  <strong>{snapshot.users.length}</strong>
+                  <span>accounts</span>
+                </div>
+                <div>
+                  <Layers size={19} />
+                  <strong>{snapshot.roles.length}</strong>
+                  <span>role definitions</span>
+                </div>
+                <div>
+                  <ShieldCheck size={19} />
+                  <strong>{snapshot.resources.length}</strong>
+                  <span>resources</span>
+                </div>
+                <div>
+                  <FileCheck2 size={19} />
+                  <strong>{items.length - reviewed}</strong>
+                  <span>review items left</span>
+                </div>
+              </div>
+            </>
+          )}
         </>
       )}
       <div className="atlas-review-layout">
@@ -160,6 +169,7 @@ export function AccessReview({
           {[
             ['map', 'Access map', Network],
             ['matrix', 'Resource matrix', Layers],
+            ['sql', 'SQL privileges', ShieldCheck],
             ['queue', 'Review queue', FileCheck2],
             ['changes', 'Changes', GitCompareArrows],
             ['duties', 'Duty rules', ShieldCheck],
@@ -168,7 +178,7 @@ export function AccessReview({
           ].map(([id, label, Icon]) => (
             <button
               key={String(id)}
-              disabled={!snapshot && id !== 'campaigns'}
+              disabled={!snapshot && id !== 'campaigns' && id !== 'sql'}
               aria-pressed={view === id}
               className={view === id ? 'active' : ''}
               onClick={() => setView(String(id))}
@@ -180,10 +190,17 @@ export function AccessReview({
           ))}
         </nav>
         <div className="atlas-review-content">
-          {view === 'campaigns' && <Campaigns onManageAccount={onManageAccount} />}
-          {!snapshot && view !== 'campaigns' && !loading && (
+          <div hidden={view !== 'sql'}>
             <p className="notice">
-              Open Campaigns to review saved work, or capture again to load configuration views.
+              SQL reads are separate from the access-map snapshot and saved campaigns.
+            </p>
+            <SqlEvidence snapshot={snapshot} />
+          </div>
+          {view === 'campaigns' && <Campaigns onManageAccount={onManageAccount} />}
+          {!snapshot && view !== 'campaigns' && view !== 'sql' && !loading && (
+            <p className="notice">
+              Open Campaigns for saved work or SQL privileges for a namespace review, or capture
+              again to load configuration views.
             </p>
           )}
           {snapshot && view === 'analysis' && <AnalysisTools snapshot={snapshot} />}
@@ -267,7 +284,7 @@ export function AccessReview({
           )}
         </div>
       </div>
-      {(snapshot || view === 'campaigns') && (
+      {(snapshot || view === 'campaigns' || view === 'sql') && (
         <p className="atlas-footnote">
           Configuration evidence, not a live authorization decision. Application roles, escalation,
           SQL/row policies and current sessions can change runtime access. Captures are bounded and
