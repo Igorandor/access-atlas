@@ -34,7 +34,7 @@ Production browser checks used the retained September presentation campaign: fil
 
 With31 pending objects, saving the only decision on page2 shortened the pending list to30 but left the UI on an empty page showing31–30. The list now clamps the displayed page to the available range; zero matches also have an explicit empty state. A regression exercising the actual component failed before the fix and passes afterward, including the zero-result case.
 
-Browser QA used the actual CertificationReview and shared certification model with31 synthetic accounts, an in-memory save callback and no native/API operations. Desktop and a 390px frame both returned to1–30 of30 after recording Account31, disabled both page buttons and retained the saved-decision receipt. The mobile document remained390/390px. Full production build and219 tests passed.
+Browser QA used the actual CertificationReview and shared certification model with31 synthetic accounts, an in-memory save callback and no native/API operations. Desktop and a 390px frame both returned to1–30 of30 after recording Account31, disabled both page buttons and retained the saved-decision receipt. The mobile document remained 390/390px. Full production build and219 tests passed.
 
 ## Report preview and initial loading — September 28, 2026
 
@@ -171,4 +171,13 @@ Read-only probes against the existing IRIS 2026.2 instance passed for both endpo
 
 Desktop browser checks passed live capture, filtering and returning from Access map with scope/results/filter retained. The downloaded JSON contained all 500+31 rows despite a 13-row local filter, correct instance/scope, source times and truncation flag. The browser download event listener timed out, but the actual downloaded file was independently parsed and checked.
 
-A separate synthetic transport exercised partial source denial, malformed rows, column notices, unknown flags, scope changes and delayed replies. At 390px iframe width, document width remained390, a317px table scroller contained700px of columns, and keyboard scrolling moved it40px. This is browser-responsive verification, not a physical-phone test. No grants, accounts, tables or native data were modified. Only the existing portal container was rebuilt; IRIS and stored campaigns were preserved.
+A separate synthetic transport exercised partial source denial, malformed rows, column notices, unknown flags, scope changes and delayed replies. At 390px iframe width, document width remained 390, a 317px table scroller contained 700px of columns, and keyboard scrolling moved it 40px. This is browser-responsive verification, not a physical-phone test. No grants, accounts, tables or native data were modified. Only the existing portal container was rebuilt; IRIS and stored campaigns were preserved.
+
+## Unsaved campaign drafts — September 28, 2026
+
+Reproduced silent loss of an edited certification scope after switching to Activity and back, with zero save calls. Campaign tool navigation now asks before discarding an unsaved finding decision or certification scope/decision. Campaign replacement also protects review drafts and edited campaign title/description; failed replacement reads retain the current draft. Finding reload/new-capture paths are guarded where a revision change would remount the editor. Access-review tool switches keep the visited campaign mounted.
+
+The production build and 241 tests pass, including six keyed-component lifecycle regressions for finding/scope navigation, Keep editing/Escape/discard, failed replacement reads and refused/successful saves. Browser checks with real components and a synthetic transport passed on desktop and 390px: scope and decision retained across SQL/Campaigns, explicit discard removed scope, failed saves retained protection, campaign replacement requested confirmation. The phone dialog fit 356px inside a 390px document without document overflow. No fixture request reached IRIS.
+
+This does not persist drafts after logout/session expiry or browser reload/close. Unrelated remediation and next-period form drafts are outside this correction. Existing session isolation is unchanged.
+

@@ -32,6 +32,12 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
   const [filter, setFilter] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const sequence = useRef(0);
+  const [draftDirty, setDraftDirty] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<() => void>();
+  function replaceCampaign(next: () => void) {
+    if (draftDirty) setPendingNavigation(() => next);
+    else next();
+  }
   async function refresh() {
     const token = ++sequence.current;
     setPending(true);
@@ -71,8 +77,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       if (token === sequence.current) setPending(false);
     }
   }
-  async function create(event: React.FormEvent) {
-    event.preventDefault();
+  async function create() {
     setPending(true);
     setError('');
     try {
@@ -135,7 +140,13 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       setPending(false);
     }
   }
-  async function nextPeriod(input: PeriodInput) {
+  async function nextPeriod(input: PeriodInput, discardConfirmed = false) {
+    if (draftDirty && !discardConfirmed) {
+      replaceCampaign(() => {
+        void nextPeriod(input, true).catch(() => {});
+      });
+      return;
+    }
     if (!current) throw new Error('Choose a campaign first.');
     setPending(true);
     setError('');
@@ -186,7 +197,9 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
                 key={campaign.id}
                 disabled={pending}
                 aria-pressed={current?.id === campaign.id}
-                onClick={() => void open(campaign.id)}
+                onClick={() => {
+                  if (campaign.id !== current?.id) replaceCampaign(() => void open(campaign.id));
+                }}
               >
                 <strong>{campaign.title}</strong>
                 <span>
@@ -199,7 +212,12 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
           {!visible.length && !pending && <p>No matching campaigns.</p>}
           <details>
             <summary>Create a campaign</summary>
-            <form onSubmit={(event) => void create(event)}>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                replaceCampaign(() => void create());
+              }}
+            >
               <fieldset disabled={pending}>
                 <label className="field">
                   Title
@@ -231,6 +249,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
           {current ? (
             <CampaignDetail
               key={current.id}
+              onDirtyChange={setDraftDirty}
               campaign={current}
               pending={pending}
               change={change}
@@ -250,6 +269,29 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
           )}
         </div>
       </div>
+      {pendingNavigation && (
+        <Modal
+          title="Discard unsaved campaign changes?"
+          onClose={() => setPendingNavigation(undefined)}
+        >
+          <p>
+            This campaign has changes that have not been saved. They will be discarded only if the
+            next campaign opens successfully.
+          </p>
+          <div className="inline-actions">
+            <button onClick={() => setPendingNavigation(undefined)}>Keep editing</button>
+            <button
+              onClick={() => {
+                const next = pendingNavigation;
+                setPendingNavigation(undefined);
+                next();
+              }}
+            >
+              Discard and continue
+            </button>
+          </div>
+        </Modal>
+      )}
     </section>
   );
 }
@@ -260,6 +302,7 @@ type ChangePayload = WithoutRevision<CampaignChange>;
 
 function CampaignDetail({
   campaign,
+  onDirtyChange,
   pending,
   change,
   reload,
@@ -268,6 +311,7 @@ function CampaignDetail({
   nextPeriod,
 }: {
   campaign: Campaign;
+  onDirtyChange?: (dirty: boolean) => void;
   pending: boolean;
   change: (
     input: ChangePayload,
@@ -280,6 +324,13 @@ function CampaignDetail({
   nextPeriod: (input: PeriodInput) => Promise<void>;
 }) {
   const [tab, setTab] = useState('decisions');
+  const [decisionDirty, setDecisionDirty] = useState(false);
+  const [certificationDirty, setCertificationDirty] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<() => void>();
+  function leaveDraft(next: () => void, dirty = decisionDirty || certificationDirty) {
+    if (dirty) setPendingNavigation(() => next);
+    else next();
+  }
   const [reportVisited, setReportVisited] = useState(false);
   const [followupFinding, setFollowupFinding] = useState('');
   const [followupCertification, setFollowupCertification] = useState('');
@@ -323,6 +374,10 @@ function CampaignDetail({
     description: campaign.description,
   });
   const detailsDirty = title !== detailsBase.title || description !== detailsBase.description;
+  useEffect(() => {
+    onDirtyChange?.(detailsDirty || decisionDirty || certificationDirty);
+  }, [detailsDirty, decisionDirty, certificationDirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   const detailsConflict = detailsDirty && detailsBase.revision !== campaign.revision;
   function useSavedDetails() {
     setTitle(campaign.title);
@@ -365,7 +420,7 @@ function CampaignDetail({
           {campaign.instance} · {campaign.owner} · revision {campaign.revision}
         </p>
         <div className="inline-actions">
-          <button disabled={pending} onClick={reload}>
+          <button disabled={pending} onClick={() => leaveDraft(reload, decisionDirty)}>
             Reload campaign
           </button>
           <button onClick={() => download('atlas-campaign-' + campaign.id + '.json', campaign)}>
@@ -394,7 +449,7 @@ function CampaignDetail({
             className="campaign-capture"
             onSubmit={(event) => {
               event.preventDefault();
-              void change({ action: 'capture', label });
+              leaveDraft(() => void change({ action: 'capture', label }));
             }}
           >
             <label className="field">
@@ -444,10 +499,15 @@ function CampaignDetail({
           <button
             key={id}
             aria-pressed={tab === id}
+            disabled={pending}
             onClick={() => {
-              if (id === 'report') setReportVisited(true);
-              setFollowupFinding('');
-              setTab(id);
+              if (id === tab) return;
+              leaveDraft(() => {
+                if (id === 'report') setReportVisited(true);
+                setFollowupFinding('');
+                setFollowupCertification('');
+                setTab(id);
+              });
             }}
           >
             {text}
@@ -456,6 +516,7 @@ function CampaignDetail({
       </nav>
       {tab === 'decisions' && (
         <CampaignDecisions
+          onDirtyChange={setDecisionDirty}
           campaign={campaign}
           disabled={pending || !active}
           change={change}
@@ -514,6 +575,7 @@ function CampaignDetail({
       )}
       {tab === 'certification' && (
         <CertificationReview
+          onDirtyChange={setCertificationDirty}
           campaign={campaign}
           scope={campaign.certificationScope}
           decisions={campaign.certifications}
@@ -691,12 +753,33 @@ function CampaignDetail({
           )}
         </section>
       )}
+      {pendingNavigation && (
+        <Modal
+          title="Discard unsaved review changes?"
+          onClose={() => setPendingNavigation(undefined)}
+        >
+          <p>Your decision or certification changes have not been saved.</p>
+          <div className="inline-actions">
+            <button onClick={() => setPendingNavigation(undefined)}>Keep editing</button>
+            <button
+              onClick={() => {
+                const next = pendingNavigation;
+                setPendingNavigation(undefined);
+                next();
+              }}
+            >
+              Discard draft
+            </button>
+          </div>
+        </Modal>
+      )}
     </>
   );
 }
 
 function CampaignDecisions({
   campaign,
+  onDirtyChange,
   disabled,
   change,
   initialFindingId = '',
@@ -704,6 +787,7 @@ function CampaignDecisions({
   backDisabled = false,
 }: {
   campaign: Campaign;
+  onDirtyChange?: (dirty: boolean) => void;
   disabled: boolean;
   change: (input: ChangePayload) => Promise<void>;
   initialFindingId?: string;
@@ -716,6 +800,10 @@ function CampaignDecisions({
   const [decisionDirty, setDecisionDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<() => void>();
   const [focusRequest, setFocusRequest] = useState(0);
+  useEffect(() => {
+    onDirtyChange?.(decisionDirty);
+  }, [decisionDirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   function leaveDecision(next: () => void) {
     if (decisionDirty) setPendingNavigation(() => next);
     else next();

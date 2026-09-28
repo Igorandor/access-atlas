@@ -48,3 +48,9 @@ For a finding in the follow-up agenda, choose **Open finding** to open its exact
 Next review period previews copied duty rules, policies and certification scope. It starts a separate campaign with no captures, decisions or remediation receipts; the previous due date is cleared unless a new one is supplied. The source campaign remains unchanged, including any unresolved writes. New period creation requires the selected source revision and current access to it.
 
 Archive hides a campaign from the default list without deleting its data. Include archived restores it to the list. Reopen a closed or archived campaign before changing review records. Campaign limits and backup instructions are in [Deployment](DEPLOYMENT.md).
+
+### Leaving an unfinished review
+
+If a finding decision or certification scope/decision has unsaved edits, switching campaign tools asks whether to keep editing or discard the draft. Escape keeps the editor open. Switching to another access-review tool preserves the campaign in memory; returning resumes it. Opening another campaign asks before replacing unsaved review or campaign-detail edits. A failed save or replacement read retains the current draft.
+
+Save decisions before signing out or closing/reloading the browser. These safeguards do not persist unsaved drafts across session boundaries and do not cover every administration or remediation form.

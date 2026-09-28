@@ -31,6 +31,7 @@ export function CertificationReview({
   initialSubject = '',
   onBackToFollowups,
   backDisabled = false,
+  onDirtyChange,
 }: {
   campaign: Campaign;
   scope: CertificationScope;
@@ -40,6 +41,7 @@ export function CertificationReview({
   initialSubject?: string;
   onBackToFollowups?: () => void;
   backDisabled?: boolean;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const latest = campaign.captures.at(-1);
   const coverage = useMemo(
@@ -101,6 +103,10 @@ export function CertificationReview({
       note !== (selectedRow.decision?.note || '') ||
       dueDate !== (selectedRow.decision?.dueDate || '')),
   );
+  useEffect(() => {
+    onDirtyChange?.(decisionDirty || scopeDirty);
+  }, [decisionDirty, scopeDirty, onDirtyChange]);
+  useEffect(() => () => onDirtyChange?.(false), [onDirtyChange]);
   function navigate(next: () => void, includeScope = false) {
     if (decisionDirty || (includeScope && scopeDirty)) setPendingNavigation(() => next);
     else next();

@@ -35,6 +35,7 @@ export function AccessReview({
   const [loading, setLoading] = useState(false),
     [error, setError] = useState(''),
     [view, setView] = useState('map');
+  const [campaignsVisited, setCampaignsVisited] = useState(false);
   const [decisions, setDecisions] = useState<Record<string, Decision>>({});
   const generation = useRef(0),
     baselineGeneration = useRef(0),
@@ -181,7 +182,10 @@ export function AccessReview({
               disabled={!snapshot && id !== 'campaigns' && id !== 'sql'}
               aria-pressed={view === id}
               className={view === id ? 'active' : ''}
-              onClick={() => setView(String(id))}
+              onClick={() => {
+                if (id === 'campaigns') setCampaignsVisited(true);
+                setView(String(id));
+              }}
             >
               {typeof Icon !== 'string' && <Icon size={17} />}
               <span>{String(label)}</span>
@@ -196,7 +200,11 @@ export function AccessReview({
             </p>
             <SqlEvidence snapshot={snapshot} />
           </div>
-          {view === 'campaigns' && <Campaigns onManageAccount={onManageAccount} />}
+          {campaignsVisited && (
+            <div hidden={view !== 'campaigns'}>
+              <Campaigns onManageAccount={onManageAccount} />
+            </div>
+          )}
           {!snapshot && view !== 'campaigns' && view !== 'sql' && !loading && (
             <p className="notice">
               Open Campaigns for saved work or SQL privileges for a namespace review, or capture
