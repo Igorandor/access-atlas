@@ -18,7 +18,7 @@ The access collector and strict snapshot schema are unchanged in purpose. See [a
 - Creation supplies the native task fields omitted from JSON Schema required declarations.
 - Empty/HTML 401 and 403 responses retain their status; failed native error envelopes cannot become successful writes.
 
-See [provenance](PROVENANCE.md) for the replaced foundation and retained validation material.
+See [source references](PROVENANCE.md) for API references and validation support.
 
 ## Retained reviews and write lifecycle
 

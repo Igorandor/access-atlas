@@ -164,7 +164,7 @@ Node.js gateway (Express)
 - `shared/access-model.ts`: pure graph traversal, finding rules and comparison.
 - `server/access-snapshot.ts`: bounded native configuration collector.
 - `shared/snapshot-schema.ts`: strict baseline import validation.
-- `src/pages/AccessReview.tsx`: review orchestration; `src/desk`: independent register, proposals and evidence reads.
+- `src/pages/AccessReview.tsx`: review orchestration; `src/desk`: configuration register, proposals and evidence reads.
 - `src/components`: product-specific evidence views and dialogs.
 - `shared/register.ts`: configuration register; `shared/schema.ts`: contract access.
 - `shared/iris-openapi.json`: unchanged upstream specification; `iris-contract.json`: generated request-only projection.
@@ -172,15 +172,11 @@ Node.js gateway (Express)
 - `iris/Atlas`: native extension, installer and harmless demo task.
 - `tests`: security boundaries and contract checks; `scripts`: reproducible live checks.
 
-There is no background AI service, analytics, paid API, cloud account requirement or simulated backend. See [architecture](docs/ARCHITECTURE.md) and [contest coverage](docs/CONTEST.md).
+See [architecture](docs/ARCHITECTURE.md) and [contest coverage](docs/CONTEST.md).
 
 ## License and attribution
 
 Original application code is MIT licensed. The InterSystems API specification is attributed separately in [THIRD_PARTY.md](THIRD_PARTY.md). InterSystems IRIS is a separately licensed product and is not covered by this repository's MIT license.
-
-## Independent project
-
-The earlier Harbor-derived application foundation has been replaced. Atlas now owns its administration workflow, gateway/session implementation, presentation components and native extension. Official API references, conventional build scaffolding and retained regression/native probes have their provenance documented in [PROVENANCE.md](docs/PROVENANCE.md). No sibling checkout or service is required. Git history remains intact.
 
 See [data views and limits](docs/DATA_VIEWS.md).
 
@@ -193,5 +189,3 @@ See [the original project idea](IDEA.md). The written walkthrough above is part 
 ## Author
 
 [Igor Podlewski on Developer Community](https://community.intersystems.com/user/igor-podlewski) · [GitHub](https://github.com/Igorandor)
-
-Development used AI assistance. See [provenance](docs/PROVENANCE.md) for implementation history and attribution.
