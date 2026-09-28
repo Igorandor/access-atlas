@@ -162,6 +162,7 @@ function clockHarness() {
   type Hooks = { slots: any[]; cursor: number; effects: Array<() => void> };
   const parent: Hooks = { slots: [], cursor: 0, effects: [] };
   const child: Hooks = { slots: [], cursor: 0, effects: [] };
+  const agenda: Hooks = { slots: [], cursor: 0, effects: [] };
   let active = parent;
   const hooks = {
     useState(initial: any) {
@@ -199,6 +200,8 @@ function clockHarness() {
   };
   const jsx = (type: any, props: any) => ({ type, props });
   const exports: any[] = [];
+  const textExports: Array<{ name: string; text: string }> = [];
+  let exportFailure = false;
   const modules: Record<string, any> = {
     react: hooks,
     'react/jsx-runtime': { jsx, jsxs: jsx },
@@ -211,6 +214,12 @@ function clockHarness() {
     '../../api': {
       download(_name: string, data: any) {
         exports.push(data);
+      },
+    },
+    '../access/AccessInquiry': {
+      saveText(name: string, text: string) {
+        if (exportFailure) throw new Error('Synthetic export unavailable.');
+        textExports.push({ name, text });
       },
     },
   };
@@ -230,7 +239,7 @@ function clockHarness() {
   }
   modules['./CampaignReport'] = load('CampaignReport.tsx');
   const detail = load('Campaigns.tsx', '\nexport { CampaignDetail };').CampaignDetail;
-  const campaign = fixture();
+  let campaign = fixture();
   campaign.certificationScope.dueDate = '2026-09-28';
   const walk = (node: any): any[] =>
     Array.isArray(node)
@@ -260,8 +269,17 @@ function clockHarness() {
         active = child;
         child.cursor = 0;
         reportNodes = walk(report.type(report.props));
+        const agendaNode = reportNodes.find((node) => node.type?.name === 'Agenda');
+        if (agendaNode) {
+          active = agenda;
+          agenda.cursor = 0;
+          const agendaNodes = walk(agendaNode.type(agendaNode.props));
+          const pagination = agendaNodes.find((node) => node.type?.name === 'Pagination');
+          reportNodes.push(...agendaNodes, ...walk(pagination.type(pagination.props)));
+        }
       }
-      for (const state of [parent, child]) while (state.effects.length) state.effects.shift()!();
+      for (const state of [parent, child, agenda])
+        while (state.effects.length) state.effects.shift()!();
     }
   }
   function click(label: string, nodes = reportNodes) {
@@ -286,6 +304,51 @@ function clockHarness() {
       click('Export report');
       click('Download report JSON');
     },
+    openAgenda() {
+      click('Follow-ups');
+    },
+    exportCsv() {
+      click('Export filtered agenda CSV');
+    },
+    filter(source: string, search = '', onlyOverdue = false) {
+      reportNodes
+        .find((node) => node.type === 'select')
+        .props.onChange({ target: { value: source } });
+      reportNodes
+        .find((node) => node.type === 'input' && node.props.type === 'search')
+        .props.onChange({ target: { value: search } });
+      reportNodes
+        .find((node) => node.type === 'input' && node.props.type === 'checkbox')
+        .props.onChange({ target: { checked: onlyOverdue } });
+      render();
+    },
+    revise(update: (value: Campaign) => void) {
+      campaign = structuredClone(campaign);
+      campaign.revision++;
+      update(campaign);
+      render();
+    },
+    nextPage() {
+      click('Next follow-ups');
+    },
+    page() {
+      return reportNodes.find((node) => node.type?.name === 'Pagination').props.page;
+    },
+    filters() {
+      return {
+        source: reportNodes.find((node) => node.type === 'select').props.value,
+        search: reportNodes.find((node) => node.type === 'input' && node.props.type === 'search')
+          .props.value,
+        overdue: reportNodes.find((node) => node.type === 'input' && node.props.type === 'checkbox')
+          .props.checked,
+      };
+    },
+    failExport(value: boolean) {
+      exportFailure = value;
+    },
+    error() {
+      return reportNodes.find((node) => typeof node.props?.error === 'string')?.props.error;
+    },
     counts() {
       const metric = parentNodes.find(
         (node) => node.type === 'span' && text(node).includes('overdue follow-ups'),
@@ -298,6 +361,7 @@ function clockHarness() {
       };
     },
     exports,
+    textExports,
   };
 }
 
@@ -326,4 +390,87 @@ test('exporting a fresh report updates the displayed report and header to its ti
   assert.equal(app.exports.length, 1);
   assert.equal(app.exports[0].counts.overdueFollowups, 1);
   assert.deepEqual(app.counts(), { header: 1, report: 1 });
+});
+
+test('agenda CSV evaluates overdue rows at click time and synchronizes the parent summary', () => {
+  const app = clockHarness();
+  app.openReport();
+  app.openAgenda();
+  app.filter('certification', 'alice', true);
+  app.exportCsv();
+  assert.equal(app.textExports[0].text.split('\r\n').length, 1, 'No overdue row before midnight');
+  app.nextDay();
+  app.exportCsv();
+  assert.match(app.textExports[1].text, /"certification","alice"/);
+  assert.match(app.textExports[1].text, /"2026-09-28","true"/);
+  assert.deepEqual(app.counts(), { header: 1, report: 1 });
+  assert.deepEqual(app.filters(), { source: 'certification', search: 'alice', overdue: true });
+});
+
+test('agenda CSV uses the latest saved certification, current filters and escaped note', () => {
+  const app = clockHarness();
+  app.openReport();
+  app.openAgenda();
+  app.nextDay();
+  const note = '=SUM(1,2)\n"Owner"';
+  app.revise((campaign) => {
+    campaign.certifications = [
+      {
+        kind: 'accounts',
+        name: 'alice',
+        captureId: 'capture',
+        outcome: 'exception',
+        note,
+        reviewedAt: '2026-09-29T00:00:00Z',
+        dueDate: '2026-09-28',
+      },
+    ];
+  });
+  app.filter('certification', 'owner', true);
+  app.exportCsv();
+  const csv = app.textExports[0].text;
+  assert.match(csv, /"certification","alice","Certify accounts","exception"/);
+  assert.match(csv, /"2026-09-28","true"/);
+  assert.ok(
+    csv.includes('"\'=SUM(1,2)\n""Owner"""'),
+    'Spreadsheet-neutralized quoted multiline note',
+  );
+  assert.ok(!csv.includes('"finding"'), 'Source filter excludes unrelated finding rows');
+  assert.deepEqual(app.filters(), { source: 'certification', search: 'owner', overdue: true });
+});
+
+test('agenda CSV exports all matching rows while preserving the selected page', () => {
+  const app = clockHarness();
+  app.revise((campaign) => {
+    campaign.captures[0].snapshot.users = Array.from({ length: 23 }, (_, i) => ({
+      Name: 'Account' + String(i + 1).padStart(2, '0'),
+      Enabled: true,
+      Roles: [],
+      EscalationRoles: [],
+    }));
+  });
+  app.openReport();
+  app.openAgenda();
+  app.filter('certification', 'account');
+  app.nextPage();
+  assert.equal(app.page(), 1);
+  app.nextDay();
+  app.exportCsv();
+  assert.equal(app.textExports[0].text.split('\r\n').length, 24);
+  assert.equal(app.page(), 1);
+  assert.deepEqual(app.filters(), { source: 'certification', search: 'account', overdue: false });
+});
+
+test('agenda export failure is visible and a successful explicit retry clears it', () => {
+  const app = clockHarness();
+  app.openReport();
+  app.openAgenda();
+  app.failExport(true);
+  assert.doesNotThrow(() => app.exportCsv());
+  assert.equal(app.error(), 'Synthetic export unavailable.');
+  assert.equal(app.textExports.length, 0);
+  app.failExport(false);
+  app.exportCsv();
+  assert.equal(app.error(), undefined);
+  assert.equal(app.textExports.length, 1);
 });

@@ -1,5 +1,11 @@
 # Verification record
 
+## Filtered follow-up CSV dates — September 28, 2026
+
+A report left open across UTC midnight could export an empty Overdue only CSV while a fresh JSON report from the same campaign revision contained the newly overdue follow-up. CSV now evaluates the current campaign at export time, applies the same source, text and overdue filters as the agenda, and refreshes the displayed date-based counts. All matching rows are exported, including later pages; the selected page and filters remain in place. Export failures are shown and an explicit retry can recover.
+
+Build and all 267 tests pass. Four new actual-component regressions cover midnight, updated campaign notes, filtering and CSV escaping, pagination and export failure/retry. Six browser checks passed with the actual report and domain model, a controlled UTC clock and synthetic records. Manual desktop and 390px checks confirmed the current note and overdue status with preserved filters; the phone document measured 390px client and scroll width. Payloads were captured in memory, without real downloads, API calls or native writes. Responsive browser coverage is not a physical-device test.
+
 ## Global navigation from review dialogs — September 28, 2026
 
 Opening a campaign report preview, using Ctrl+K and selecting Logs left a native modal open inside the hidden review workspace. The invisible modal made the new workspace inert; clicking Review did nothing. The retained review now suspends its dialogs when another workspace is selected. Nested boundaries combine their suspension state, so an active campaign cannot override a hidden parent. Returning restores the same preview and in-memory note without a save or native write. The tool finder also recognizes SQL and grant keywords.

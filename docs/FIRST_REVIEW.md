@@ -36,6 +36,8 @@ Switching to another object asks before discarding an edited decision. When you 
 
 Open **Report & follow-ups**. **Readiness** lists missing decisions and unresolved investigations. **Follow-ups** puts outstanding work and dates in one queue. **Open finding** or **Open certification** opens the corresponding review; **Back to follow-ups** keeps the report filters. Save your changes or explicitly discard the draft before returning. Under **Export report**, choose **Preview report** to check the selected sections and optional reviewer note. Close the preview, then download Markdown for a repository or printable HTML for offline review and PDF printing.
 
+For a focused work list, filter **Follow-ups** by source, text or **Overdue only**, then choose **Export filtered agenda CSV**. The export includes all matching rows, including later pages, and recalculates overdue dates for the current UTC day. The on-screen counts refresh at the same time. A follow-up date schedules review work; it does not expire a decision or revoke access.
+
 Inspect the [example report from the recorded walkthrough](examples/access-review.md), or download [its standalone HTML version](examples/access-review.html). It intentionally shows unfinished work. The example is a saved report, not a live demo or a security certification.
 
 ![A saved campaign still needs decisions before its review is complete](images/review-readiness.png)

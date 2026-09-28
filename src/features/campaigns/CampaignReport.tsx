@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Campaign } from '../../../shared/campaign';
 import {
   buildCampaignReport,
+  campaignAgenda,
   campaignReportHtml,
   campaignReportMarkdown,
   agendaCsv,
@@ -83,6 +84,17 @@ export function CampaignReport({
           'text/markdown;charset=utf-8',
         );
       else download('atlas-campaign-report.json', current);
+      setGeneratedAt(at);
+      setError('');
+    } catch (failure) {
+      setError((failure as Error).message);
+    }
+  }
+  function exportAgenda(matches: (item: AgendaItem) => boolean) {
+    try {
+      const at = new Date();
+      const current = campaignAgenda(campaign, at).filter(matches);
+      saveText('atlas-review-followups.csv', agendaCsv(current), 'text/csv;charset=utf-8');
       setGeneratedAt(at);
       setError('');
     } catch (failure) {
@@ -186,6 +198,7 @@ export function CampaignReport({
       {tab === 'agenda' && (
         <Agenda
           items={report.agenda}
+          onExport={exportAgenda}
           onReviewFinding={onReviewFinding}
           onReviewCertification={onReviewCertification}
         />
@@ -290,10 +303,12 @@ function ReportMetric({ value, label }: { value: string; label: string }) {
 
 function Agenda({
   items,
+  onExport,
   onReviewFinding,
   onReviewCertification,
 }: {
   items: AgendaItem[];
+  onExport: (matches: (item: AgendaItem) => boolean) => void;
   onReviewFinding?: (findingId: string) => void;
   onReviewCertification?: (subjectKey: string) => void;
 }) {
@@ -301,26 +316,17 @@ function Agenda({
   const [search, setSearch] = useState('');
   const [onlyOverdue, setOnlyOverdue] = useState(false);
   const [page, setPage] = useState(0);
-  const visible = items.filter(
-    (item) =>
-      (source === 'all' || item.source === source) &&
-      (!onlyOverdue || item.overdue) &&
-      (item.target + ' ' + item.title + ' ' + item.note)
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
+  const matches = (item: AgendaItem) =>
+    (source === 'all' || item.source === source) &&
+    (!onlyOverdue || item.overdue) &&
+    (item.target + ' ' + item.title + ' ' + item.note).toLowerCase().includes(search.toLowerCase());
+  const visible = items.filter(matches);
   const activePage = Math.min(page, Math.max(0, Math.ceil(visible.length / 20) - 1));
   return (
     <section className="panel padded report-agenda">
       <div className="section-heading">
         <h4>Follow-up agenda</h4>
-        <button
-          onClick={() =>
-            saveText('atlas-review-followups.csv', agendaCsv(visible), 'text/csv;charset=utf-8')
-          }
-        >
-          Export filtered agenda CSV
-        </button>
+        <button onClick={() => onExport(matches)}>Export filtered agenda CSV</button>
       </div>
       <div className="report-filters">
         <label className="field">
