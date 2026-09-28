@@ -1,5 +1,11 @@
 # Verification record
 
+## Narrow HTML report tables — September 28, 2026
+
+Release 1.1.8 gives wide standalone HTML report tables a minimum readable column width on screens up to600px. Each wide table has a named focusable scrolling region and a narrow-screen hint. Three-column review status, desktop widths, print width rules, report values and CSP remain unchanged.
+
+Build and25 existing report/domain regressions pass. Root browser checks used a full synthetic report with all five wide sections populated. At390px, the document stayed375px wide with its scrollbar; the agenda region was343px wide and its822px table scrolled from0 to478px using arrow keys, exposing the final note column. On desktop all five regions measured1100px client/scroll width and no scroll hint was displayed. The screenshot check confirmed readable notes and intact headings. No native or stored data was changed; physical-device and printer behavior were not exercised.
+
 ## Historical decision evidence — September 28, 2026
 
 Release 1.1.7 makes the saved reason, follow-up date, review time and capture identifier visible for historical certification and finding decisions. Both activity views use an expandable evidence display. The selected report activity section includes those historical facts in JSON, Markdown and HTML without replacing them with current decisions or exporting the internal finding fingerprint. Excluding activity also excludes its saved decision details. Existing records without snapshots remain readable without invented evidence.

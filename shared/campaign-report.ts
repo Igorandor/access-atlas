@@ -361,9 +361,15 @@ function escapeHtml(value: unknown) {
       ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]!,
   );
 }
-function table(headers: string[], rows: unknown[][]) {
+function table(headers: string[], rows: unknown[][], label: string) {
+  const wide = headers.length > 3;
   return (
-    '<div class="table-wrap"><table><thead><tr>' +
+    (wide ? '<p class="table-scroll-hint">Scroll horizontally to see all columns.</p>' : '') +
+    '<div class="table-wrap' +
+    (wide ? ' wide-table' : '') +
+    '"' +
+    (wide ? ' tabindex="0" role="region" aria-label="' + escapeHtml(label) + '"' : '') +
+    '><table><thead><tr>' +
     headers.map((header) => '<th>' + escapeHtml(header) + '</th>').join('') +
     '</tr></thead><tbody>' +
     rows
@@ -414,6 +420,7 @@ export function campaignReportHtml(report: CampaignReport): string {
         item.satisfied ? 'Satisfied' : 'Needs attention',
         item.detail,
       ]),
+      'Review status',
     ),
   );
   sections.push(
@@ -428,6 +435,7 @@ export function campaignReportHtml(report: CampaignReport): string {
         item.nextStep,
         item.note,
       ]),
+      'Follow-up agenda',
     ),
   );
   if (report.findings)
@@ -443,6 +451,7 @@ export function campaignReportHtml(report: CampaignReport): string {
           row.decision?.dueDate || '',
           row.decision?.note || row.finding.detail,
         ]),
+        'Finding decisions',
       ),
     );
   if (report.certifications)
@@ -459,6 +468,7 @@ export function campaignReportHtml(report: CampaignReport): string {
           row.decision?.note || '',
           row.subject.unknown.join(' | '),
         ]),
+        'Object certification',
       ),
     );
   if (report.remediations)
@@ -475,6 +485,7 @@ export function campaignReportHtml(report: CampaignReport): string {
           item.message,
           item.reconciliation || '',
         ]),
+        'Remediation receipts',
       ),
     );
   if (report.timeline)
@@ -492,6 +503,7 @@ export function campaignReportHtml(report: CampaignReport): string {
           item.applications,
           item.findings,
         ]),
+        'Capture timeline',
       ),
     );
   if (report.activity)
@@ -530,7 +542,7 @@ export function campaignReportHtml(report: CampaignReport): string {
     escapeHtml(report.campaign.title) +
     ' — Access Atlas</title><style>' +
     'body{font:15px/1.55 system-ui,sans-serif;color:#182437;background:#fff;max-width:1100px;margin:2rem auto;padding:0 1rem}h1{font-size:2rem}h2{margin-top:2rem;border-bottom:2px solid #d9dfe7;padding-bottom:.4rem}h1,h2,p,li,td,dd,footer{overflow-wrap:anywhere}dl{display:grid;grid-template-columns:160px minmax(0,1fr);gap:.4rem}dt{font-weight:600}dd{margin:0}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:.5rem;border:1px solid #d9dfe7;text-align:left;vertical-align:top;white-space:pre-wrap}th{background:#f3f5f8}.table-wrap{overflow-x:auto}.note{white-space:pre-wrap;padding:1rem;background:#f3f5f8}footer{margin:2rem 0;color:#516075}@media screen and (max-width:600px){dl{grid-template-columns:minmax(0,1fr)}dd{margin-bottom:.6rem}h1{font-size:1.6rem}}@media print{body{max-width:none;font-size:11px;margin:0}table{font-size:9px}h2{break-after:avoid}tr{break-inside:avoid}.table-wrap{overflow:visible}thead{display:table-header-group}}' +
-    '.activity-event{border-bottom:1px solid #d9dfe7;padding:.8rem 0}.activity-event h3{margin:.3rem 0;overflow-wrap:anywhere}.activity-event h4{margin:.8rem 0 .4rem}.activity-event p{margin:.4rem 0}.activity-event dd{white-space:pre-wrap}' +
+    '.activity-event{border-bottom:1px solid #d9dfe7;padding:.8rem 0}.activity-event h3{margin:.3rem 0;overflow-wrap:anywhere}.activity-event h4{margin:.8rem 0 .4rem}.activity-event p{margin:.4rem 0}.activity-event dd{white-space:pre-wrap}.table-scroll-hint{display:none}.wide-table:focus-visible{outline:2px solid #385d94;outline-offset:2px}@media screen and (max-width:600px){.wide-table table{min-width:48rem}.wide-table th,.wide-table td{min-width:7.5rem}.table-scroll-hint{display:block;font-size:.85rem;color:#516075}}' +
     '</style></head><body><h1>' +
     escapeHtml(report.campaign.title) +
     '</h1><p>' +
