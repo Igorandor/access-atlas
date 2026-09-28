@@ -3,6 +3,13 @@
   gap: 1rem;
   min-width: 0;
 }
+.report-preview-frame {
+  display: block;
+  width: 100%;
+  height: 65vh;
+  border: 1px solid var(--line);
+  background: white;
+}
 .report-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

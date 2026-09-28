@@ -9,7 +9,7 @@ import {
   type CampaignReport as Report,
   type AgendaItem,
 } from '../../../shared/campaign-report';
-import { Badge, ErrorBox } from '../../components/ui';
+import { Badge, ErrorBox, Modal } from '../../components/ui';
 import { download } from '../../api';
 import { saveText } from '../access/AccessInquiry';
 import './report.css';
@@ -47,16 +47,18 @@ export function CampaignReport({ campaign }: { campaign: Campaign }) {
   const [include, setInclude] = useState<ReportSection[]>(sections.map((section) => section.id));
   const [tab, setTab] = useState('overview');
   const [error, setError] = useState('');
+  const [preview, setPreview] = useState('');
   const [generatedAt, setGeneratedAt] = useState(() => new Date());
   const report = useMemo(
     () => buildCampaignReport(campaign, { authorNote: note, include }, generatedAt),
     [campaign, note, include, generatedAt],
   );
   const attention = report.readiness.filter((item) => !item.satisfied);
-  function exportReport(format: 'html' | 'json' | 'md') {
+  function exportReport(format: 'preview' | 'html' | 'json' | 'md') {
     try {
       const current = buildCampaignReport(campaign, { authorNote: note, include }, new Date());
-      if (format === 'html')
+      if (format === 'preview') setPreview(campaignReportHtml(current));
+      else if (format === 'html')
         saveText(
           'atlas-campaign-report.html',
           campaignReportHtml(current),
@@ -220,13 +222,14 @@ export function CampaignReport({ campaign }: { campaign: Campaign }) {
             />
           </label>
           <p className="muted">
-            This note is included only in downloaded reports. It is not saved as a campaign
+            This note is included in the report preview and downloads. It is not saved as a campaign
             decision.
           </p>
           <div className="inquiry-actions">
-            <button className="primary" onClick={() => exportReport('html')}>
-              Download printable HTML
+            <button className="primary" onClick={() => exportReport('preview')}>
+              Preview report
             </button>
+            <button onClick={() => exportReport('html')}>Download printable HTML</button>
             <button onClick={() => exportReport('md')}>Download Markdown</button>
             <button onClick={() => exportReport('json')}>Download report JSON</button>
           </div>
@@ -242,6 +245,16 @@ export function CampaignReport({ campaign }: { campaign: Campaign }) {
           </ul>
           <p>Campaign identity, readiness, follow-up agenda and limitations are always included.</p>
         </section>
+      )}
+      {preview && (
+        <Modal title="Review report preview" onClose={() => setPreview('')} wide>
+          <iframe
+            title="Review report content"
+            className="report-preview-frame"
+            sandbox=""
+            srcDoc={preview}
+          />
+        </Modal>
       )}
     </section>
   );

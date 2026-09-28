@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react';
+import { lazy, useEffect, useRef, useState, type FormEvent } from 'react';
 import {
   Activity,
   BookOpen,
@@ -10,11 +10,18 @@ import {
   Workflow,
 } from 'lucide-react';
 import { AtlasShell } from './layout/AtlasShell';
-import { AccessReview } from './pages/AccessReview';
-import { ConfigurationDesk } from './desk/ConfigurationDesk';
-import { ReadDesk } from './desk/ReadDesk';
 import { request } from './api';
 import { ErrorBox, Loading, Modal } from './components/ui';
+import { DeferredWorkspace } from './components/DeferredWorkspace';
+const AccessReview = lazy(() =>
+  import('./pages/AccessReview').then((module) => ({ default: module.AccessReview })),
+);
+const ConfigurationDesk = lazy(() =>
+  import('./desk/ConfigurationDesk').then((module) => ({ default: module.ConfigurationDesk })),
+);
+const ReadDesk = lazy(() =>
+  import('./desk/ReadDesk').then((module) => ({ default: module.ReadDesk })),
+);
 const ApiWorkbench = lazy(() =>
   import('./desk/ApiWorkbench').then((module) => ({ default: module.ApiWorkbench })),
 );
@@ -159,32 +166,38 @@ export default function App() {
       >
         {error && <ErrorBox error={error} retry={() => void logout()} />}
         <div hidden={page !== 'atlas'}>
-          <AccessReview navigate={navigate} onManageAccount={inspectAccount} />
+          <DeferredWorkspace>
+            <AccessReview navigate={navigate} onManageAccount={inspectAccount} />
+          </DeferredWorkspace>
         </div>
         {['permissions', 'apps', 'security', 'tasks', 'system'].includes(page) && (
           <>
             {page === 'permissions' && accountTarget && (
               <button onClick={() => navigate('atlas')}>Back to access review</button>
             )}
-            <ConfigurationDesk
-              key={page}
-              section={page}
-              username={account.info.username}
-              initialAccount={page === 'permissions' ? accountTarget : undefined}
-            />
+            <DeferredWorkspace>
+              <ConfigurationDesk
+                key={page}
+                section={page}
+                username={account.info.username}
+                initialAccount={page === 'permissions' ? accountTarget : undefined}
+              />
+            </DeferredWorkspace>
           </>
         )}
         {['overview', 'logs', 'explorer'].includes(page) &&
           (page === 'explorer' ? (
-            <Suspense fallback={<Loading />}>
+            <DeferredWorkspace>
               <ApiWorkbench />
-            </Suspense>
+            </DeferredWorkspace>
           ) : page === 'logs' ? (
-            <Suspense fallback={<Loading />}>
+            <DeferredWorkspace>
               <LogReview />
-            </Suspense>
+            </DeferredWorkspace>
           ) : (
-            <ReadDesk key={page} kind="overview" />
+            <DeferredWorkspace>
+              <ReadDesk key={page} kind="overview" />
+            </DeferredWorkspace>
           ))}
       </AtlasShell>
       {switcher && <ToolFinder navigate={navigate} onClose={() => showSwitcher(false)} />}

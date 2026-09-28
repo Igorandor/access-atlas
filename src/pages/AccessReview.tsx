@@ -14,6 +14,7 @@ import {
 import { request, download } from '../api';
 import { Badge, ErrorBox, Loading, PageHeader } from '../components/ui';
 import { findings, type AccessSnapshot } from '../../shared/access-model';
+import { parseSnapshot } from '../../shared/snapshot-schema';
 
 import { AccessMap } from '../features/access/AccessMap';
 import { ResourceMatrix } from '../features/access/ResourceMatrix';
@@ -65,7 +66,6 @@ export function AccessReview({
     const id = ++baselineGeneration.current;
     try {
       if (input.size > 2_000_000) throw new Error('Snapshot files are limited to 2 MB.');
-      const { parseSnapshot } = await import('../../shared/snapshot-schema');
       const contents = await input.text();
       if (id !== baselineGeneration.current) return;
       const parsed = parseSnapshot(JSON.parse(contents));

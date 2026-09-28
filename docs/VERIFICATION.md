@@ -1,5 +1,15 @@
 # Verification record
 
+## Report preview and initial loading — September 28, 2026
+
+Reports can now be previewed before export. The preview uses the same escaped standalone HTML renderer as downloads inside an empty-sandbox iframe (no scripts, origin access, forms or navigation permissions). Closing the dialog restores focus to Preview report. Metadata becomes a single column on narrow screens so timestamps do not widen the report.
+
+Browser checks passed on the production build with a retained native capture: desktop report content and close/focus behavior, and a 390px same-origin application frame with document width/scroll width390/390 and dialog355/355. The report's own opaque sandbox remained enabled. This is responsive-layout verification, not a physical-device test. The18 report/review regressions include hostile notes and scope escaping; the complete build and218 tests passed again after the changes.
+
+The main client entry decreased from744.27kB to240.26kB (approximately68%, uncompressed build output) by deferring the review and administration workspaces. Their code still downloads when opened. A rejected lazy-module fixture displayed a recoverable error with Reload application, rather than an empty application. This measures generated assets, not a claimed network or interaction benchmark.
+
+The first-review guide and example HTML/Markdown report use bundled IRIS accounts and explicitly show unfinished work. They contain no credentials. The report is an example, not a security certification.
+
 ## Review form navigation — September 28, 2026
 
 Opening a finding decision or account certification now focuses its heading and brings the form into view. Previously the form appeared below the full results list, often outside the viewport. Reopening the selected item preserves its draft. Current saved decisions display their outcome, timestamp and follow-up date beside the form; stale decisions are not labelled current. Native writes and campaign authorization are unchanged.
@@ -101,7 +111,7 @@ Installation failure paths were tested in separate native sessions: both a faili
 
 ## Limits and retained evidence
 
-IRIS for Health and a complete external identity-provider authorization flow were not tested. Host observations are not container quotas. The earlier volume-replacement persistence checks remain historical evidence; the current native image build did not delete or replace the live data volumes. No public GitHub/Open Exchange publication or contest submission was performed.
+IRIS for Health and a complete external identity-provider authorization flow were not tested. Host observations are not container quotas. The earlier volume-replacement persistence checks remain historical evidence; the current native image build did not delete or replace the live data volumes. This historical test round preceded publication. The repositories and Open Exchange submissions were subsequently published; see the README links.
 
 See PROVENANCE.md, CONTEST_SECURITY_REVIEW.md and DEPLOYMENT.md for origins, boundaries and deployment prerequisites. Test resources are temporary and cleaned up by the native scripts.
 
