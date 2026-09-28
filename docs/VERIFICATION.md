@@ -1,5 +1,11 @@
 # Verification record
 
+## Historical decision evidence — September 28, 2026
+
+Release 1.1.7 makes the saved reason, follow-up date, review time and capture identifier visible for historical certification and finding decisions. Both activity views use an expandable evidence display. The selected report activity section includes those historical facts in JSON, Markdown and HTML without replacing them with current decisions or exporting the internal finding fingerprint. Excluding activity also excludes its saved decision details. Existing records without snapshots remain readable without invented evidence.
+
+The build and 273 tests pass, including six new regressions for historical/current separation, section selection, HTML/Markdown escaping, absent evidence, the 1000-entry bound and the actual shared React component. After final text/layout adjustments, build and the six focused regressions passed again. Desktop browser checks opened both certification revisions with distinct reasons/dates. At390px, report Activity exposed the original saved decision with no document overflow (390px client/scroll width). Manual review found the first HTML activity table too cramped on a phone; it was replaced with responsive revision sections and rechecked. The exported report frame had375px client/scroll width inside the390px frame due to its scrollbar. All fixtures used synthetic validated records with no native or durable writes. These responsive checks are not physical-device or printer coverage.
+
 ## Filtered follow-up CSV dates — September 28, 2026
 
 A report left open across UTC midnight could export an empty Overdue only CSV while a fresh JSON report from the same campaign revision contained the newly overdue follow-up. CSV now evaluates the current campaign at export time, applies the same source, text and overdue filters as the agenda, and refreshes the displayed date-based counts. All matching rows are exported, including later pages; the selected page and filters remain in place. Export failures are shown and an explicit retry can recover.

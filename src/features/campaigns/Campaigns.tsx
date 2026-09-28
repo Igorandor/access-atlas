@@ -10,6 +10,7 @@ import { AnalysisTools } from '../access/AnalysisTools';
 import { PolicyReview } from '../access/PolicyReview';
 import { RemediationPanel } from './RemediationPanel';
 import { CertificationReview } from './CertificationReview';
+import { SavedReviewEvidence } from './SavedReviewEvidence';
 import { CampaignReport } from './CampaignReport';
 import { NextPeriod } from './NextPeriod';
 import type { NextPeriod as PeriodInput } from '../../../shared/campaign-period';
@@ -758,19 +759,7 @@ function CampaignDetail({
                   Revision {event.revision} · {new Date(event.at).toLocaleString()} · {event.actor}
                 </span>
                 <p>{event.detail}</p>
-                {event.decision && (
-                  <details>
-                    <summary>Saved decision</summary>
-                    <p>
-                      {event.decision.outcome} · {event.decision.note}
-                    </p>
-                    <p>
-                      {event.decision.dueDate
-                        ? 'Follow up by ' + event.decision.dueDate
-                        : 'No follow-up date'}
-                    </p>
-                  </details>
-                )}
+                <SavedReviewEvidence event={event} />
                 {event.dutyRules && (
                   <details>
                     <summary>Saved duty rules ({event.dutyRules.length})</summary>

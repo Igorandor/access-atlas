@@ -22,6 +22,35 @@ export type CampaignReportOptions = {
   authorNote: string;
   include: ReportSection[];
 };
+export type CampaignActivity = Pick<
+  Campaign['history'][number],
+  'revision' | 'at' | 'actor' | 'action' | 'detail' | 'certification'
+> & {
+  decision?: Pick<
+    Campaign['decisions'][number],
+    'findingId' | 'outcome' | 'note' | 'dueDate' | 'captureId' | 'reviewedAt'
+  >;
+};
+
+export function campaignActivityEvidence(
+  event: Pick<CampaignActivity, 'decision' | 'certification'>,
+) {
+  const saved = event.certification ?? event.decision;
+  if (!saved) return undefined;
+  return {
+    title: event.certification ? 'Saved certification decision' : 'Saved finding decision',
+    facts: [
+      event.certification
+        ? ['Object', event.certification.kind + ': ' + event.certification.name]
+        : ['Finding', event.decision!.findingId],
+      ['Outcome', saved.outcome],
+      ['Reason', saved.note],
+      ['Follow-up date', saved.dueDate || 'No follow-up date'],
+      ['Reviewed at', saved.reviewedAt],
+      ['Capture ID', saved.captureId],
+    ] as Array<[string, string]>,
+  };
+}
 export type CampaignReport = {
   format: 'atlas-campaign-report-1';
   generatedAt: string;
@@ -57,9 +86,7 @@ export type CampaignReport = {
   certifications?: ReturnType<typeof certificationCoverage>['rows'];
   remediations?: Campaign['remediations'];
   timeline?: ReturnType<typeof captureTimeline>;
-  activity?: Array<
-    Pick<Campaign['history'][number], 'revision' | 'at' | 'actor' | 'action' | 'detail'>
-  >;
+  activity?: CampaignActivity[];
 };
 
 const terminalCertification = new Set(['retain', 'exception']);
@@ -300,13 +327,28 @@ export function buildCampaignReport(
     ...(include.has('timeline') ? { timeline: captureTimeline(campaign.captures) } : {}),
     ...(include.has('activity')
       ? {
-          activity: campaign.history.map(({ revision, at, actor, action, detail }) => ({
-            revision,
-            at,
-            actor,
-            action,
-            detail,
-          })),
+          activity: campaign.history.map(
+            ({ revision, at, actor, action, detail, certification, decision }) => ({
+              revision,
+              at,
+              actor,
+              action,
+              detail,
+              ...(certification ? { certification: { ...certification } } : {}),
+              ...(decision
+                ? {
+                    decision: {
+                      findingId: decision.findingId,
+                      outcome: decision.outcome,
+                      note: decision.note,
+                      reviewedAt: decision.reviewedAt,
+                      captureId: decision.captureId,
+                      ...(decision.dueDate ? { dueDate: decision.dueDate } : {}),
+                    },
+                  }
+                : {}),
+            }),
+          ),
         }
       : {}),
   };
@@ -455,22 +497,40 @@ export function campaignReportHtml(report: CampaignReport): string {
   if (report.activity)
     sections.push(
       heading('Activity'),
-      table(
-        ['Revision', 'At', 'Actor', 'Action', 'Detail'],
-        report.activity.map((item) => [
-          item.revision,
-          item.at,
-          item.actor,
-          item.action,
-          item.detail,
-        ]),
-      ),
+      '<p>Saved decisions are shown as recorded at each revision.</p>',
+      report.activity
+        .map((item) => {
+          const evidence = campaignActivityEvidence(item);
+          return (
+            '<section class="activity-event"><h3>' +
+            escapeHtml('Revision ' + item.revision + ' · ' + item.action) +
+            '</h3><p>' +
+            escapeHtml(item.at + ' · ' + item.actor) +
+            '</p>' +
+            (item.detail ? '<p>' + escapeHtml(item.detail) + '</p>' : '') +
+            (evidence
+              ? '<h4>' +
+                escapeHtml(evidence.title) +
+                '</h4><dl>' +
+                evidence.facts
+                  .map(
+                    ([label, value]) =>
+                      '<dt>' + escapeHtml(label) + '</dt><dd>' + escapeHtml(value) + '</dd>',
+                  )
+                  .join('') +
+                '</dl>'
+              : '') +
+            '</section>'
+          );
+        })
+        .join(''),
     );
   return (
     '<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src \'none\'; style-src \'unsafe-inline\'; base-uri \'none\'; form-action \'none\'"><title>' +
     escapeHtml(report.campaign.title) +
     ' — Access Atlas</title><style>' +
     'body{font:15px/1.55 system-ui,sans-serif;color:#182437;background:#fff;max-width:1100px;margin:2rem auto;padding:0 1rem}h1{font-size:2rem}h2{margin-top:2rem;border-bottom:2px solid #d9dfe7;padding-bottom:.4rem}h1,h2,p,li,td,dd,footer{overflow-wrap:anywhere}dl{display:grid;grid-template-columns:160px minmax(0,1fr);gap:.4rem}dt{font-weight:600}dd{margin:0}table{border-collapse:collapse;width:100%;font-size:12px}th,td{padding:.5rem;border:1px solid #d9dfe7;text-align:left;vertical-align:top;white-space:pre-wrap}th{background:#f3f5f8}.table-wrap{overflow-x:auto}.note{white-space:pre-wrap;padding:1rem;background:#f3f5f8}footer{margin:2rem 0;color:#516075}@media screen and (max-width:600px){dl{grid-template-columns:minmax(0,1fr)}dd{margin-bottom:.6rem}h1{font-size:1.6rem}}@media print{body{max-width:none;font-size:11px;margin:0}table{font-size:9px}h2{break-after:avoid}tr{break-inside:avoid}.table-wrap{overflow:visible}thead{display:table-header-group}}' +
+    '.activity-event{border-bottom:1px solid #d9dfe7;padding:.8rem 0}.activity-event h3{margin:.3rem 0;overflow-wrap:anywhere}.activity-event h4{margin:.8rem 0 .4rem}.activity-event p{margin:.4rem 0}.activity-event dd{white-space:pre-wrap}' +
     '</style></head><body><h1>' +
     escapeHtml(report.campaign.title) +
     '</h1><p>' +
@@ -621,14 +681,22 @@ export function campaignReportMarkdown(report: CampaignReport) {
     lines.push('');
   }
   if (report.activity) {
-    lines.push('## Activity', '');
-    for (const row of report.activity)
+    lines.push('## Activity', '', 'Saved decisions are shown as recorded at each revision.', '');
+    for (const row of report.activity) {
       lines.push(
         '- ' +
           literal(
             `Revision ${row.revision} · ${row.at} · ${row.actor} · ${row.action}: ${row.detail}`,
           ),
       );
+      const evidence = campaignActivityEvidence(row);
+      if (evidence) {
+        lines.push('', '  ' + evidence.title + ':', '');
+        for (const [label, value] of evidence.facts)
+          lines.push('  - ' + label + ': ' + literal(value));
+        lines.push('');
+      }
+    }
     lines.push('');
   }
   lines.push(

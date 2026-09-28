@@ -13,6 +13,7 @@ import {
 import { Badge, ErrorBox, Modal } from '../../components/ui';
 import { download } from '../../api';
 import { saveText } from '../access/AccessInquiry';
+import { SavedReviewEvidence } from './SavedReviewEvidence';
 import './report.css';
 
 const sections: Array<{ id: ReportSection; title: string; description: string }> = [
@@ -39,7 +40,7 @@ const sections: Array<{ id: ReportSection; title: string; description: string }>
   {
     id: 'activity',
     title: 'Campaign activity',
-    description: 'Saved revisions, actors and actions.',
+    description: 'Saved revisions, actors, actions and historical decision reasons.',
   },
 ];
 
@@ -717,17 +718,7 @@ function ReportActivity({ campaign }: { campaign: Campaign }) {
               </span>
             </div>
             <p>{event.detail}</p>
-            {event.certification && (
-              <p>
-                Certification: {event.certification.kind} {event.certification.name} ·{' '}
-                {event.certification.outcome}
-              </p>
-            )}
-            {event.decision && (
-              <p>
-                Finding: {event.decision.findingId} · {event.decision.outcome}
-              </p>
-            )}
+            <SavedReviewEvidence event={event} />
           </li>
         ))}
       </ol>

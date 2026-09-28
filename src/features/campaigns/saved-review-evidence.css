@@ -1,0 +1,20 @@
+.saved-review-evidence dl > div {
+  display: grid;
+  grid-template-columns: minmax(90px, 130px) minmax(0, 1fr);
+  gap: 8px;
+  margin: 8px 0;
+}
+.saved-review-evidence dt {
+  color: var(--muted);
+}
+.saved-review-evidence dd {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .saved-review-evidence dl > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 2px;
+  }
+}
