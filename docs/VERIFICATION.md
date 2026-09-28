@@ -136,7 +136,7 @@ September 27 browser checks on the real rebuilt gateway verified Explain access 
 
 ## Historical independent release checkpoint
 
-Verified September 26, 2026 on disposable IRIS Community 2026.2 build 221U. This record describes the current independent implementation; earlier review documents describe earlier revisions.
+Verified September 26, 2026 on disposable IRIS Community 2026.2 build 221U. Each dated entry records the version and checks available at that time.
 
 | Check                    | Current result                                                                                                          |
 | ------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
