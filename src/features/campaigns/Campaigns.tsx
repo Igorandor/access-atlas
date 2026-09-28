@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { request, download } from '../../api';
+import { request, download, RequestError } from '../../api';
 import { refreshEvidence } from '../../saved-evidence';
-import { ErrorBox, Loading, Badge, Modal } from '../../components/ui';
+import { ErrorBox, Loading, Badge, Modal, ModalBoundary } from '../../components/ui';
 import { DriftReview, CaptureTrend } from '../access/DriftReview';
 import { AccessMap } from '../access/AccessMap';
 import { ResourceMatrix } from '../access/ResourceMatrix';
@@ -32,8 +32,85 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
   const [filter, setFilter] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const sequence = useRef(0);
+  const [accessCheckId, setAccessCheckId] = useState<string>();
   const [draftDirty, setDraftDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<() => void>();
+  function clearDeniedWorkspace() {
+    setCampaigns([]);
+    setCurrent(undefined);
+    setPendingNavigation(undefined);
+    setDraftDirty(false);
+    setAccessCheckId(undefined);
+  }
+  async function refreshListAfterSave(token: number) {
+    try {
+      const result = await request<CampaignSummary[]>('campaigns');
+      if (token === sequence.current) setCampaigns(result);
+    } catch (failure) {
+      if (token !== sequence.current) return;
+      if (failure instanceof RequestError && failure.status === 403) clearDeniedWorkspace();
+      setError(
+        'Change saved, but the campaign list could not be refreshed. Do not repeat the change. ' +
+          (failure as Error).message,
+      );
+    }
+  }
+  async function revalidateRefusal(
+    failure: unknown,
+    id: string | undefined,
+    token: number,
+    showRefusal = true,
+  ) {
+    if (
+      !(failure instanceof RequestError && failure.status === 403) ||
+      !id ||
+      token !== sequence.current
+    )
+      return;
+    setAccessCheckId(id);
+    setPendingNavigation(undefined);
+    if (showRefusal) setError(failure.message);
+    try {
+      const record = await request<Campaign>('campaigns/' + id);
+      if (token !== sequence.current) return;
+      // A newer revision remounts finding editors. Revalidation must not erase
+      // their unsaved decisions; ordinary guarded reload owns that transition.
+      if (!draftDirty) setCurrent((previous) => (previous?.id === id ? record : previous));
+      else if (current?.id === id && record.revision !== current.revision)
+        setError(
+          (showRefusal ? failure.message + ' ' : '') +
+            'The saved campaign changed. Reload before retrying; your unsaved edits are still here.',
+        );
+      setAccessCheckId((previous) => (previous === id ? undefined : previous));
+    } catch (readFailure) {
+      if (token !== sequence.current) return;
+      if (readFailure instanceof RequestError && [403, 404].includes(readFailure.status)) {
+        clearDeniedWorkspace();
+        setError(readFailure.message);
+      } else {
+        setError(
+          'The change was refused. Could not confirm current campaign access: ' +
+            (readFailure as Error).message,
+        );
+      }
+    }
+  }
+  async function retryAccess() {
+    if (!current) return;
+    const token = ++sequence.current;
+    setPending(true);
+    setError('');
+    try {
+      await revalidateRefusal(
+        new RequestError('Checking current campaign access.', 403),
+        current.id,
+        token,
+        false,
+      );
+    } finally {
+      if (token === sequence.current) setPending(false);
+    }
+  }
   function replaceCampaign(next: () => void) {
     if (draftDirty) setPendingNavigation(() => next);
     else next();
@@ -45,8 +122,11 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     try {
       await refreshEvidence<CampaignSummary[]>('campaigns', {
         current: () => token === sequence.current,
-        received: setCampaigns,
-        refused: () => setCampaigns([]),
+        received: (value) => {
+          setCampaigns(value);
+          setAccessCheckId(undefined);
+        },
+        refused: clearDeniedWorkspace,
         failed: setError,
       });
     } finally {
@@ -66,7 +146,10 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     try {
       await refreshEvidence<Campaign>('campaigns/' + id, {
         current: () => token === sequence.current,
-        received: setCurrent,
+        received: (value) => {
+          setCurrent(value);
+          setAccessCheckId((previous) => (previous === id ? undefined : previous));
+        },
         refused: () => {
           setCurrent((previous) => (previous?.id === id ? undefined : previous));
           setCampaigns((previous) => previous.filter((campaign) => campaign.id !== id));
@@ -78,18 +161,24 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     }
   }
   async function create() {
+    const token = ++sequence.current;
     setPending(true);
     setError('');
+    let applied = false;
     try {
       const result = await request<Campaign>('campaigns', { title, description });
+      if (token !== sequence.current) return;
+      applied = true;
       setCurrent(result);
       setTitle('');
       setDescription('');
-      setCampaigns(await request('campaigns'));
+      await refreshListAfterSave(token);
     } catch (failure) {
+      if (token !== sequence.current) return;
       setError((failure as Error).message);
+      if (!applied) await revalidateRefusal(failure, current?.id, token);
     } finally {
-      setPending(false);
+      if (token === sequence.current) setPending(false);
     }
   }
   async function change(
@@ -98,6 +187,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     onRefused?: (message: string) => void,
   ) {
     if (!current) return;
+    const token = ++sequence.current;
     setPending(true);
     setError('');
     let applied = false;
@@ -106,14 +196,17 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
         ...input,
         revision: expectedRevision ?? current.revision,
       });
+      if (token !== sequence.current) return;
       applied = true;
       setCurrent(result);
-      setCampaigns(await request('campaigns'));
+      await refreshListAfterSave(token);
     } catch (failure) {
+      if (token !== sequence.current) return;
       if (!applied && onRefused) onRefused((failure as Error).message);
       else setError((failure as Error).message);
+      if (!applied) await revalidateRefusal(failure, current.id, token);
     } finally {
-      setPending(false);
+      if (token === sequence.current) setPending(false);
     }
   }
   const visible = campaigns.filter(
@@ -123,21 +216,29 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
   );
   async function remediation(action: string, payload: Record<string, unknown>) {
     if (!current) throw new Error('Select a campaign first.');
+    const token = ++sequence.current;
     setPending(true);
     setError('');
+    let applied = false;
     try {
       const result = await request<any>('campaigns/' + current.id + '/' + action, {
         ...payload,
         revision: current.revision,
       });
+      if (token !== sequence.current)
+        throw new Error('The campaign view changed before the response arrived.');
+      applied = true;
       setCurrent(result.campaign);
-      setCampaigns(await request('campaigns'));
+      await refreshListAfterSave(token);
       return result;
     } catch (failure) {
-      setError((failure as Error).message);
+      if (token === sequence.current) {
+        setError((failure as Error).message);
+        if (!applied) await revalidateRefusal(failure, current.id, token);
+      }
       throw failure;
     } finally {
-      setPending(false);
+      if (token === sequence.current) setPending(false);
     }
   }
   async function nextPeriod(input: PeriodInput, discardConfirmed = false) {
@@ -148,17 +249,24 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       return;
     }
     if (!current) throw new Error('Choose a campaign first.');
+    const token = ++sequence.current;
     setPending(true);
     setError('');
+    let applied = false;
     try {
       const created = await request<Campaign>('campaigns/' + current.id + '/next-period', input);
+      if (token !== sequence.current) return;
+      applied = true;
       setCurrent(created);
-      setCampaigns(await request('campaigns'));
+      await refreshListAfterSave(token);
     } catch (failure) {
-      setError((failure as Error).message);
+      if (token === sequence.current) {
+        setError((failure as Error).message);
+        if (!applied) await revalidateRefusal(failure, current.id, token);
+      }
       throw failure;
     } finally {
-      setPending(false);
+      if (token === sequence.current) setPending(false);
     }
   }
   return (
@@ -247,17 +355,35 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
         <div className="campaign-content">
           {pending && <Loading />}
           {current ? (
-            <CampaignDetail
-              key={current.id}
-              onDirtyChange={setDraftDirty}
-              campaign={current}
-              pending={pending}
-              change={change}
-              reload={() => void open(current.id)}
-              onManageAccount={onManageAccount}
-              remediation={remediation}
-              nextPeriod={nextPeriod}
-            />
+            <>
+              {accessCheckId === current.id && (
+                <section className="panel padded" role="status">
+                  <h3>Checking campaign access</h3>
+                  <p>
+                    The last change was refused. Saved evidence and exports are hidden until this
+                    campaign can be read again. Your draft is kept in this session.
+                  </p>
+                  <button disabled={pending} onClick={() => void retryAccess()}>
+                    Check access again
+                  </button>
+                </section>
+              )}
+              <div hidden={accessCheckId === current.id}>
+                <ModalBoundary suspended={accessCheckId === current.id}>
+                  <CampaignDetail
+                    key={current.id}
+                    onDirtyChange={setDraftDirty}
+                    campaign={current}
+                    pending={pending}
+                    change={change}
+                    reload={() => void open(current.id)}
+                    onManageAccount={onManageAccount}
+                    remediation={remediation}
+                    nextPeriod={nextPeriod}
+                  />
+                </ModalBoundary>
+              </div>
+            </>
           ) : (
             <div className="panel padded">
               <h3>Start an access review</h3>

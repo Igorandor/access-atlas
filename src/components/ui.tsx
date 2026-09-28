@@ -1,4 +1,15 @@
-import { useEffect, useRef, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, type ReactNode } from 'react';
+const ModalSuspension = createContext(false);
+export function ModalBoundary({
+  suspended,
+  children,
+}: {
+  suspended: boolean;
+  children: ReactNode;
+}) {
+  return <ModalSuspension.Provider value={suspended}>{children}</ModalSuspension.Provider>;
+}
+
 export const Badge = ({ children, tone = 'neutral' }: { children: ReactNode; tone?: string }) => (
   <span className={`badge ${tone}`}>{children}</span>
 );
@@ -48,19 +59,22 @@ export function Modal({
   onClose: () => void;
   wide?: boolean;
 }) {
+  const suspended = useContext(ModalSuspension);
   const element = useRef<HTMLDialogElement>(null);
   const opener = useRef<HTMLElement | null>(null);
   useEffect(() => {
+    if (suspended) return;
     opener.current = document.activeElement as HTMLElement;
     element.current?.showModal();
     return () => {
       element.current?.close();
       opener.current?.focus();
     };
-  }, []);
+  }, [suspended]);
   return (
     <dialog
       ref={element}
+      hidden={suspended}
       className={wide ? 'modal wide' : 'modal'}
       aria-label={title}
       onCancel={(event) => {

@@ -32,6 +32,7 @@ async function harness(kind: 'scope' | 'finding') {
   const writes: any[] = [];
   let refuseRead = false,
     refuseSave = false;
+  let saveFailureStatus = 409;
   class RequestError extends Error {
     constructor(
       message: string,
@@ -51,7 +52,7 @@ async function harness(kind: 'scope' | 'finding') {
     const stored = documents.get(path.split('/')[1])!;
     if (input) {
       writes.push(structuredClone(input));
-      if (refuseSave) throw new RequestError('Save refused', 409);
+      if (refuseSave) throw new RequestError('Save refused', saveFailureStatus);
       if (input.action === 'certification-scope')
         stored.certificationScope = structuredClone(input.scope);
       if (input.action === 'decision')
@@ -115,7 +116,7 @@ async function harness(kind: 'scope' | 'finding') {
   const modules: Record<string, any> = {
     react: hooks,
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'fragment' },
-    '../../api': { request, download() {} },
+    '../../api': { request, RequestError, download() {} },
     './api': { request, RequestError },
     '../../components/ui': { Modal: function Modal() {}, ErrorBox: function ErrorBox() {} },
     '../../../shared/campaign': {
@@ -258,8 +259,12 @@ async function harness(kind: 'scope' | 'finding') {
     failRead() {
       refuseRead = true;
     },
-    failSave() {
+    failSave(status = 409) {
       refuseSave = true;
+      saveFailureStatus = status;
+    },
+    remoteRevision() {
+      campaign.revision++;
     },
     async save() {
       if (kind === 'scope') click('Save scope');
@@ -331,3 +336,15 @@ for (const kind of ['scope', 'finding'] as const) {
     assert.equal(saved.writes.length, 1);
   });
 }
+
+test('authorized revalidation of a newer revision does not remount or discard a finding draft', async () => {
+  const ui = await harness('finding');
+  ui.edit('Unsubmitted reasoning');
+  ui.remoteRevision();
+  ui.failSave(403);
+  await ui.save();
+  assert.equal(ui.value(), 'Unsubmitted reasoning');
+  ui.click('Activity');
+  assert.ok(ui.modal(), 'The retained finding draft must still be guarded');
+  assert.equal(ui.writes.length, 1, 'Authorization revalidation must never replay the write');
+});

@@ -114,7 +114,7 @@ async function harness(first: number | AccessSnapshot, campaignStatus = 200) {
     react: hooks,
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'Fragment' },
     '../api': { request },
-    '../../api': { request },
+    '../../api': { request, RequestError },
     './api': { request, RequestError },
     '../components/ui': ui,
     '../../components/ui': ui,

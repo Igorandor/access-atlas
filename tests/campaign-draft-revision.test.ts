@@ -50,6 +50,13 @@ async function harness(scenario: Scenario) {
   let applied = 0;
   let refuseStatus = true;
   let failList = false;
+  let listFailureStatus = 500;
+  let mutationFailureStatus: number | undefined;
+  let caseFailureStatus: number | undefined;
+  const reads: string[] = [];
+  let readGate:
+    | { promise: Promise<any>; resolve: (value: any) => void; reject: (error: Error) => void }
+    | undefined;
   const focusEvents: string[] = [];
   let scrolls = 0;
   class RequestError extends Error {
@@ -62,12 +69,18 @@ async function harness(scenario: Scenario) {
   }
   async function request(path: string, body?: any) {
     if (path === 'campaigns' && body === undefined) {
-      if (failList) throw new RequestError('List refresh failed', 500);
+      if (failList) throw new RequestError('List refresh failed', listFailureStatus);
       return [campaignModel.campaignSummary(structuredClone(stored))];
     }
     assert.equal(path, 'campaigns/' + stored.id);
+    if (body === undefined) {
+      reads.push(path);
+      if (readGate) return readGate.promise;
+      if (caseFailureStatus) throw new RequestError('Case read failed', caseFailureStatus);
+    }
     if (body !== undefined) {
       writes.push(structuredClone(body));
+      if (mutationFailureStatus) throw new RequestError('Mutation refused', mutationFailureStatus);
       if (body.revision !== stored.revision)
         throw new RequestError('Reload before saving: revision conflict', 409);
       if (body.action === 'details')
@@ -121,7 +134,7 @@ async function harness(scenario: Scenario) {
   const modules: Record<string, any> = {
     react: hooks,
     'react/jsx-runtime': { jsx, jsxs: jsx, Fragment: 'fragment' },
-    '../../api': { request },
+    '../../api': { request, RequestError },
     './api': { request, RequestError },
     '../../../shared/campaign': campaignModel,
     '../../../shared/certification': certification,
@@ -208,6 +221,54 @@ async function harness(scenario: Scenario) {
   flush();
   return {
     writes,
+    reads,
+    workspaceHidden: () =>
+      page().some(
+        (node) =>
+          node.props?.hidden && walk(node).some((child) => child.type?.name === 'CampaignDetail'),
+      ),
+    pending: () => button('Refresh list', page()).props.disabled,
+    refuseMutation(readStatus?: number) {
+      mutationFailureStatus = 403;
+      caseFailureStatus = readStatus;
+    },
+    allowCaseRead() {
+      caseFailureStatus = undefined;
+    },
+    deferCaseRead() {
+      let resolve!: (value: any) => void, reject!: (error: Error) => void;
+      const promise = new Promise<any>((yes, no) => {
+        resolve = yes;
+        reject = no;
+      });
+      readGate = { promise, resolve, reject };
+    },
+    releaseCaseRead(status?: number) {
+      const gate = readGate!;
+      readGate = undefined;
+      if (status) gate.reject(new RequestError('Delayed read refused', status));
+      else gate.resolve(structuredClone(stored));
+    },
+    async retryAccess() {
+      button('Check access again', page()).props.onClick();
+      await tick();
+      flush();
+    },
+    shownRevision: () =>
+      page().find((node) => node.type?.name === 'CampaignDetail')?.props.campaign.revision,
+    pageError: () => page().find((node) => node.props?.error)?.props.error,
+    detailVisible: () => content().length > 0,
+    exportVisible: () =>
+      content().some((node) => node.type === 'button' && text(node).trim() === 'Export campaign'),
+    refuseList(status: number) {
+      failList = true;
+      listFailureStatus = status;
+    },
+    async refreshList() {
+      button('Refresh list', page()).props.onClick();
+      await tick();
+      flush();
+    },
     button,
     input,
     flush,
@@ -366,4 +427,94 @@ test('successful status mutation followed by a failed list refresh is not report
   assert.equal(ui.localAlert(), undefined);
   assert.equal(ui.focusEvents.length, 0);
   assert.equal(ui.button('Reopen').props.disabled, false);
+});
+
+for (const status of [403, 500]) {
+  test(`campaign list ${status} ${status === 403 ? 'removes' : 'retains'} the open workspace and its export`, async () => {
+    const ui = await harness('settings');
+    ui.edit('Unsubmitted campaign details');
+    ui.refuseList(status);
+    await ui.refreshList();
+    assert.equal(ui.detailVisible(), status !== 403);
+    assert.equal(ui.exportVisible(), status !== 403);
+    if (status === 500) assert.equal(ui.input().props.value, 'Unsubmitted campaign details');
+    assert.equal(ui.writes.length, 0);
+  });
+  test(`post-save campaign list ${status} applies the same workspace access boundary`, async () => {
+    const ui = await harness('settings');
+    ui.edit('Saved before list read');
+    ui.refuseList(status);
+    ui.submitCallback()();
+    await ui.settle();
+    assert.equal(ui.applied, 1, 'The completed save is not undone by a failed list read');
+    assert.equal(ui.stored.description, 'Saved before list read');
+    assert.match(ui.pageError(), /Change saved.*Do not repeat/);
+    assert.equal(ui.detailVisible(), status !== 403);
+    assert.equal(ui.exportVisible(), status !== 403);
+  });
+}
+
+for (const status of [403, 404]) {
+  test(`mutation403 followed by campaign GET${status} clears the workspace and all exports`, async () => {
+    const ui = await harness('settings');
+    ui.edit('Draft');
+    ui.refuseMutation(status);
+    ui.submitCallback()();
+    await ui.settle();
+    assert.equal(ui.reads.length, 2, 'One initial read and one authorization recheck');
+    assert.equal(ui.detailVisible(), false);
+    assert.equal(ui.exportVisible(), false);
+    assert.equal(ui.applied, 0);
+  });
+}
+
+test('independently refused mutation retains its authorized draft and requests a guarded reload', async () => {
+  const ui = await harness('settings');
+  ui.edit('Preserved draft');
+  ui.refuseMutation();
+  ui.remote();
+  ui.submitCallback()();
+  await ui.settle();
+  assert.equal(ui.workspaceHidden(), false);
+  assert.equal(ui.input().props.value, 'Preserved draft');
+  assert.equal(ui.shownRevision(), 1);
+  assert.equal(ui.stored.revision, 2);
+  assert.match(ui.pageError(), /Reload before retrying/);
+  assert.equal(ui.exportVisible(), true);
+  assert.equal(ui.applied, 0);
+});
+
+test('temporary revalidation failure hides evidence and retains the draft until a successful read', async () => {
+  const ui = await harness('scope');
+  ui.edit('Unsubmitted prefix');
+  ui.refuseMutation(503);
+  ui.submitCallback()();
+  await ui.settle();
+  assert.equal(ui.workspaceHidden(), true);
+  assert.equal(ui.input().props.value, 'Unsubmitted prefix');
+  ui.allowCaseRead();
+  await ui.retryAccess();
+  assert.equal(ui.workspaceHidden(), false);
+  assert.equal(ui.input().props.value, 'Unsubmitted prefix');
+  assert.equal(ui.pageError(), undefined);
+  assert.equal(ui.applied, 0);
+});
+
+test('mutation revalidation holds pending and ignores a late refusal after a newer authorized refresh', async () => {
+  const ui = await harness('settings');
+  ui.edit('Draft');
+  ui.refuseMutation();
+  ui.deferCaseRead();
+  ui.submitCallback()();
+  await ui.settle();
+  assert.equal(ui.workspaceHidden(), true);
+  assert.equal(ui.pending(), true);
+  // Simulate an already queued newer read. The old check must not own the view.
+  await ui.refreshList();
+  assert.equal(ui.workspaceHidden(), false);
+  ui.releaseCaseRead(403);
+  await ui.settle();
+  assert.equal(ui.detailVisible(), true);
+  assert.equal(ui.exportVisible(), true);
+  assert.equal(ui.input().props.value, 'Draft');
 });

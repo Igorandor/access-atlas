@@ -1,5 +1,11 @@
 # Verification record
 
+## Campaign authorization changes — September 28, 2026
+
+A denied campaign list now clears the selected campaign and nested exports, consistent with the route-wide read permission. A mutation403 separately rechecks the selected campaign: allowed access retains edits, GET403/404 clears the workspace, and temporary failure hides evidence and exports while preserving drafts in memory. A newer read revision does not silently rebase or erase an edited decision; the reviewer must reload. Scoped modal suspension explicitly closes native top-layer dialogs during the check. Successful writes followed by a list error stay reported as saved and retain their result, avoiding an invitation to repeat the operation.
+
+Production build and 255 tests pass, including sequence guards, finding draft retention, confirmed-save handling and modal lifecycle. Actual campaign components with production styles passed desktop and 390px checks: list500 retained edits; list403 cleared detail/export; mutation403 followed by GET200 preserved the scope; GET503 hid it until a successful retry restored the exact draft; GET403/404 removed the campaign. A separate real-browser ModalBoundary fixture confirmed that suspension sets the native dialog to closed and hidden, and restoration reopens the same edited draft. These checks used synthetic transport and made no native or durable writes. Already exported copies and draft persistence after reload/logout are outside this change.
+
 ## Markdown remediation evidence — September 28, 2026
 
 Markdown reports previously included a remediation's status and message but omitted its update timestamp, checked fields and reconciliation note, which were already present in HTML. Markdown now retains that evidence when the remediation section is selected. The regression failed before the fix and passes afterward; it also verifies literal escaping of a hostile reconciliation note and omission of the whole optional section when deselected. Production build and all 226 tests pass. Native writes and the HTML/UI renderer are unchanged.
@@ -186,4 +192,3 @@ This does not persist drafts after logout/session expiry or browser reload/close
 Reproduced a confirmation from an earlier campaign revision remaining active after a source reload changed the certification scope. Confirmation now belongs to the source ID and revision, and the submit handler independently enforces it. A changed source requires a new review while retaining the entered title and description. Three actual-component regressions cover source changes, unchanged rerenders, edited inputs and submission guards. Build and all 244 tests pass.
 
 Desktop and 390px browser checks used the real component with synthetic campaign props: changing Finance/excluded to AllDepartments/included cleared confirmation and disabled creation; entered text remained. Confirming the new settings submitted revision 2 to an in-memory callback. The full production styles kept the phone document at 390px with horizontal scrolling confined to the comparison table. No campaign or native operation was sent to a server.
-
