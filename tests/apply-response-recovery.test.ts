@@ -188,6 +188,7 @@ function configuration() {
 
 function campaignPanel() {
   const calls: string[] = [];
+  const revisions: Array<number | undefined> = [];
   let failure: Error | undefined,
     reloads = 0;
   const snapshot = {
@@ -221,9 +222,10 @@ function campaignPanel() {
         reloads++;
         ui.props.campaign = { ...ui.props.campaign, revision: 3 };
       },
-      submit: async (action: string) => {
+      submit: async (action: string, _payload: unknown, revision?: number) => {
+        revisions.push(revision);
         calls.push(action);
-        if (action === 'remediation-review') return { review };
+        if (action === 'remediation-review') return { review, campaign: ui.props.campaign };
         if (failure) throw failure;
         return {};
       },
@@ -248,6 +250,7 @@ function campaignPanel() {
   return {
     ...ui,
     calls,
+    revisions,
     prepare,
     fail: (error?: Error) => {
       failure = error;
@@ -420,4 +423,59 @@ test('campaign failed apply focuses its recovery block once, without focus steal
     assert.deepEqual(ui.scrollEvents, ['status']);
     assert.equal(ui.calls.filter((call) => call === 'remediation-apply').length, 1);
   }
+});
+
+test('campaign remediation blocks a changed basis synchronously and retained apply callbacks keep the reviewed revision', async () => {
+  const ui = campaignPanel();
+  await ui.prepare();
+  const originalApply = ui.button('Apply this change once').props.onClick;
+  ui.props.campaign = { ...ui.props.campaign, revision: 2 };
+  assert.equal(ui.button('Apply this change once').props.disabled, true);
+  ui.button('Apply this change once').props.onClick();
+  await tick();
+  assert.equal(ui.calls.length, 1);
+  originalApply();
+  await tick();
+  assert.deepEqual(ui.revisions, [1, 1], 'The old callback never adopts revision2');
+});
+
+test('stale remediation confirmation stays invalid after the old props return and preserves its reason', async () => {
+  const ui = campaignPanel();
+  await ui.prepare();
+  ui.commitEffects();
+  const original = ui.props.campaign;
+  ui.props.campaign = { ...original, revision: 2 };
+  ui.commitEffects();
+  assert.equal(ui.nodes().find((node) => node.type === 'input').props.value, '');
+  ui.props.campaign = original;
+  ui.commitEffects();
+  assert.equal(ui.button('Apply this change once').props.disabled, true);
+  assert.equal(ui.focusEvents.filter((role) => role === 'status').length, 1);
+  ui.button('Leave proposal unsubmitted').props.onClick();
+  assert.equal(ui.nodes().find((node) => node.type === 'textarea').props.value, 'Keep this reason');
+  assert.equal(ui.calls.length, 1);
+});
+
+test('retained preparation handler carries its original campaign revision', async () => {
+  const ui = campaignPanel();
+  ui.nodes()
+    .find((node) => node.type === 'textarea')
+    .props.onChange({ target: { value: 'Original purpose' } });
+  const originalPrepare = ui.button('Check current state and review').props.onClick;
+  ui.props.campaign = { ...ui.props.campaign, revision: 2 };
+  originalPrepare();
+  await tick();
+  assert.deepEqual(ui.revisions, [1]);
+});
+
+test('configuration review distinguishes captured and proposed values without calling them current', async () => {
+  const ui = configuration();
+  await ui.draft();
+  await ui.prepare();
+  const diff = ui.nodes().find((node) => node.props?.beforeLabel === 'Captured');
+  assert.ok(diff);
+  assert.equal(diff.props.afterLabel, 'Proposed');
+  assert.equal(diff.props.before.Description, 'old');
+  assert.equal(diff.props.after.Description, 'new');
+  assert.equal(ui.calls.filter((call) => call === 'changes/apply').length, 0);
 });

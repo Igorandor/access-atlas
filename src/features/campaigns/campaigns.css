@@ -54,6 +54,7 @@
 }
 .campaign-content {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 18px;
   min-width: 0;
 }
@@ -240,7 +241,7 @@
 }
 @media (max-width: 1050px) {
   .campaign-columns {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .campaign-index {
     position: static;

@@ -216,8 +216,14 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       (includeArchived || campaign.state !== 'archived') &&
       (campaign.title + ' ' + campaign.description).toLowerCase().includes(filter.toLowerCase()),
   );
-  async function remediation(action: string, payload: Record<string, unknown>) {
+  async function remediation(
+    action: string,
+    payload: Record<string, unknown>,
+    expectedRevision?: number,
+  ) {
     if (!current) throw new Error('Select a campaign first.');
+    if (expectedRevision !== undefined && expectedRevision !== current.revision)
+      throw new Error('This campaign changed after review. Reload it and prepare a new proposal.');
     const token = ++sequence.current;
     setPending(true);
     setError('');
@@ -225,7 +231,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     try {
       const result = await request<any>('campaigns/' + current.id + '/' + action, {
         ...payload,
-        revision: current.revision,
+        revision: expectedRevision ?? current.revision,
       });
       if (token !== sequence.current)
         throw new Error('The campaign view changed before the response arrived.');
@@ -448,7 +454,11 @@ function CampaignDetail({
   ) => Promise<void>;
   reload: () => void;
   onManageAccount: (account: string) => void;
-  remediation: (action: string, payload: Record<string, unknown>) => Promise<any>;
+  remediation: (
+    action: string,
+    payload: Record<string, unknown>,
+    expectedRevision?: number,
+  ) => Promise<any>;
   nextPeriod: (input: PeriodInput) => Promise<void>;
 }) {
   const [tab, setTab] = useState('decisions');

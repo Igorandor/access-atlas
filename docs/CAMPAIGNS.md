@@ -29,7 +29,7 @@ Follow-up dates schedule work. They do not automatically expire exceptions, remo
 
 For supported findings, the Remediation panel creates a fixed targeted proposal: remove a directly assigned role, disable an account, remove public write, require application authentication or disable an application. It presents the captured baseline and, where available, an access projection.
 
-Review reads the current target and rejects stale selected fields. Apply requires its exact target. The campaign records dispatch before a native write. A successful response is followed by a readback; unavailable or differing results remain explicit. Reconcile reads the target without replaying the operation. An interrupted dispatch must be reconciled before editing the campaign or attempting another remediation.
+Review reads the current target and rejects stale selected fields. Apply requires its exact target. A prepared proposal belongs to the capture and campaign revision returned by that review. If a reload changes this basis, Atlas marks the proposal outdated, clears its confirmation and blocks Apply. Choose **Leave proposal unsubmitted** to return to the draft, inspect the current evidence and prepare a fresh review. The reason is retained, but the previous confirmation cannot be reused. The campaign records dispatch before a native write. A successful response is followed by a readback; unavailable or differing results remain explicit. Reconcile reads the target without replaying the operation. An interrupted dispatch must be reconciled before editing the campaign or attempting another remediation.
 
 Acceptance or exception decisions are review records, not native mutations. Access simulations and role candidates never assign roles automatically.
 

@@ -159,7 +159,17 @@ export function DataView({
     </section>
   );
 }
-export function DataDiff({ before, after }: { before: any; after: any }) {
+export function DataDiff({
+  before,
+  after,
+  beforeLabel = 'Baseline',
+  afterLabel = 'Current',
+}: {
+  before: any;
+  after: any;
+  beforeLabel?: string;
+  afterLabel?: string;
+}) {
   const keys = [...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})])];
   return (
     <div className="table-scroll">
@@ -167,8 +177,8 @@ export function DataDiff({ before, after }: { before: any; after: any }) {
         <thead>
           <tr>
             <th>Field</th>
-            <th>Baseline</th>
-            <th>Current</th>
+            <th>{beforeLabel}</th>
+            <th>{afterLabel}</th>
           </tr>
         </thead>
         <tbody>

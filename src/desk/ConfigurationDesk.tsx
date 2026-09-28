@@ -501,6 +501,8 @@ function Register({
                       ),
                     )}
                     after={redact(proposal.body)}
+                    beforeLabel="Captured"
+                    afterLabel="Proposed"
                   />
                   <p>
                     Target:{' '}

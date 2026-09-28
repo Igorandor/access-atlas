@@ -1,5 +1,13 @@
 # Verification record
 
+## Remediation proposal basis — September 28, 2026
+
+Release 1.2.3 binds prepared remediation to the returned campaign, capture and revision. Changed evidence clears confirmation and blocks the old proposal synchronously; returning old data does not reactivate it. The reviewed values remain separate from the recalculated draft, with the target and reason visible. Explicit return preserves the reason and focuses the remediation heading. Consumed reviews keep their separate result-recovery controls. Proposed-value columns are labelled explicitly in remediation and the configuration register; actual drift comparisons retain their existing labels.
+
+Build and 287 tests pass, plus 19 actual-component browser checks covering preparation, unchanged reloads, changed captures/revisions, stale callbacks, missing findings, explicit re-review, confirmed success, uncertain outcomes, read denial and focus. Tests use synthetic records and transport without native or durable writes. Server authorization and live field-drift checks are unchanged; the reproduced UI mismatch is not evidence of a backend bypass.
+
+Manual desktop and 390px checks confirm cleared confirmation, blocked stale Apply, retained reason, revised expected roles after a new review, and heading focus followed by Tab to Finding. Unknown-response recovery survives a later reload without enabling Apply. Initial phone review measured 390/397px; bounded campaign grid tracks correct it to 390/390px. Desktop measures 1280/1280px. Configuration-register proposed headers were separately checked at both widths. Build passed after the CSS-only adjustment. These are responsive-browser checks, not physical-device tests; ticket expiry was not exercised.
+
 ## Certification draft revisions — September 28, 2026
 
 Release 1.2.2 binds each certification draft to its subject, capture and campaign revision. A reload that changes this basis preserves edited values and blocks submission, including programmatic submission. Use saved decision explicitly adopts the current record. Unedited forms and matching saves on the same capture follow the current revision normally. When an object leaves scope, its unsaved values remain readable until explicitly discarded; disabling certification does not hide this recovery control.

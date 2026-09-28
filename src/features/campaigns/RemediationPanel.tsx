@@ -14,7 +14,11 @@ export function RemediationPanel({
 }: {
   campaign: Campaign;
   disabled: boolean;
-  submit: (action: string, payload: Record<string, unknown>) => Promise<any>;
+  submit: (
+    action: string,
+    payload: Record<string, unknown>,
+    expectedRevision?: number,
+  ) => Promise<any>;
   reload: () => void;
 }) {
   const findings = useMemo(() => campaignFindings(campaign), [campaign]);
@@ -22,11 +26,26 @@ export function RemediationPanel({
     ['user', 'resource', 'app'].includes(finding.kind),
   );
   const [selected, setSelected] = useState(supported[0]?.id || '');
+  const heading = useRef<HTMLHeadingElement>(null);
+  const [draftFocusRequest, setDraftFocusRequest] = useState(0);
+  useEffect(() => {
+    if (!draftFocusRequest) return;
+    heading.current?.focus({ preventScroll: true });
+    heading.current?.scrollIntoView({ block: 'start' });
+  }, [draftFocusRequest]);
   const [action, setAction] = useState<RemediationRequest['action']>('remove-role');
   const [role, setRole] = useState('');
   const [reason, setReason] = useState('');
   const [confirmation, setConfirmation] = useState('');
   const [review, setReview] = useState<ChangeReview>();
+  const [reviewBasis, setReviewBasis] = useState<{
+    campaignId: string;
+    captureId?: string;
+    revision: number;
+  }>();
+  const [reviewInvalid, setReviewInvalid] = useState(false);
+  const staleNotice = useRef<HTMLElement>(null);
+  const focusedStaleReview = useRef<string | undefined>(undefined);
   const [error, setError] = useState('');
   const [reconcile, setReconcile] = useState('');
   const [reconcileNote, setReconcileNote] = useState('');
@@ -47,7 +66,26 @@ export function RemediationPanel({
       recovery.current.scrollIntoView({ block: 'center' });
     }
   }, [disabled, error, applyAttempt]);
-  const snapshot = campaign.captures.at(-1)?.snapshot;
+  const capture = campaign.captures.at(-1);
+  const snapshot = capture?.snapshot;
+  const basisChanged = Boolean(
+    review &&
+    (!reviewBasis ||
+      reviewBasis.campaignId !== campaign.id ||
+      reviewBasis.captureId !== capture?.id ||
+      reviewBasis.revision !== campaign.revision),
+  );
+  const staleReview = Boolean(review && (reviewInvalid || basisChanged));
+  useEffect(() => {
+    if (!review || !staleReview || applyAttempt?.id === review.id) return;
+    setReviewInvalid(true);
+    setConfirmation('');
+    if (!disabled && focusedStaleReview.current !== review.id) {
+      focusedStaleReview.current = review.id;
+      staleNotice.current?.focus({ preventScroll: true });
+      staleNotice.current?.scrollIntoView({ block: 'center' });
+    }
+  }, [review, staleReview, applyAttempt, disabled]);
   const finding = findings.find((item) => item.id === selected);
   const account = snapshot?.users.find((user) => user.Name === finding?.target);
   const actions: Array<[RemediationRequest['action'], string]> =
@@ -78,16 +116,27 @@ export function RemediationPanel({
     }
   }, [snapshot, finding, chosenAction, chosenRole]);
   async function prepare() {
-    if (!finding || !chosenAction) return;
+    if (disabled || !finding || !chosenAction) return;
     setError('');
     try {
-      const result = await submit('remediation-review', {
-        findingId: finding.id,
-        fingerprint: finding.fingerprint,
-        action: chosenAction,
-        role: chosenRole,
-        reason,
+      const result = await submit(
+        'remediation-review',
+        {
+          findingId: finding.id,
+          fingerprint: finding.fingerprint,
+          action: chosenAction,
+          role: chosenRole,
+          reason,
+        },
+        campaign.revision,
+      );
+      setReviewBasis({
+        campaignId: result.campaign.id,
+        captureId: result.campaign.captures.at(-1)?.id,
+        revision: result.campaign.revision,
       });
+      setReviewInvalid(false);
+      focusedStaleReview.current = undefined;
       setReview(result.review);
       setApplyAttempt(undefined);
       setConfirmation('');
@@ -96,13 +145,20 @@ export function RemediationPanel({
     }
   }
   async function apply() {
-    if (!review || submittedReviews.current.has(review.id)) return;
+    if (
+      disabled ||
+      !review ||
+      !reviewBasis ||
+      staleReview ||
+      submittedReviews.current.has(review.id)
+    )
+      return;
     const id = review.id;
     submittedReviews.current.add(id);
     setApplyAttempt({ id, uncertain: false });
     setError('');
     try {
-      await submit('remediation-apply', { reviewId: id, confirmation });
+      await submit('remediation-apply', { reviewId: id, confirmation }, reviewBasis.revision);
       setApplyAttempt(undefined);
       setReview(undefined);
       setConfirmation('');
@@ -120,7 +176,9 @@ export function RemediationPanel({
   }
   return (
     <section className="panel padded remediation-panel">
-      <h2>Remediation</h2>
+      <h2 ref={heading} tabIndex={-1}>
+        Remediation
+      </h2>
       <p>
         Prepare a change from a campaign finding. Atlas checks current fields again before writing
         and records the result in this campaign.
@@ -152,7 +210,7 @@ export function RemediationPanel({
           other changes.
         </p>
       )}
-      {snapshot && supported.length > 0 && (
+      {snapshot && supported.length > 0 && !review && (
         <fieldset disabled={disabled || campaign.state !== 'active'}>
           <label className="field">
             Finding
@@ -209,7 +267,12 @@ export function RemediationPanel({
               {draft.data && (
                 <>
                   <h3>{draft.data.title}</h3>
-                  <DataDiff before={draft.data.baseline} after={draft.data.operation.body} />
+                  <DataDiff
+                    before={draft.data.baseline}
+                    after={draft.data.operation.body}
+                    beforeLabel="Captured"
+                    afterLabel="Proposed"
+                  />
                   {draft.data.warnings.map((warning) => (
                     <p className="notice" key={warning}>
                       {warning}
@@ -255,37 +318,71 @@ export function RemediationPanel({
               )}
             </>
           )}
-          {review && (
-            <div className="remediation-confirmation">
-              <h3>Server-reviewed proposal</h3>
-              <p>{review.verification}</p>
-              <p>Expires {new Date(review.expiresAt).toLocaleTimeString()}</p>
-              <DataDiff before={review.before} after={review.expected} />
-              <label className="field">
-                Type {review.target} to confirm
-                <input
-                  disabled={applyAttempt?.id === review.id}
-                  autoComplete="off"
-                  value={confirmation}
-                  onChange={(event) => setConfirmation(event.target.value)}
-                />
-              </label>
-              <div className="inline-actions">
-                <button onClick={() => setReview(undefined)}>
-                  {applyAttempt?.id === review.id
-                    ? 'Return to draft'
-                    : 'Leave proposal unsubmitted'}
-                </button>
-                <button
-                  className="primary"
-                  disabled={applyAttempt?.id === review.id || confirmation !== review.target}
-                  onClick={() => void apply()}
-                >
-                  Apply this change once
-                </button>
-              </div>
+        </fieldset>
+      )}
+      {review && (
+        <fieldset disabled={disabled || campaign.state !== 'active'}>
+          <div className="remediation-confirmation">
+            <h3>Server-reviewed proposal</h3>
+            {staleReview && applyAttempt?.id !== review.id && (
+              <aside
+                ref={staleNotice}
+                tabIndex={-1}
+                className="notice"
+                role="status"
+                aria-label="Proposal needs a new review"
+              >
+                <p>
+                  This campaign changed after the proposal was reviewed. Its confirmation is no
+                  longer valid. Leave the proposal unsubmitted, then check current state and review
+                  the change again. Your reason is kept.
+                </p>
+              </aside>
+            )}
+            <p>{review.verification}</p>
+            <p>Expires {new Date(review.expiresAt).toLocaleTimeString()}</p>
+            <p>
+              Target: <code>{review.target}</code>
+            </p>
+            <DataDiff
+              before={review.before}
+              after={review.expected}
+              beforeLabel="Reviewed"
+              afterLabel="Expected after change"
+            />
+            <label className="field">
+              Reason for reviewed change
+              <textarea readOnly rows={3} value={reason} />
+            </label>
+            <label className="field">
+              Type {review.target} to confirm
+              <input
+                disabled={staleReview || applyAttempt?.id === review.id}
+                autoComplete="off"
+                value={confirmation}
+                onChange={(event) => setConfirmation(event.target.value)}
+              />
+            </label>
+            <div className="inline-actions">
+              <button
+                onClick={() => {
+                  setReview(undefined);
+                  setDraftFocusRequest((request) => request + 1);
+                }}
+              >
+                {applyAttempt?.id === review.id ? 'Return to draft' : 'Leave proposal unsubmitted'}
+              </button>
+              <button
+                className="primary"
+                disabled={
+                  staleReview || applyAttempt?.id === review.id || confirmation !== review.target
+                }
+                onClick={() => void apply()}
+              >
+                Apply this change once
+              </button>
             </div>
-          )}
+          </div>
         </fieldset>
       )}
       <h3>Remediation history</h3>
