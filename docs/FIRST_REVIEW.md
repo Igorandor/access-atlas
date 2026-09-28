@@ -18,6 +18,8 @@ Open **Campaigns**, expand **Create a campaign**, and give the review a title an
 
 Under **Decisions**, review one finding. Choose **Investigating**, write the question that needs answering, and set a follow-up date. **Save decision** records the review; it does not revoke access. The saved outcome, timestamp and follow-up date appear beside the form.
 
+If you cancel the decision, open a different finding, or return to follow-ups with unsaved changes, choose **Keep editing** or **Discard draft**. Discarding does not save. Save your work before leaving the campaign or switching workspaces.
+
 Do not accept all findings just to obtain a green report. For example, a `%All` account requires an operational justification, while an unauthenticated route may have its own authorization controls.
 
 ## 3. Review accounts without automatic findings

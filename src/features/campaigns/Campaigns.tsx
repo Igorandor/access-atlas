@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { request, download } from '../../api';
 import { refreshEvidence } from '../../saved-evidence';
-import { ErrorBox, Loading, Badge } from '../../components/ui';
+import { ErrorBox, Loading, Badge, Modal } from '../../components/ui';
 import { DriftReview, CaptureTrend } from '../access/DriftReview';
 import { AccessMap } from '../access/AccessMap';
 import { ResourceMatrix } from '../access/ResourceMatrix';
@@ -698,7 +698,13 @@ function CampaignDecisions({
   const progress = useMemo(() => campaignProgress(campaign), [campaign]);
   const [filter, setFilter] = useState('all');
   const [selectedId, setSelectedId] = useState(initialFindingId);
+  const [decisionDirty, setDecisionDirty] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<() => void>();
   const [focusRequest, setFocusRequest] = useState(0);
+  function leaveDecision(next: () => void) {
+    if (decisionDirty) setPendingNavigation(() => next);
+    else next();
+  }
   const selected = progress.rows.find((row) => row.finding.id === selectedId);
   const visible = progress.rows.filter(
     (row) =>
@@ -750,8 +756,12 @@ function CampaignDecisions({
           <button
             disabled={disabled}
             onClick={() => {
-              setSelectedId(row.finding.id);
-              setFocusRequest((request) => request + 1);
+              const open = () => {
+                setSelectedId(row.finding.id);
+                setFocusRequest((request) => request + 1);
+              };
+              if (row.finding.id !== selectedId) leaveDecision(open);
+              else open();
             }}
           >
             Review
@@ -764,16 +774,45 @@ function CampaignDecisions({
           row={selected}
           focusRequest={focusRequest}
           disabled={disabled}
+          onDirtyChange={setDecisionDirty}
           save={async (input) => {
             await change(input);
           }}
-          cancel={() => setSelectedId('')}
+          cancel={() => {
+            leaveDecision(() => {
+              setSelectedId('');
+              setDecisionDirty(false);
+            });
+          }}
         />
       )}
       {onBackToFollowups && (
-        <button disabled={backDisabled} onClick={onBackToFollowups}>
+        <button
+          disabled={backDisabled}
+          onClick={() => {
+            leaveDecision(onBackToFollowups);
+          }}
+        >
           Back to follow-ups
         </button>
+      )}
+      {pendingNavigation && (
+        <Modal title="Discard unsaved decision?" onClose={() => setPendingNavigation(undefined)}>
+          <p>Your changes to this decision have not been saved.</p>
+          <div className="inline-actions">
+            <button onClick={() => setPendingNavigation(undefined)}>Keep editing</button>
+            <button
+              onClick={() => {
+                const next = pendingNavigation;
+                setPendingNavigation(undefined);
+                setDecisionDirty(false);
+                next();
+              }}
+            >
+              Discard draft
+            </button>
+          </div>
+        </Modal>
       )}
     </section>
   );
@@ -785,16 +824,25 @@ function DecisionForm({
   disabled,
   save,
   cancel,
+  onDirtyChange,
 }: {
   row: ReturnType<typeof campaignProgress>['rows'][number];
   focusRequest: number;
   disabled: boolean;
   save: (input: ChangePayload) => Promise<void>;
   cancel: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }) {
   const [outcome, setOutcome] = useState<ReviewOutcome>(row.decision?.outcome || 'investigating');
   const [note, setNote] = useState(row.decision?.note || '');
   const [dueDate, setDueDate] = useState(row.decision?.dueDate || '');
+  useEffect(() => {
+    onDirtyChange?.(
+      outcome !== (row.decision?.outcome || 'investigating') ||
+        note !== (row.decision?.note || '') ||
+        dueDate !== (row.decision?.dueDate || ''),
+    );
+  }, [outcome, note, dueDate, row.decision, onDirtyChange]);
   const heading = useRef<HTMLHeadingElement>(null);
   useEffect(() => {
     heading.current?.focus({ preventScroll: true });
