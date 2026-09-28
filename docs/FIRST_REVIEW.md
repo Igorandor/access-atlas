@@ -2,7 +2,9 @@
 
 This short walkthrough uses the accounts and roles in the bundled IRIS Community installation. It reads configuration and saves review records; it does not change native permissions.
 
-Start the stack with `docker compose up -d --build`, open <http://localhost:3200>, and sign in with the quick-start credentials in the [README](../README.md#quick-start-complete-local-installation). Wait for the capture to finish and check its completeness label.
+For a no-install introduction, try the [interactive grant example](https://igorandor.github.io/access-atlas/) with synthetic accounts. The steps below use your running IRIS instance and retain a review record.
+
+Follow the [README quick start](../README.md#quick-start-complete-local-installation) to obtain the source and start the stack. Open <http://localhost:3200>, sign in with its quick-start credentials, then wait for the capture to finish and check its completeness label.
 
 ## 1. Explain one grant
 
@@ -32,7 +34,7 @@ Record **Investigate** when evidence or ownership is unclear. A certification de
 
 Switching to another object asks before discarding an edited decision. When you arrive from a follow-up, **Back to follow-ups** also checks for unsaved decision or scope changes.
 
-To understand an earlier decision, open **Activity** and expand its saved decision evidence. Read the reason, follow-up date and capture identifier attached to that revision. **Report & follow-ups → Activity** offers the same evidence. An older decision describes the review at that time; use **Certification** or **Decisions** to check the current review status. Include **Campaign activity** when exporting a report if the recipient needs that history.
+To understand an earlier decision, open **Activity** and expand its saved decision evidence. Read the reason, follow-up date and capture identifier attached to that revision. **Report & follow-ups â†’ Activity** offers the same evidence. An older decision describes the review at that time; use **Certification** or **Decisions** to check the current review status. Include **Campaign activity** when exporting a report if the recipient needs that history.
 
 ## 4. Export the work that remains
 
