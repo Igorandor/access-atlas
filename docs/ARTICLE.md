@@ -18,6 +18,8 @@ These views explain configuration. They do not prove that a particular request w
 
 ## Try the read-only workflow
 
+You can first [try the interactive permission example](https://igorandor.github.io/access-atlas/) without installing anything. Uncheck SupportTeam to see why removing one assigned role removes write access while a separate inheritance path preserves read access. Reset the preview and inspect the Resource matrix. This example uses synthetic data entirely in the browser; it does not connect to IRIS or ask for credentials.
+
 The bundled installation needs Docker with Compose v2, Linux containers, at least 4 GB of available RAM and approximately 5 GB of free disk space. From a fresh checkout, run:
 
 ```sh
