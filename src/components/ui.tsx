@@ -7,7 +7,10 @@ export function ModalBoundary({
   suspended: boolean;
   children: ReactNode;
 }) {
-  return <ModalSuspension.Provider value={suspended}>{children}</ModalSuspension.Provider>;
+  const inherited = useContext(ModalSuspension);
+  return (
+    <ModalSuspension.Provider value={inherited || suspended}>{children}</ModalSuspension.Provider>
+  );
 }
 
 export const Badge = ({ children, tone = 'neutral' }: { children: ReactNode; tone?: string }) => (

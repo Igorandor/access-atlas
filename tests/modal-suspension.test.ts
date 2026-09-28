@@ -64,8 +64,17 @@ test('a suspended boundary closes a top-layer dialog while retaining its draft, 
     return node;
   };
   assert.equal(render().props.hidden, false);
+  assert.equal(
+    module.exports.ModalBoundary({ suspended: false, children: draft }).props.value,
+    false,
+  );
   assert.equal(element.open, true);
   suspended = true;
+  assert.equal(
+    module.exports.ModalBoundary({ suspended: false, children: draft }).props.value,
+    true,
+    'a locally active nested boundary must not override inherited suspension',
+  );
   const hidden = render();
   assert.equal(hidden.props.hidden, true);
   assert.equal(element.open, false, 'CSS hiding alone must not leave a native modal open');

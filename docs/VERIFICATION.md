@@ -1,5 +1,11 @@
 # Verification record
 
+## Global navigation from review dialogs — September 28, 2026
+
+Opening a campaign report preview, using Ctrl+K and selecting Logs left a native modal open inside the hidden review workspace. The invisible modal made the new workspace inert; clicking Review did nothing. The retained review now suspends its dialogs when another workspace is selected. Nested boundaries combine their suspension state, so an active campaign cannot override a hidden parent. Returning restores the same preview and in-memory note without a save or native write. The tool finder also recognizes SQL and grant keywords.
+
+Build and 263 tests pass, including regressions for workspace suspension, inherited modal state and SQL discoverability. Real App, campaign and modal components with production styles passed desktop and 390px checks using synthetic transport. Logs had no active modal after navigation; both a normal Review click and the tool finder restored the preview, keyboard focus and exact reviewer note. The phone dialog measured 356.4px in a 390px viewport with no horizontal overflow. This is responsive browser coverage, not a physical-device test. No stored campaigns, grants or IRIS data were changed.
+
 ## Overdue follow-up summary — September 28, 2026
 
 The campaign header counted only overdue unresolved finding decisions, so it could display zero while Report & follow-ups showed an overdue certification or a scheduled review of an accepted finding. It now counts the same agenda used by the report. Three actual-component regressions failed before the change and pass for a certification exception, an unreviewed subject with a scope deadline and an accepted finding with a follow-up date. The narrower finding filter, decisions and deadlines are unchanged. Build and 261 tests pass. Three additional actual parent/report regressions cover crossing UTC midnight before Refresh dates, first opening the report and exporting fresh evidence. The report notifies the parent of its exact evaluation time without a background timer. Desktop and 390px actual-component checks showed matching counts and all three due entries; desktop Refresh dates retained agreement. All records were synthetic, with no API or native writes.

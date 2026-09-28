@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import { AtlasShell } from './layout/AtlasShell';
 import { request } from './api';
-import { ErrorBox, Loading, Modal } from './components/ui';
+import { ErrorBox, Loading, Modal, ModalBoundary } from './components/ui';
 import { DeferredWorkspace } from './components/DeferredWorkspace';
 const AccessReview = lazy(() =>
   import('./pages/AccessReview').then((module) => ({ default: module.AccessReview })),
@@ -34,7 +34,7 @@ const navigation = [
     id: 'atlas',
     label: 'Access review',
     icon: Shield,
-    keywords: 'campaign certification inheritance simulation',
+    keywords: 'campaign certification inheritance simulation sql privileges grants',
   },
   {
     id: 'permissions',
@@ -166,9 +166,11 @@ export default function App() {
       >
         {error && <ErrorBox error={error} retry={() => void logout()} />}
         <div hidden={page !== 'atlas'}>
-          <DeferredWorkspace>
-            <AccessReview navigate={navigate} onManageAccount={inspectAccount} />
-          </DeferredWorkspace>
+          <ModalBoundary suspended={page !== 'atlas'}>
+            <DeferredWorkspace>
+              <AccessReview navigate={navigate} onManageAccount={inspectAccount} />
+            </DeferredWorkspace>
+          </ModalBoundary>
         </div>
         {['permissions', 'apps', 'security', 'tasks', 'system'].includes(page) && (
           <>

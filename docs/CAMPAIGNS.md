@@ -55,4 +55,6 @@ Archive hides a campaign from the default list without deleting its data. Includ
 
 If a finding decision or certification scope/decision has unsaved edits, switching campaign tools asks whether to keep editing or discard the draft. Escape keeps the editor open. Switching to another access-review tool preserves the campaign in memory; returning resumes it. Opening another campaign asks before replacing unsaved review or campaign-detail edits. A failed save or replacement read retains the current draft.
 
+Switching from Review to Administration or Instance suspends any open review dialog. Returning to Review restores that dialog and its in-memory state. This also applies when navigating with Ctrl/Cmd+K from a report preview.
+
 Save decisions before signing out or closing/reloading the browser. These safeguards do not persist unsaved drafts across session boundaries and do not cover every administration or remediation form.
