@@ -594,8 +594,19 @@ export function campaignReportMarkdown(report: CampaignReport) {
   }
   if (report.remediations) {
     lines.push('## Remediation receipts', '');
-    for (const row of report.remediations)
-      lines.push('- ' + literal(`${row.target}: ${row.title} · ${row.status} · ${row.message}`));
+    for (const row of report.remediations) {
+      lines.push(
+        '### ' + literal(`${row.target} · ${row.title}`),
+        '',
+        '- Status: ' + literal(row.status),
+        '- Updated: ' + literal(row.updatedAt),
+        '- Checked fields: ' + literal(row.checkedFields.join(', ') || 'None recorded'),
+        '',
+        literal(row.message),
+        '',
+      );
+      if (row.reconciliation) lines.push('Reconciliation: ' + literal(row.reconciliation), '');
+    }
     lines.push('');
   }
   if (report.timeline) {

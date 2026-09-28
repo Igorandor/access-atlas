@@ -321,6 +321,40 @@ test('reports escape hostile notes and exclude optional sections without excludi
   assert.ok(report.limits.length);
   assert.match(campaignReportMarkdown(report), /\\<script\\>/);
 });
+
+test('Markdown retains remediation readback and reconciliation evidence when selected', () => {
+  const document = campaign();
+  document.remediations.push({
+    id: randomUUID(),
+    findingId: 'fixture',
+    fingerprint: 'fixture',
+    title: 'Disable account',
+    target: 'alice',
+    reason: 'Owner review',
+    createdAt: document.createdAt,
+    updatedAt: '2026-09-28T02:00:00Z',
+    status: 'different',
+    path: '/v2/security/user',
+    method: 'PUT',
+    message: 'Readback differs from the proposal.',
+    checkedFields: ['Enabled', 'Roles'],
+    reconciliation: 'Owner kept the service account. <script>data</script>',
+  });
+  const report = buildCampaignReport(document, { authorNote: '', include: ['remediations'] });
+  const markdown = campaignReportMarkdown(report);
+  assert.match(markdown, /Updated: 2026-09-28T02:00:00Z/);
+  assert.match(markdown, /Checked fields: Enabled, Roles/);
+  assert.ok(
+    markdown.includes(
+      'Reconciliation: Owner kept the service account\\. \\<script\\>data\\</script\\>',
+    ),
+  );
+  assert.doesNotMatch(markdown, /<script>/);
+  assert.doesNotMatch(
+    campaignReportMarkdown(buildCampaignReport(document, { authorNote: '', include: [] })),
+    /Owner kept the service account/,
+  );
+});
 test('HTML and Markdown distinguish certification scopes even when their captured objects match', () => {
   const document = campaign();
   document.certificationScope = {

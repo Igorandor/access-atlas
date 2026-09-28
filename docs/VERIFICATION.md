@@ -1,5 +1,9 @@
 # Verification record
 
+## Markdown remediation evidence — September 28, 2026
+
+Markdown reports previously included a remediation's status and message but omitted its update timestamp, checked fields and reconciliation note, which were already present in HTML. Markdown now retains that evidence when the remediation section is selected. The regression failed before the fix and passes afterward; it also verifies literal escaping of a hostile reconciliation note and omission of the whole optional section when deselected. Production build and all 226 tests pass. Native writes and the HTML/UI renderer are unchanged.
+
 ## Workspace failure isolation — September 28, 2026
 
 A controlled Logs rendering failure exposed a navigation bug: switching to the otherwise healthy REST workbench retained the previous error boundary state. Each transient workspace now has its own boundary identity. The retained access review remains mounted separately so ordinary navigation still preserves its capture.
