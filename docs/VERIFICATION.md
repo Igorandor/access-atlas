@@ -1,5 +1,11 @@
 # Verification record
 
+## Certification pagination — September 28, 2026
+
+With31 pending objects, saving the only decision on page2 shortened the pending list to30 but left the UI on an empty page showing31–30. The list now clamps the displayed page to the available range; zero matches also have an explicit empty state. A regression exercising the actual component failed before the fix and passes afterward, including the zero-result case.
+
+Browser QA used the actual CertificationReview and shared certification model with31 synthetic accounts, an in-memory save callback and no native/API operations. Desktop and a390px frame both returned to1–30 of30 after recording Account31, disabled both page buttons and retained the saved-decision receipt. The mobile document remained390/390px. Full production build and219 tests passed.
+
 ## Report preview and initial loading — September 28, 2026
 
 Reports can now be previewed before export. The preview uses the same escaped standalone HTML renderer as downloads inside an empty-sandbox iframe (no scripts, origin access, forms or navigation permissions). Closing the dialog restores focus to Preview report. Metadata becomes a single column on narrow screens so timestamps do not widen the report.

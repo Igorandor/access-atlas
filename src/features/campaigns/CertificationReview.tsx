@@ -78,7 +78,8 @@ export function CertificationReview({
           ? state === 'all' || !row.decision
           : row.decision?.outcome === state),
     ) || [];
-  const shown = visible.slice(page * 30, page * 30 + 30);
+  const activePage = Math.min(page, Math.max(0, Math.ceil(visible.length / 30) - 1));
+  const shown = visible.slice(activePage * 30, activePage * 30 + 30);
   const selectedRow = coverage?.rows.find(
     (row) => JSON.stringify([row.subject.kind, row.subject.name]) === selected,
   );
@@ -308,15 +309,19 @@ export function CertificationReview({
               </button>
             ))}
           </div>
+          {coverage.total > 0 && !visible.length && <p>No objects match these filters.</p>}
           <div className="inline-actions">
-            <button disabled={page === 0} onClick={() => setPage(page - 1)}>
+            <button disabled={activePage === 0} onClick={() => setPage(activePage - 1)}>
               Previous
             </button>
             <span>
-              {visible.length ? page * 30 + 1 : 0}–{Math.min(visible.length, page * 30 + 30)} of{' '}
-              {visible.length}
+              {visible.length ? activePage * 30 + 1 : 0}–
+              {Math.min(visible.length, activePage * 30 + 30)} of {visible.length}
             </span>
-            <button disabled={(page + 1) * 30 >= visible.length} onClick={() => setPage(page + 1)}>
+            <button
+              disabled={(activePage + 1) * 30 >= visible.length}
+              onClick={() => setPage(activePage + 1)}
+            >
               Next
             </button>
           </div>
