@@ -13,6 +13,8 @@ An empty response means no rows were returned for the entered scope. Check the n
 
 These are current, separate observations, not an atomic snapshot or a historical campaign capture. They remain in browser memory until you edit the namespace or grantee, replace them with a new capture, or end the session. Export the evidence first if you need to retain it; exporting does not clear the current results. The view does not grant, revoke, impersonate accounts, run SQL or change IRIS settings. The operator needs `%Admin_Secure:U` for both native reads; namespace-list permission is not required because the namespace can be entered directly.
 
+If the session has expired when you select **Read SQL privileges**, Atlas returns to sign-in and removes the previous report from the workspace. After signing in, enter the scope and request a new read. A temporary server failure is different: the prior capture retains its original timestamp and can still be exported. Files already downloaded are unaffected.
+
 ## Native API behavior
 
 The view uses `GET /api/admin/v2/security/sql-privileges` and `GET /api/admin/v2/security/sql-admin-privileges`. The bundled OpenAPI describes object columns as `Name` and `Privilege`, while the tested IRIS 2026.2 response uses `Object` and `Action`. Atlas handles these two explicit formats; conflicting values are reported as malformed evidence. SQL administrative rows use `Privilege`.

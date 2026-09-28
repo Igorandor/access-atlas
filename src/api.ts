@@ -54,7 +54,7 @@ export class AtlasConnection {
     if (announce) this.channel?.postMessage(sessionSignal);
   }
   private rejectSession(resource: string, status: number) {
-    if (status === 401 && !['login', 'session'].includes(resource)) {
+    if (status === 401 && resource !== 'login' && (resource !== 'session' || this.token !== '')) {
       this.endSession(true);
       this.notifySessionEnded();
     }

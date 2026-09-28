@@ -192,6 +192,103 @@ test('current 401 ends the current session once and clears its CSRF token', asyn
   }
 });
 
+test('active session refresh 401 clears the token and broadcasts expiry even with an unreadable body', async (t) => {
+  for (const unreadable of [false, true]) {
+    const signals: unknown[] = [];
+    let ended = 0,
+      refresh = false,
+      sentToken: unknown;
+    const connection = new AtlasConnection(
+      {
+        addEventListener() {},
+        postMessage: (value) => {
+          signals.push(value);
+        },
+      },
+      () => {
+        ended++;
+      },
+    );
+    t.mock.method(globalThis, 'fetch', async (_url: string, options: RequestInit) => {
+      if (options.method === 'POST') {
+        sentToken = (options.headers as Record<string, string>)['X-CSRF-Token'];
+        return Response.json({ ok: true });
+      }
+      if (!refresh)
+        return Response.json({ csrf: 'existing-token', info: { username: 'Existing' } });
+      return unreadable
+        ? new Response('not JSON', { status: 401 })
+        : Response.json({ error: 'Session expired' }, { status: 401 });
+    });
+    await connection.send('session');
+    refresh = true;
+    await assert.rejects(
+      connection.send('session'),
+      (error) => error instanceof RequestError && error.status === 401,
+    );
+    assert.equal(ended, 1);
+    assert.deepEqual(signals, ['atlas-session-changed']);
+    await connection.send('probe', {});
+    assert.equal(sentToken, '');
+    await assert.rejects(connection.send('session'));
+    assert.equal(ended, 1, 'already signed-out discovery must not announce expiry again');
+    t.mock.restoreAll();
+  }
+});
+
+test('initial unauthorized discovery remains quiet while non401 active refresh failures preserve its token', async (t) => {
+  for (const status of [401, 403, 503]) {
+    let ended = 0,
+      refused = false,
+      sentToken: unknown;
+    const connection = new AtlasConnection({ addEventListener() {}, postMessage() {} }, () => {
+      ended++;
+    });
+    t.mock.method(globalThis, 'fetch', async (_url: string, options: RequestInit) => {
+      if (options.method === 'POST') {
+        sentToken = (options.headers as Record<string, string>)['X-CSRF-Token'];
+        return Response.json({ ok: true });
+      }
+      return status === 401 || refused
+        ? Response.json({ error: 'Synthetic refusal' }, { status })
+        : Response.json({ csrf: 'existing-token' });
+    });
+    if (status !== 401) await connection.send('session');
+    refused = true;
+    await assert.rejects(connection.send('session'));
+    await connection.send('probe', {});
+    assert.equal(ended, 0);
+    assert.equal(sentToken, status === 401 ? '' : 'existing-token');
+    t.mock.restoreAll();
+  }
+});
+
+test('late active-session 401 cannot sign out a newer login', async (t) => {
+  for (const unreadable of [false, true]) {
+    const pending = deferred<Response>();
+    const fixture = setup(t, async (url) =>
+      url === '/api/session' ? pending.promise : Response.json({ ok: true }),
+    );
+    await request('login', { username: 'A' });
+    const old = request('session'),
+      rejected = assert.rejects(old, stale);
+    await request('login', { username: 'B' });
+    pending.resolve(
+      unreadable
+        ? new Response('old invalid body', { status: 401 })
+        : Response.json({ error: 'A expired' }, { status: 401 }),
+    );
+    await rejected;
+    await request('probe', {});
+    assert.equal(
+      (fixture.sent.at(-1)!.options.headers as Record<string, string>)['X-CSRF-Token'],
+      'token-B',
+    );
+    assert.equal(fixture.ended(), 0);
+    t.mock.restoreAll();
+  }
+});
+
 test('a delayed poll for A cannot be sent using B credentials', async (t) => {
   const delay = deferred<void>();
   const waiting = deferred<void>();

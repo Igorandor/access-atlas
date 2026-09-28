@@ -1,5 +1,13 @@
 # Verification record
 
+## Expired session during SQL refresh — September 29, 2026
+
+Release 1.2.7 ends an established Atlas session when its session refresh returns HTTP 401, including an unreadable response body. The existing App handler removes the cached workspace and shows sign-in. Initial unauthenticated discovery remains quiet; 403 and transient 503 responses do not end the session. Responses from an older session remain unable to sign out a newer account. There is no automatic retry, and previously downloaded files are unaffected.
+
+Build and 297 tests pass. Three new session-boundary regression groups check token clearing and the cross-tab signal, initial discovery and other statuses, and delayed responses after a newer login. Eight actual App browser checks verify retained SQL evidence for 403/503, removal and sign-in for parsed/unreadable 401, and no repeated SQL reads after those refusals. Run `node scripts/test-sql-session-refresh-browser.mjs` and open its printed URL.
+
+Manual desktop and 390px checks confirm a temporary failure preserves the dated capture and export control, while an expired session returns to the real sign-in form with focus on the username. The phone sign-in panel fits 390px. All transport and records are synthetic; no native calls, stored records or real credentials were used. The before proof used the actual connection and SQL component; the final browser checks also mount the actual App.
+
 ## Certification export context — September 29, 2026
 
 The standalone certification JSON now includes campaign identity and revision, export time, capture label/start time, exact source warnings and relevant limits. Existing keys and coverage remain intact; it exports the saved scope rather than unsaved scope edits. A before test reproduced complete:false with only a generic unknown-source notice while the exact application-inventory refusal was omitted.
