@@ -1,5 +1,9 @@
 # Verification record
 
+## Overdue follow-up summary — September 28, 2026
+
+The campaign header counted only overdue unresolved finding decisions, so it could display zero while Report & follow-ups showed an overdue certification or a scheduled review of an accepted finding. It now counts the same agenda used by the report. Three actual-component regressions failed before the change and pass for a certification exception, an unreviewed subject with a scope deadline and an accepted finding with a follow-up date. The narrower finding filter, decisions and deadlines are unchanged. Build and 261 tests pass. Three additional actual parent/report regressions cover crossing UTC midnight before Refresh dates, first opening the report and exporting fresh evidence. The report notifies the parent of its exact evaluation time without a background timer. Desktop and 390px actual-component checks showed matching counts and all three due entries; desktop Refresh dates retained agreement. All records were synthetic, with no API or native writes.
+
 ## Campaign authorization changes — September 28, 2026
 
 A denied campaign list now clears the selected campaign and nested exports, consistent with the route-wide read permission. A mutation403 separately rechecks the selected campaign: allowed access retains edits, GET403/404 clears the workspace, and temporary failure hides evidence and exports while preserving drafts in memory. A newer read revision does not silently rebase or erase an edited decision; the reviewer must reload. Scoped modal suspension explicitly closes native top-layer dialogs during the check. Successful writes followed by a list error stay reported as saved and retain their result, avoiding an invitation to repeat the operation.

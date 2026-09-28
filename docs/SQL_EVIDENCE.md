@@ -11,7 +11,7 @@ The two reads include system-defined object privileges and request at most 500 r
 
 An empty response means no rows were returned for the entered scope. Check the name as well: on the tested IRIS 2026.2 instance, a nonexistent grantee also returned an empty successful response. A column-privilege indicator means additional column details exist; this view does not expand them. Neither an empty result nor the absence of a particular row proves denied runtime access.
 
-These are current, separate observations, not an atomic snapshot or a historical campaign capture. They remain in browser memory until exported or the session ends. The view does not grant, revoke, impersonate accounts, run SQL or change IRIS settings. The operator needs `%Admin_Secure:U` for both native reads; namespace-list permission is not required because the namespace can be entered directly.
+These are current, separate observations, not an atomic snapshot or a historical campaign capture. They remain in browser memory until you edit the namespace or grantee, replace them with a new capture, or end the session. Export the evidence first if you need to retain it; exporting does not clear the current results. The view does not grant, revoke, impersonate accounts, run SQL or change IRIS settings. The operator needs `%Admin_Secure:U` for both native reads; namespace-list permission is not required because the namespace can be entered directly.
 
 ## Native API behavior
 

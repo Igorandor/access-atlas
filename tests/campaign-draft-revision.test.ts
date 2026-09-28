@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs';
 import { runInNewContext } from 'node:vm';
 import { transformSync } from 'esbuild';
 import * as campaignModel from '../shared/campaign';
+import * as campaignReport from '../shared/campaign-report';
 import * as certification from '../shared/certification';
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
@@ -137,6 +138,7 @@ async function harness(scenario: Scenario) {
     '../../api': { request, RequestError },
     './api': { request, RequestError },
     '../../../shared/campaign': campaignModel,
+    '../../../shared/campaign-report': campaignReport,
     '../../../shared/certification': certification,
     '../../components/ui': { ErrorBox: () => null, Loading: () => null, Badge: () => null },
   };

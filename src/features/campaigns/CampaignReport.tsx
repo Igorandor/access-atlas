@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { Campaign } from '../../../shared/campaign';
 import {
   buildCampaignReport,
@@ -46,10 +46,12 @@ export function CampaignReport({
   campaign,
   onReviewFinding,
   onReviewCertification,
+  onDatesRefreshed,
 }: {
   campaign: Campaign;
   onReviewFinding?: (findingId: string) => void;
   onReviewCertification?: (subjectKey: string) => void;
+  onDatesRefreshed?: (at: Date) => void;
 }) {
   const [note, setNote] = useState('');
   const [include, setInclude] = useState<ReportSection[]>(sections.map((section) => section.id));
@@ -57,6 +59,7 @@ export function CampaignReport({
   const [error, setError] = useState('');
   const [preview, setPreview] = useState('');
   const [generatedAt, setGeneratedAt] = useState(() => new Date());
+  useEffect(() => onDatesRefreshed?.(generatedAt), [generatedAt, onDatesRefreshed]);
   const report = useMemo(
     () => buildCampaignReport(campaign, { authorNote: note, include }, generatedAt),
     [campaign, note, include, generatedAt],
@@ -64,7 +67,8 @@ export function CampaignReport({
   const attention = report.readiness.filter((item) => !item.satisfied);
   function exportReport(format: 'preview' | 'html' | 'json' | 'md') {
     try {
-      const current = buildCampaignReport(campaign, { authorNote: note, include }, new Date());
+      const at = new Date();
+      const current = buildCampaignReport(campaign, { authorNote: note, include }, at);
       if (format === 'preview') setPreview(campaignReportHtml(current));
       else if (format === 'html')
         saveText(
@@ -79,6 +83,7 @@ export function CampaignReport({
           'text/markdown;charset=utf-8',
         );
       else download('atlas-campaign-report.json', current);
+      setGeneratedAt(at);
       setError('');
     } catch (failure) {
       setError((failure as Error).message);

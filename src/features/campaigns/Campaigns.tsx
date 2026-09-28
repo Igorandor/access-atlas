@@ -13,6 +13,7 @@ import { CertificationReview } from './CertificationReview';
 import { CampaignReport } from './CampaignReport';
 import { NextPeriod } from './NextPeriod';
 import type { NextPeriod as PeriodInput } from '../../../shared/campaign-period';
+import { campaignAgenda } from '../../../shared/campaign-report';
 import {
   campaignProgress,
   type Campaign,
@@ -530,6 +531,11 @@ function CampaignDetail({
     description,
   ]);
   const progress = useMemo(() => campaignProgress(campaign), [campaign]);
+  const [followupDate, setFollowupDate] = useState(() => new Date());
+  const overdueFollowups = useMemo(
+    () => campaignAgenda(campaign, followupDate).filter((item) => item.overdue).length,
+    [campaign, followupDate],
+  );
   const active = campaign.state === 'active';
   const latest = campaign.captures.at(-1);
   return (
@@ -567,7 +573,7 @@ function CampaignDetail({
             <strong>{progress.openChanges}</strong> changes required
           </span>
           <span>
-            <strong>{progress.overdue}</strong> overdue follow-ups
+            <strong>{overdueFollowups}</strong> overdue follow-ups
           </span>
         </div>
         {active && (
@@ -685,6 +691,7 @@ function CampaignDetail({
         >
           <CampaignReport
             campaign={campaign}
+            onDatesRefreshed={setFollowupDate}
             onReviewFinding={(id) => {
               setFollowupFinding(id);
               setTab('decisions');

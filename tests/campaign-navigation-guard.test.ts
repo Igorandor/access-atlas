@@ -119,6 +119,7 @@ async function harness(kind: 'scope' | 'finding') {
     '../../api': { request, RequestError, download() {} },
     './api': { request, RequestError },
     '../../components/ui': { Modal: function Modal() {}, ErrorBox: function ErrorBox() {} },
+    '../../../shared/campaign-report': { campaignAgenda: () => [] },
     '../../../shared/campaign': {
       campaignProgress: (value: any) => ({
         reviewed: value.decisions.length,
