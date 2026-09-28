@@ -12,6 +12,8 @@ Try the [first access review](docs/FIRST_REVIEW.md), or inspect an [example expo
 
 The top navigation separates **Review**, **Administration** and **Instance**. Review has its own tool rail for the access map, resource matrix, review queue and changes. Administration contains accounts, applications, security and tasks; Instance contains the overview, host resources, logs and REST explorer. Switching sections preserves the captured review until logout or reload.
 
+[Watch the current walkthrough on YouTube](https://www.youtube.com/watch?v=MQmV8uuzKGo) (unlisted, available by link).
+
 ## The access-review workflow
 
 1. Sign in and let **Access review** capture users, role definitions, resources and applications. Read the completeness indicator and any warnings.
@@ -38,6 +40,8 @@ For a retained review, open **Campaigns**, create a campaign and save a capture.
 | Logs             | Messages, alerts, asynchronous audit queries, task history, journals and session receipts.                      |
 
 Every write has a separate review step. Execution and destructive controls require a typed target. Updates compare the touched fields with a fresh native read; this reduces lost updates but is not an atomic native lock.
+
+See [how to interpret API results](docs/API_BEHAVIOR.md) before acting on an incomplete capture, an accepted background job or an uncertain change.
 
 The interface includes light/dark themes, keyboard controls, Ctrl/Cmd+K navigation and responsive layouts. Native API values are never replaced with sample data.
 
@@ -182,7 +186,7 @@ See [data views and limits](docs/DATA_VIEWS.md).
 
 Open Review → Duty rules after capturing configuration. Enter a rule title and two different roles that should be reviewed together; add the rule. Evaluate ordinary conflicts, conditional escalation paths and unknown evidence separately. Inspect a row for its role paths. Export rules for reuse or Export evaluation for the rules, capture time, instance, warnings and results. Imports accept an exported JSON array up to 32 KB and 20 rules. Disabled accounts are excluded unless their configuration is unreadable. Rules remain in this view while changing tabs and clear at logout/reload. These rules do not enforce permissions or prove denied runtime access.
 
-See [the original project idea](IDEA.md). The written walkthrough above is part of the contest demonstration. Watch the [video walkthrough](https://www.youtube.com/watch?v=5IzkxZosweA), recorded from actual application interactions with English captions and CC0 music. Recording details and credits are in [VIDEO.md](docs/VIDEO.md).
+See [the original project idea](IDEA.md). The written walkthrough above is part of the contest demonstration. Watch the [video walkthrough](https://www.youtube.com/watch?v=MQmV8uuzKGo), recorded from actual application interactions with English captions and CC0 music. Recording details and credits are in [VIDEO.md](docs/VIDEO.md).
 
 ## Author
 

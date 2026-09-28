@@ -4,7 +4,7 @@
 
 The [extended MP4 walkthrough](https://github.com/Igorandor/access-atlas/releases/download/v1.0.0/access-atlas-walkthrough.mp4) runs 2:08 and shows inherited access, a role-removal preview, a saved campaign, finding decisions, object certification, follow-ups, report preview and a fresh review period. It uses actual recorded browser interactions, edited between takes, with CC0 music and no narration. Native configuration is read only; review records are saved in the isolated presentation store.
 
-The [release](https://github.com/Igorandor/access-atlas/releases/tag/v1.0.0) includes English SRT captions and a transcript. This is a separate GitHub-hosted recording; the original YouTube link below remains valid. The extended recording has not been uploaded to YouTube.
+The [release](https://github.com/Igorandor/access-atlas/releases/tag/v1.0.0) includes English SRT captions and a transcript. The [current YouTube walkthrough](https://www.youtube.com/watch?v=MQmV8uuzKGo) is unlisted and available by link. It was published on September 28, 2026; the updated link was sent for approval on the existing Open Exchange application. The shorter original recording below remains available.
 
 ## Original YouTube recording
 
