@@ -28,7 +28,7 @@ Record **Investigate** when evidence or ownership is unclear. A certification de
 
 ## 4. Export the work that remains
 
-Open **Report & follow-ups**. **Readiness** lists missing decisions and unresolved investigations. **Follow-ups** puts outstanding work and dates in one queue. Under **Export report**, choose **Preview report** to check the selected sections and optional reviewer note. Close the preview, then download Markdown for a repository or printable HTML for offline review and PDF printing.
+Open **Report & follow-ups**. **Readiness** lists missing decisions and unresolved investigations. **Follow-ups** puts outstanding work and dates in one queue. **Open finding** opens its decision; save any changes before using **Back to follow-ups**, which keeps the report filters. Under **Export report**, choose **Preview report** to check the selected sections and optional reviewer note. Close the preview, then download Markdown for a repository or printable HTML for offline review and PDF printing.
 
 Inspect the [example report from the recorded walkthrough](examples/access-review.md), or download [its standalone HTML version](examples/access-review.html). It intentionally shows unfinished work. The example is a saved report, not a live demo or a security certification.
 

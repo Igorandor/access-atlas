@@ -37,9 +37,11 @@ Acceptance or exception decisions are review records, not native mutations. Acce
 
 Capture history shows counts across saved captures and compares two selected captures. Account impact distinguishes direct assignment changes from inherited-role and public-grant effects. Partial data is marked unknown rather than treated as deletion. A finding no longer matching a predicate is not proof that a particular remediation caused it.
 
-Report & follow-ups contains readiness checks, a follow-up agenda, a searchable decision register, remediation receipts and campaign activity. Export sections can be selected. Identity, readiness, agenda and scope limits always accompany the report. The optional reviewer note belongs only to downloaded reports; it is not saved as a decision.
+Report & follow-ups contains readiness checks, a follow-up agenda, a searchable decision register, remediation receipts and campaign activity. Export sections can be selected. Identity, readiness, agenda and scope limits always accompany the report. The optional reviewer note belongs to the report preview and downloads; it is not saved as a decision.
 
-Printable HTML uses escaped values, no scripts and no external assets. Open it in a browser and print to PDF when needed. JSON, Markdown and CSV provide editable records, not signed compliance attestations. CSV cells that could be formulas are neutralized. Treat exports as security configuration data.
+For a finding in the follow-up agenda, choose **Open finding** to open its exact decision form. Save any edits, then use **Back to follow-ups** to return to the same search and source filter. Opening a finding does not save a decision or change native permissions.
+
+**Preview report** opens the selected sections before downloading. Printable HTML uses escaped values, no scripts and no external assets. Open it in a browser and print to PDF when needed. JSON, Markdown and CSV provide editable records, not signed compliance attestations. CSV cells that could be formulas are neutralized. Treat exports as security configuration data.
 
 ## Next period and retention
 

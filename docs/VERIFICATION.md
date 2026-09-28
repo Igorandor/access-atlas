@@ -1,5 +1,11 @@
 # Verification record
 
+## Finding follow-up navigation — September 28, 2026
+
+A finding in Report & follow-ups can open its exact decision form. Returning retains the agenda search, source filter and report options because the report stays mounted within the selected campaign. The existing form still requires an explicit save; navigation performs no native write or decision mutation. A different campaign gets its own report state. The return control is disabled during a pending campaign mutation.
+
+Production browser checks used the retained September presentation campaign: filter SuperUser/finding, open the correct existing decision with heading focus, and return to the same one-row filter. Desktop and a390px frame passed; mobile document width/scroll width were390/390. No decision was saved during these navigation checks. Production build and the219 existing regressions pass. These responsive checks do not claim physical touchscreen coverage.
+
 ## Certification pagination — September 28, 2026
 
 With31 pending objects, saving the only decision on page2 shortened the pending list to30 but left the UI on an empty page showing31–30. The list now clamps the displayed page to the available range; zero matches also have an explicit empty state. A regression exercising the actual component failed before the fix and passes afterward, including the zero-result case.

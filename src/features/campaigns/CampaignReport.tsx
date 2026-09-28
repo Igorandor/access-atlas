@@ -42,7 +42,13 @@ const sections: Array<{ id: ReportSection; title: string; description: string }>
   },
 ];
 
-export function CampaignReport({ campaign }: { campaign: Campaign }) {
+export function CampaignReport({
+  campaign,
+  onReviewFinding,
+}: {
+  campaign: Campaign;
+  onReviewFinding?: (findingId: string) => void;
+}) {
   const [note, setNote] = useState('');
   const [include, setInclude] = useState<ReportSection[]>(sections.map((section) => section.id));
   const [tab, setTab] = useState('overview');
@@ -170,7 +176,7 @@ export function CampaignReport({ campaign }: { campaign: Campaign }) {
           </details>
         </section>
       )}
-      {tab === 'agenda' && <Agenda items={report.agenda} />}
+      {tab === 'agenda' && <Agenda items={report.agenda} onReviewFinding={onReviewFinding} />}
       {tab === 'decisions' && (
         <DecisionRegister
           report={buildCampaignReport(
@@ -269,7 +275,13 @@ function ReportMetric({ value, label }: { value: string; label: string }) {
   );
 }
 
-function Agenda({ items }: { items: AgendaItem[] }) {
+function Agenda({
+  items,
+  onReviewFinding,
+}: {
+  items: AgendaItem[];
+  onReviewFinding?: (findingId: string) => void;
+}) {
   const [source, setSource] = useState('all');
   const [search, setSearch] = useState('');
   const [onlyOverdue, setOnlyOverdue] = useState(false);
@@ -356,6 +368,16 @@ function Agenda({ items }: { items: AgendaItem[] }) {
                 ? `Follow-up ${item.dueDate}${item.overdue ? ' · overdue' : ''}`
                 : 'No follow-up date set'}
             </span>
+            {item.source === 'finding' && onReviewFinding && (
+              <div className="inquiry-actions">
+                <button
+                  aria-label={`Open finding: ${item.title} (${item.target})`}
+                  onClick={() => onReviewFinding(item.id.slice('finding:'.length))}
+                >
+                  Open finding
+                </button>
+              </div>
+            )}
           </article>
         ))}
       </div>

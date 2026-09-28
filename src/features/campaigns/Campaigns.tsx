@@ -280,6 +280,17 @@ function CampaignDetail({
   nextPeriod: (input: PeriodInput) => Promise<void>;
 }) {
   const [tab, setTab] = useState('decisions');
+  const [reportVisited, setReportVisited] = useState(false);
+  const [followupFinding, setFollowupFinding] = useState('');
+  const reportRegion = useRef<HTMLDivElement>(null);
+  const returnToReport = useRef(false);
+  useEffect(() => {
+    if (tab === 'report' && returnToReport.current) {
+      returnToReport.current = false;
+      reportRegion.current?.focus({ preventScroll: true });
+      reportRegion.current?.scrollIntoView({ block: 'start' });
+    }
+  }, [tab]);
   const [label, setLabel] = useState('Access review ' + new Date().toISOString().slice(0, 10));
   const [reason, setReason] = useState('');
   const [statusFailure, setStatusFailure] = useState<{ message: string }>();
@@ -429,13 +440,35 @@ function CampaignDetail({
           ['report', 'Report & follow-ups'],
           ['next-period', 'Next review period'],
         ].map(([id, text]) => (
-          <button key={id} aria-pressed={tab === id} onClick={() => setTab(id)}>
+          <button
+            key={id}
+            aria-pressed={tab === id}
+            onClick={() => {
+              if (id === 'report') setReportVisited(true);
+              setFollowupFinding('');
+              setTab(id);
+            }}
+          >
             {text}
           </button>
         ))}
       </nav>
       {tab === 'decisions' && (
-        <CampaignDecisions campaign={campaign} disabled={pending || !active} change={change} />
+        <CampaignDecisions
+          campaign={campaign}
+          disabled={pending || !active}
+          change={change}
+          initialFindingId={followupFinding}
+          backDisabled={pending}
+          onBackToFollowups={
+            followupFinding
+              ? () => {
+                  returnToReport.current = true;
+                  setTab('report');
+                }
+              : undefined
+          }
+        />
       )}
       {tab === 'map' && latest && (
         <AccessMap snapshot={latest.snapshot} onManage={onManageAccount} />
@@ -455,7 +488,22 @@ function CampaignDetail({
         <p className="panel padded">Capture access to use this tool.</p>
       )}
       {tab === 'captures' && <CampaignCaptures campaign={campaign} />}
-      {tab === 'report' && <CampaignReport campaign={campaign} />}
+      {reportVisited && (
+        <div
+          hidden={tab !== 'report'}
+          ref={reportRegion}
+          tabIndex={-1}
+          aria-label="Campaign report"
+        >
+          <CampaignReport
+            campaign={campaign}
+            onReviewFinding={(id) => {
+              setFollowupFinding(id);
+              setTab('decisions');
+            }}
+          />
+        </div>
+      )}
       {tab === 'next-period' && (
         <NextPeriod campaign={campaign} disabled={pending} create={nextPeriod} />
       )}
@@ -636,14 +684,20 @@ function CampaignDecisions({
   campaign,
   disabled,
   change,
+  initialFindingId = '',
+  onBackToFollowups,
+  backDisabled = false,
 }: {
   campaign: Campaign;
   disabled: boolean;
   change: (input: ChangePayload) => Promise<void>;
+  initialFindingId?: string;
+  onBackToFollowups?: () => void;
+  backDisabled?: boolean;
 }) {
   const progress = useMemo(() => campaignProgress(campaign), [campaign]);
   const [filter, setFilter] = useState('all');
-  const [selectedId, setSelectedId] = useState('');
+  const [selectedId, setSelectedId] = useState(initialFindingId);
   const [focusRequest, setFocusRequest] = useState(0);
   const selected = progress.rows.find((row) => row.finding.id === selectedId);
   const visible = progress.rows.filter(
@@ -715,6 +769,11 @@ function CampaignDecisions({
           }}
           cancel={() => setSelectedId('')}
         />
+      )}
+      {onBackToFollowups && (
+        <button disabled={backDisabled} onClick={onBackToFollowups}>
+          Back to follow-ups
+        </button>
       )}
     </section>
   );
