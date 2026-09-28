@@ -34,6 +34,8 @@ Under **Certification**, expand **Certification scope**, require certification, 
 
 Record **Investigate** when evidence or ownership is unclear. A certification decision is separate from a finding decision, and both are separate from changing IRIS.
 
+If **Reload campaign** brings a new capture or revision while you are editing a certification decision, Atlas keeps your text and blocks saving the stale draft. Read the updated evidence, preserve any text you still need, then choose **Use saved decision** to load the current decision and continue the review. The button replaces the old draft. Filters and pages change the object list; the selected object's heading identifies which decision you are editing.
+
 Switching to another object asks before discarding an edited decision. When you arrive from a follow-up, **Back to follow-ups** also checks for unsaved decision or scope changes.
 
 To understand an earlier decision, open **Activity** and expand its saved decision evidence. Read the reason, follow-up date and capture identifier attached to that revision. **Report & follow-ups → Activity** offers the same evidence. An older decision describes the review at that time; use **Certification** or **Decisions** to check the current review status. Include **Campaign activity** when exporting a report if the recipient needs that history.

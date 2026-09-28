@@ -1,5 +1,11 @@
 # Verification record
 
+## Certification draft revisions — September 28, 2026
+
+Release 1.2.2 binds each certification draft to its subject, capture and campaign revision. A reload that changes this basis preserves edited values and blocks submission, including programmatic submission. Use saved decision explicitly adopts the current record. Unedited forms and matching saves on the same capture follow the current revision normally. When an object leaves scope, its unsaved values remain readable until explicitly discarded; disabling certification does not hide this recovery control.
+
+Build and 283 tests pass. Twenty-three actual-component browser checks cover changed captures, concurrent decisions, unchanged reloads, matching saves, removed subjects, disabled scope, navigation guards, refused saves and read-access recovery. Manual desktop and 390px checks confirmed focus on the conflict, preserved text, explicit reset and submission against the new capture/revision, and readable out-of-scope notes. Documents measured 1280/1280 and 390/390 client/scroll width. All records and saves were synthetic and in memory, with no IRIS or durable writes. These checks do not certify native authorization or physical-device behavior.
+
 ## Incomplete role evidence — September 28, 2026
 
 Release 1.2.1 distinguishes missing or unreadable reachable role definitions from complete definitions with no grants. Matrix cells retain known grants beside a question mark, and their explanations list the unread definitions. Proven paths to %All stay visible. The removal preview retains limitations from the original assignment, including when the unread role is unchecked, and counts only known grant changes. Cycles among readable roles and unrelated unread roles do not make an account's evidence incomplete.

@@ -82,6 +82,14 @@ export function CertificationReview({
   );
   const [note, setNote] = useState(initialRow?.decision?.note || '');
   const [dueDate, setDueDate] = useState(initialRow?.decision?.dueDate || '');
+  const [decisionBase, setDecisionBase] = useState({
+    subject: initialRow ? initialSubject : '',
+    revision: campaign.revision,
+    captureId: latest?.id,
+    outcome: initialRow?.decision?.outcome || 'retain',
+    note: initialRow?.decision?.note || '',
+    dueDate: initialRow?.decision?.dueDate || '',
+  });
   const [carryFrom, setCarryFrom] = useState(campaign.captures.at(-2)?.id || '');
   const visible =
     coverage?.rows.filter(
@@ -98,11 +106,69 @@ export function CertificationReview({
     (row) => JSON.stringify([row.subject.kind, row.subject.name]) === selected,
   );
   const decisionDirty = Boolean(
-    selectedRow &&
-    (outcome !== (selectedRow.decision?.outcome || 'retain') ||
-      note !== (selectedRow.decision?.note || '') ||
-      dueDate !== (selectedRow.decision?.dueDate || '')),
+    selected &&
+    (outcome !== decisionBase.outcome ||
+      note !== decisionBase.note ||
+      dueDate !== decisionBase.dueDate),
   );
+  const decisionConflict = Boolean(
+    selected &&
+    (decisionBase.subject !== selected ||
+      decisionBase.revision !== campaign.revision ||
+      decisionBase.captureId !== latest?.id ||
+      !selectedRow),
+  );
+  const decisionConflictNotice = useRef<HTMLDivElement>(null);
+  const focusedConflict = useRef('');
+  function useSavedDecision() {
+    const current = selectedRow?.decision;
+    const subject = selectedRow ? selected : '';
+    setSelected(subject);
+    setOutcome(current?.outcome || 'retain');
+    setNote(current?.note || '');
+    setDueDate(current?.dueDate || '');
+    setDecisionBase({
+      subject,
+      revision: campaign.revision,
+      captureId: latest?.id,
+      outcome: current?.outcome || 'retain',
+      note: current?.note || '',
+      dueDate: current?.dueDate || '',
+    });
+  }
+  useEffect(() => {
+    if (!decisionConflict) {
+      focusedConflict.current = '';
+      return;
+    }
+    // Matching saved values can adopt the revision only for the same capture.
+    // Equal text on another capture does not prove that its evidence was reviewed.
+    const savedDraft =
+      selectedRow &&
+      decisionBase.captureId === latest?.id &&
+      outcome === (selectedRow.decision?.outcome || 'retain') &&
+      note === (selectedRow.decision?.note || '') &&
+      dueDate === (selectedRow.decision?.dueDate || '');
+    if (!decisionDirty || savedDraft) useSavedDecision();
+    else {
+      const identity = JSON.stringify([selected, campaign.revision, latest?.id]);
+      if (focusedConflict.current !== identity) {
+        focusedConflict.current = identity;
+        decisionConflictNotice.current?.focus({ preventScroll: true });
+        decisionConflictNotice.current?.scrollIntoView({ block: 'start' });
+      }
+    }
+  }, [
+    decisionConflict,
+    decisionDirty,
+    decisionBase,
+    campaign.revision,
+    latest?.id,
+    selectedRow,
+    outcome,
+    note,
+    dueDate,
+  ]);
   useEffect(() => {
     onDirtyChange?.(decisionDirty || scopeDirty);
   }, [decisionDirty, scopeDirty, onDirtyChange]);
@@ -233,6 +299,25 @@ export function CertificationReview({
         </p>
       )}
       {!latest && <p>Capture access to populate the review scope.</p>}
+      {decisionConflict && (
+        <div className="notice" role="status" tabIndex={-1} ref={decisionConflictNotice}>
+          <p>
+            This campaign changed after you opened this decision. Your draft is preserved.
+            {selectedRow
+              ? ' Use saved decision to load the current review before editing again.'
+              : ' The object is no longer in the current scope. Discard the draft to choose another object.'}
+          </p>
+          {!selectedRow && (
+            <details>
+              <summary>Unsaved decision draft</summary>
+              <DataValue value={{ outcome, note, dueDate: dueDate || undefined }} />
+            </details>
+          )}
+          <button type="button" disabled={disabled} onClick={useSavedDecision}>
+            {selectedRow ? 'Use saved decision' : 'Discard unavailable decision draft'}
+          </button>
+        </div>
+      )}
       {coverage && scope.enabled && (
         <>
           <div className="campaign-metrics">
@@ -320,6 +405,14 @@ export function CertificationReview({
                     setOutcome(row.decision?.outcome || 'retain');
                     setNote(row.decision?.note || '');
                     setDueDate(row.decision?.dueDate || '');
+                    setDecisionBase({
+                      subject: next,
+                      revision: campaign.revision,
+                      captureId: latest?.id,
+                      outcome: row.decision?.outcome || 'retain',
+                      note: row.decision?.note || '',
+                      dueDate: row.decision?.dueDate || '',
+                    });
                   });
                 }}
               >
@@ -388,15 +481,19 @@ export function CertificationReview({
               <form
                 onSubmit={(event) => {
                   event.preventDefault();
-                  void save({
-                    action: 'certify',
-                    captureId: latest!.id,
-                    kind: selectedRow.subject.kind,
-                    name: selectedRow.subject.name,
-                    outcome,
-                    note,
-                    ...(dueDate ? { dueDate } : {}),
-                  });
+                  if (disabled || decisionConflict || !decisionBase.captureId) return;
+                  void save(
+                    {
+                      action: 'certify',
+                      captureId: decisionBase.captureId,
+                      kind: selectedRow.subject.kind,
+                      name: selectedRow.subject.name,
+                      outcome,
+                      note,
+                      ...(dueDate ? { dueDate } : {}),
+                    },
+                    decisionBase.revision,
+                  );
                 }}
               >
                 <fieldset disabled={disabled}>
@@ -437,7 +534,7 @@ export function CertificationReview({
                     This records a review decision. Follow-up dates schedule a review; they do not
                     expire permissions or automatically revoke exceptions.
                   </p>
-                  <button className="primary" disabled={!note.trim()}>
+                  <button className="primary" disabled={!note.trim() || decisionConflict}>
                     Record certification decision
                   </button>
                 </fieldset>

@@ -6,6 +6,7 @@ import { transformSync } from 'esbuild';
 
 function harness(initialSubject = '["accounts","A:one"]') {
   const slots: any[] = [];
+  const submissions: Array<{ input: any; revision?: number }> = [];
   let cursor = 0,
     writes = 0,
     returns = 0;
@@ -67,8 +68,9 @@ function harness(initialSubject = '["accounts","A:one"]') {
     onBackToFollowups: () => {
       returns++;
     },
-    save: async () => {
+    save: async (input: any, revision?: number) => {
       writes++;
+      submissions.push({ input, revision });
     },
   };
   const walk = (n: any): any[] =>
@@ -93,6 +95,16 @@ function harness(initialSubject = '["accounts","A:one"]') {
   const note = () => nodes().find((n) => n.type === 'textarea');
   return {
     nodes,
+    submissions,
+    reload(captureId = 'capture') {
+      props.campaign.revision++;
+      props.campaign.captures = [{ id: captureId, snapshot: { warnings: [] } }];
+    },
+    removeSelectedSubject() {
+      rows.shift();
+      props.campaign.revision++;
+    },
+    submitCallback: () => nodes().find((node) => node.type === 'form').props.onSubmit,
     button,
     note,
     text,
@@ -155,5 +167,50 @@ test('return also protects a changed scope; an absent subject opens no misleadin
   assert.ok(ui.modal());
   ui.button('Keep editing').props.onClick();
   assert.equal(ui.returns, 0);
+  assert.equal(ui.writes, 0);
+});
+
+test('certification draft submit is guarded against a newer revision and capture', () => {
+  const ui = harness();
+  ui.note().props.onChange({ target: { value: 'Review of the original capture' } });
+  const oldSubmit = ui.submitCallback();
+  ui.reload('new-capture');
+  assert.equal(ui.button('Record certification decision').props.disabled, true);
+  ui.submitCallback()({ preventDefault() {} });
+  assert.equal(ui.writes, 0, 'A programmatic submit also obeys the conflict');
+  assert.equal(ui.note().props.value, 'Review of the original capture');
+  oldSubmit({ preventDefault() {} });
+  assert.equal(ui.submissions[0].input.captureId, 'capture');
+  assert.equal(ui.submissions[0].revision, 1, 'A retained handler cannot adopt the new revision');
+});
+
+test('explicit saved-decision reset binds the next edit to the current revision', () => {
+  const ui = harness();
+  ui.note().props.onChange({ target: { value: 'Old unsaved note' } });
+  ui.reload();
+  assert.equal(ui.button('Record certification decision').props.disabled, true);
+  ui.button('Use saved decision').props.onClick();
+  assert.equal(ui.note().props.value, 'Saved A:one');
+  assert.equal(ui.button('Record certification decision').props.disabled, false);
+  ui.note().props.onChange({ target: { value: 'Reconsidered against current review' } });
+  ui.submitCallback()({ preventDefault() {} });
+  assert.equal(ui.submissions[0].revision, 2);
+  assert.equal(ui.submissions[0].input.name, 'A:one');
+  assert.equal(ui.submissions[0].input.note, 'Reconsidered against current review');
+});
+
+test('an out-of-scope certification draft remains guarded until explicitly discarded', () => {
+  const ui = harness();
+  ui.note().props.onChange({ target: { value: 'Keep the unavailable subject draft' } });
+  ui.removeSelectedSubject();
+  assert.equal(ui.note(), undefined);
+  assert.ok(ui.button('Discard unavailable decision draft'));
+  ui.button('Back to follow-ups').props.onClick();
+  assert.ok(ui.modal());
+  ui.button('Keep editing').props.onClick();
+  assert.equal(ui.returns, 0);
+  ui.button('Discard unavailable decision draft').props.onClick();
+  ui.button('Back to follow-ups').props.onClick();
+  assert.equal(ui.returns, 1);
   assert.equal(ui.writes, 0);
 });
