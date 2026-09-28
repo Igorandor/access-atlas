@@ -280,3 +280,8 @@
   border-bottom: 1px solid var(--line);
   overflow-wrap: anywhere;
 }
+
+.campaign-creation-recovery {
+  overflow-wrap: anywhere;
+  margin-bottom: 16px;
+}

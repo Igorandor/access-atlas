@@ -1,5 +1,13 @@
 # Verification record
 
+## Recovering campaign creation — September 29, 2026
+
+Release 1.2.5 retains the attempted campaign title and next-period source when creation cannot be confirmed. Both creation entry points remain blocked until an explicit history read and operator acknowledgement. The existing campaign list is refreshed with filters cleared and archived records included; no record is automatically selected or matched. Failed or malformed history cannot authorize another creation. A later ordinary list refresh invalidates the previous acknowledgement, including on failure. Known successful creation followed by a failed list refresh remains reported as saved.
+
+Build and 292 tests pass, plus 19 actual-component browser checks. They cover transport, malformed success and server failure; definite refusal; synchronous duplicate submits; both entry points; retained next-period fields; failed, malformed, empty and denied history; acknowledgement invalidation; known save/list failure; and the existing source-revision confirmation. Before fixtures reproduced two distinct ordinary records and two distinct next-period children after repeated submissions around lost responses. No native or durable writes were made.
+
+Manual desktop and 390px checks confirm retained title/scope, reset list filters, no automatic selection, blocked repeat after history succeeds, inline read failure, and explicit acknowledgement before another attempt. Next-period title, description and reviewed source survive the history read. Client/scroll widths are 1280/1280 and 390/390px. The guard remains in page memory, not across a full browser reload; it is not server idempotency or a native-authorization certification.
+
 ## Certification carry-forward preview — September 28, 2026
 
 Release 1.2.4 previews eligible decisions and reasons for omissions before carrying them to the latest capture. The preview and mutation share the same eligibility planner; saved scope, capture identity, evidence completeness, unchanged configuration/dependencies and retain/exception outcomes remain required. Original human review dates and revision protection are preserved. Incomplete captures show a single explanation without presenting an assessed count.

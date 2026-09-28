@@ -15,6 +15,12 @@ Finding decisions are tied to exact finding content. A changed finding requires 
 
 In Access map, **Inspect account** opens a fresh read of that account in the configuration register. **Back to access review** returns to the same campaign, map and filter. This also works for the ad hoc access map. The shortcut does not create a proposal or change permissions; the register uses current native authorization rather than the saved capture.
 
+## Recover an interrupted creation
+
+If Atlas cannot confirm creation of a campaign or next review period, check saved campaigns before repeating it. The recovery read refreshes the existing list and clears its filters so a saved record is not hidden. It does not select a presumed match or treat an absent entry as proof of failure. Inspect the title, scope and saved record before explicitly allowing another campaign. A failed read keeps the repeat blocked and preserves the entered fields.
+
+The warning remains while this page stays open, including switching selected campaigns. After a full browser reload, inspect the campaign list before repeating an interrupted creation. Creating a campaign saves review settings and does not change native permissions.
+
 ## Object certification
 
 Enable certification in its scope panel. Choose accounts, roles, resources and applications, a name prefix and whether disabled objects are included. The scope may have a review due date. Select an object, inspect the captured facts and dependencies, and record retain, change, remove, investigate or exception with a reason.

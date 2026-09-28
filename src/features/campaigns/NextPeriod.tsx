@@ -6,10 +6,12 @@ import { ErrorBox } from '../../components/ui';
 export function NextPeriod({
   campaign,
   disabled,
+  creationBlocked = false,
   create,
 }: {
   campaign: Campaign;
   disabled: boolean;
+  creationBlocked?: boolean;
   create: (input: PeriodInput) => Promise<void>;
 }) {
   const [title, setTitle] = useState((campaign.title + ' · next period').slice(0, 160));
@@ -44,7 +46,7 @@ export function NextPeriod({
   );
   async function submit(event: React.FormEvent) {
     event.preventDefault();
-    if (disabled) return;
+    if (disabled || creationBlocked) return;
     if (!reviewed || !title.trim() || !preview.length) {
       setError('Review the current settings before creating the next campaign.');
       return;
@@ -219,7 +221,10 @@ export function NextPeriod({
             I reviewed the settings for the next period.
           </label>
           <div className="inquiry-actions">
-            <button className="primary" disabled={!reviewed || !title.trim() || !preview.length}>
+            <button
+              className="primary"
+              disabled={creationBlocked || !reviewed || !title.trim() || !preview.length}
+            >
               Create next-period campaign
             </button>
           </div>

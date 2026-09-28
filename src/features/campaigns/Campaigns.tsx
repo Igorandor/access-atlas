@@ -17,6 +17,7 @@ import type { NextPeriod as PeriodInput } from '../../../shared/campaign-period'
 import { campaignAgenda } from '../../../shared/campaign-report';
 import {
   campaignProgress,
+  validateCampaign,
   type Campaign,
   type CampaignSummary,
   type CampaignChange,
@@ -34,10 +35,90 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
   const [filter, setFilter] = useState('');
   const [includeArchived, setIncludeArchived] = useState(false);
   const sequence = useRef(0);
+  const creationPending = useRef(false);
+  const creationUnknown = useRef(false);
+  const [creationRecovery, setCreationRecovery] = useState<{
+    title: string;
+    source?: string;
+    checked?: boolean;
+    error?: string;
+  }>();
+  const recoveryButton = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (creationRecovery && !pending) {
+      recoveryButton.current?.focus({ preventScroll: true });
+      recoveryButton.current?.scrollIntoView({ block: 'center' });
+    }
+  }, [Boolean(creationRecovery), pending]);
+  function uncertainCreation(failure: unknown, attemptedTitle: string, source?: string) {
+    if (!(
+      failure instanceof TypeError ||
+      (failure instanceof RequestError &&
+        (failure.status >= 500 || (failure.status >= 200 && failure.status < 300)))
+    ))
+      return false;
+    creationUnknown.current = true;
+    setCreationRecovery({ title: attemptedTitle, source });
+    return true;
+  }
+  function createdCampaign(value: unknown): Campaign {
+    try {
+      return validateCampaign(value);
+    } catch {
+      throw new RequestError(
+        'The saved campaign response could not be read. Check saved campaigns before creating another.',
+        201,
+      );
+    }
+  }
+  async function checkSavedCampaigns() {
+    if (!creationUnknown.current || creationPending.current || pending) return;
+    creationPending.current = true;
+    const token = ++sequence.current;
+    setPending(true);
+    setCreationRecovery((value) => value && { ...value, checked: false, error: undefined });
+    try {
+      const rows = await request<CampaignSummary[]>('campaigns');
+      if (token !== sequence.current) return;
+      if (
+        !Array.isArray(rows) ||
+        rows.some(
+          (row) =>
+            !row ||
+            typeof row.id !== 'string' ||
+            typeof row.title !== 'string' ||
+            typeof row.description !== 'string' ||
+            !['active', 'closed', 'archived'].includes(row.state) ||
+            typeof row.captureCount !== 'number' ||
+            typeof row.updatedAt !== 'string' ||
+            !Number.isFinite(Date.parse(row.updatedAt)),
+        )
+      )
+        throw new Error(
+          'Saved campaign history could not be read. Try again before allowing another campaign.',
+        );
+      setCampaigns(rows);
+      setFilter('');
+      setIncludeArchived(true);
+      setCreationRecovery((value) => value && { ...value, checked: true });
+    } catch (failure) {
+      if (token !== sequence.current) return;
+      if (failure instanceof RequestError && [403, 404].includes(failure.status))
+        clearDeniedWorkspace();
+      setCreationRecovery(
+        (value) => value && { ...value, checked: false, error: (failure as Error).message },
+      );
+    } finally {
+      creationPending.current = false;
+      if (token === sequence.current) setPending(false);
+    }
+  }
+
   const [accessCheckId, setAccessCheckId] = useState<string>();
   const [draftDirty, setDraftDirty] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<() => void>();
   function clearDeniedWorkspace() {
+    setCreationRecovery((value) => value && { ...value, checked: false });
     setCampaigns([]);
     setCurrent(undefined);
     setPendingNavigation(undefined);
@@ -45,6 +126,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     setAccessCheckId(undefined);
   }
   async function refreshListAfterSave(token: number) {
+    setCreationRecovery((value) => value && { ...value, checked: false });
     try {
       const result = await request<CampaignSummary[]>('campaigns');
       if (token === sequence.current) setCampaigns(result);
@@ -118,6 +200,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     else next();
   }
   async function refresh() {
+    setCreationRecovery((value) => value && { ...value, checked: false });
     const token = ++sequence.current;
     setPending(true);
     setError('');
@@ -163,12 +246,15 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     }
   }
   async function create() {
+    if (creationPending.current || creationUnknown.current || pending) return;
+    creationPending.current = true;
+    const attemptedTitle = title;
     const token = ++sequence.current;
     setPending(true);
     setError('');
     let applied = false;
     try {
-      const result = await request<Campaign>('campaigns', { title, description });
+      const result = createdCampaign(await request<Campaign>('campaigns', { title, description }));
       if (token !== sequence.current) return;
       applied = true;
       setCurrent(result);
@@ -177,9 +263,11 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       await refreshListAfterSave(token);
     } catch (failure) {
       if (token !== sequence.current) return;
+      if (!applied && uncertainCreation(failure, attemptedTitle)) return;
       setError((failure as Error).message);
       if (!applied) await revalidateRefusal(failure, current?.id, token);
     } finally {
+      creationPending.current = false;
       if (token === sequence.current) setPending(false);
     }
   }
@@ -250,6 +338,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     }
   }
   async function nextPeriod(input: PeriodInput, discardConfirmed = false) {
+    if (creationPending.current || creationUnknown.current || pending) return;
     if (draftDirty && !discardConfirmed) {
       replaceCampaign(() => {
         void nextPeriod(input, true).catch(() => {});
@@ -257,23 +346,29 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       return;
     }
     if (!current) throw new Error('Choose a campaign first.');
+    creationPending.current = true;
+    const attemptedSource = current.id;
     const token = ++sequence.current;
     setPending(true);
     setError('');
     let applied = false;
     try {
-      const created = await request<Campaign>('campaigns/' + current.id + '/next-period', input);
+      const created = createdCampaign(
+        await request<Campaign>('campaigns/' + current.id + '/next-period', input),
+      );
       if (token !== sequence.current) return;
       applied = true;
       setCurrent(created);
       await refreshListAfterSave(token);
     } catch (failure) {
       if (token === sequence.current) {
+        if (!applied && uncertainCreation(failure, input.title, attemptedSource)) return;
         setError((failure as Error).message);
         if (!applied) await revalidateRefusal(failure, current.id, token);
       }
       throw failure;
     } finally {
+      creationPending.current = false;
       if (token === sequence.current) setPending(false);
     }
   }
@@ -289,6 +384,46 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
         </button>
       </header>
       {error && <ErrorBox error={error} />}
+      {creationRecovery && (
+        <section
+          className="panel padded campaign-creation-recovery"
+          aria-label="Unconfirmed campaign creation"
+        >
+          <p role="status">
+            Creation of <strong>{creationRecovery.title}</strong> could not be confirmed. The
+            campaign may have been saved. Check saved campaigns before creating another.
+          </p>
+          {creationRecovery.source && (
+            <p>Next review period from campaign {creationRecovery.source}.</p>
+          )}
+          {creationRecovery.error && <ErrorBox error={creationRecovery.error} />}
+          <button
+            ref={recoveryButton}
+            disabled={pending}
+            onClick={() => void checkSavedCampaigns()}
+          >
+            Check saved campaigns
+          </button>
+          {creationRecovery.checked && (
+            <>
+              <p>
+                The saved campaign list below was refreshed with all filters cleared and archived
+                campaigns included. No campaign was selected automatically. An absent campaign does
+                not prove that creation failed.
+              </p>
+              <button
+                disabled={pending}
+                onClick={() => {
+                  creationUnknown.current = false;
+                  setCreationRecovery(undefined);
+                }}
+              >
+                I checked saved campaigns; allow another campaign
+              </button>
+            </>
+          )}
+        </section>
+      )}
       <div className="campaign-columns">
         <aside className="campaign-index panel">
           <label className="field">
@@ -353,7 +488,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
                     onChange={(event) => setDescription(event.target.value)}
                   />
                 </label>
-                <button className="primary" disabled={!title.trim()}>
+                <button className="primary" disabled={!title.trim() || Boolean(creationRecovery)}>
                   Create campaign
                 </button>
               </fieldset>
@@ -383,6 +518,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
                     onDirtyChange={setDraftDirty}
                     campaign={current}
                     pending={pending}
+                    creationBlocked={Boolean(creationRecovery)}
                     change={change}
                     reload={() => void open(current.id)}
                     onManageAccount={onManageAccount}
@@ -438,6 +574,7 @@ function CampaignDetail({
   campaign,
   onDirtyChange,
   pending,
+  creationBlocked,
   change,
   reload,
   onManageAccount,
@@ -447,6 +584,7 @@ function CampaignDetail({
   campaign: Campaign;
   onDirtyChange?: (dirty: boolean) => void;
   pending: boolean;
+  creationBlocked: boolean;
   change: (
     input: ChangePayload,
     expectedRevision?: number,
@@ -715,7 +853,12 @@ function CampaignDetail({
         </div>
       )}
       {tab === 'next-period' && (
-        <NextPeriod campaign={campaign} disabled={pending} create={nextPeriod} />
+        <NextPeriod
+          campaign={campaign}
+          disabled={pending}
+          creationBlocked={creationBlocked}
+          create={nextPeriod}
+        />
       )}
       {tab === 'certification' && (
         <CertificationReview
