@@ -24,6 +24,7 @@ export function AccessMap({
     [snapshot, user, omitted],
   );
   const original = useMemo(() => resolveAccess(snapshot, user?.Roles ?? []), [snapshot, user]);
+  const incompletePreview = original.unresolvedRoles.length > 0;
   const grants = [...access.grants]
     .filter(([name]) => name.toLowerCase().includes(filter.toLowerCase()))
     .sort(([a], [b]) => a.localeCompare(b));
@@ -126,10 +127,13 @@ export function AccessMap({
                   </div>
                   {omitted.length > 0 && (
                     <div className="simulation-note">
-                      <strong>Preview only</strong> · {changed}{' '}
+                      <strong>Preview only</strong> · {changed} {incompletePreview ? 'known ' : ''}
                       {changed === 1
                         ? 'resource grant set changes.'
                         : 'resource grant sets change.'}{' '}
+                      {incompletePreview
+                        ? 'The full effect is unknown because some role definitions could not be read. '
+                        : ''}
                       {original.broadAccess && !access.broadAccess
                         ? 'The declared path to %All is also removed.'
                         : ''}
@@ -165,8 +169,20 @@ export function AccessMap({
                     {w}
                   </p>
                 ))}
+                {omitted.length > 0 &&
+                  original.unresolvedRoles.some(
+                    (role) => !access.unresolvedRoles.includes(role),
+                  ) && (
+                    <p className="notice">
+                      The original assignment includes unread role definitions:{' '}
+                      {original.unresolvedRoles
+                        .filter((role) => !access.unresolvedRoles.includes(role))
+                        .join(', ')}
+                      . Their privileges remain unknown in this preview.
+                    </p>
+                  )}
                 <details className="reached-roles">
-                  <summary>{access.roles.size} reachable role definitions · inspect paths</summary>
+                  <summary>{access.roles.size} reachable roles · inspect paths</summary>
                   {[...access.roles].map(([name, path]) => (
                     <div key={name}>
                       <code>{[user.Name, ...path.roles].join(' → ')}</code>

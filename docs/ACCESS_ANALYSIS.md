@@ -12,9 +12,13 @@ The displayed permission letters are R (read), W (write) and U (use). Public per
 
 `EscalationRoles` are displayed separately and are not silently added to login roles. Paths through `EscalationOnly` definitions are labeled conditional. Application/matching roles, service authentication, SQL grants, row policies, active sessions and privileged-routine escalation are outside this projection. A disabled account retains its configured grants but cannot be assumed to have an active login. Review [IRIS role escalation](https://docs.intersystems.com/irislatest/csp/docbook/DocBook.UI.Page.cls?KEY=ASECURITYAPI) when interpreting runtime behavior.
 
+The matrix uses `?` when an account or a reachable role definition could not be read. A cell such as `R + ?` retains the known read grant while signalling that other grants may be missing. Open the cell to see the unread definitions and known paths. A cycle among readable roles does not by itself make the evidence incomplete.
+
 ## Removal preview
 
 Unchecking an assigned role recomputes the graph with that root omitted. The preview shows how many explicit resource grant sets differ and whether the declared path to `%All` disappears. Alternative paths preserve their grants. Public privileges and runtime escalation remain separate. No API write occurs, and the preview is not an automatic remediation plan.
+
+If the original assignment reaches an unread role, the preview counts only known changes and keeps that limitation visible even when the unread role is unchecked. The full effect remains unknown until the missing definitions can be read.
 
 ## Review queue
 

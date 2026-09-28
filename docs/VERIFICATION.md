@@ -1,5 +1,11 @@
 # Verification record
 
+## Incomplete role evidence — September 28, 2026
+
+Release 1.2.1 distinguishes missing or unreadable reachable role definitions from complete definitions with no grants. Matrix cells retain known grants beside a question mark, and their explanations list the unread definitions. Proven paths to %All stay visible. The removal preview retains limitations from the original assignment, including when the unread role is unchecked, and counts only known grant changes. Cycles among readable roles and unrelated unread roles do not make an account's evidence incomplete.
+
+Build and 280 tests pass. Twenty-four actual-component browser checks cover missing and denied roles, known grants and proven broad paths alongside unknown evidence, readable cycles, unrelated failures, unread accounts with stale fields, and complete empty roles. Ten built-example browser checks pass with zero backend requests. Manual desktop and 390px checks confirm readable explanations, retained baseline warnings and known grants; both phone views measure 390px client/scroll width. All records were synthetic, with no native or durable writes. These checks do not certify runtime authorization or physical-device behavior.
+
 ## Isolated interactive access example — September 28, 2026
 
 Release 1.2.0 adds a separate static example using the actual AccessMap and ResourceMatrix components with a validated synthetic snapshot. Removing SupportTeam removes W while ReportingReader retains R; reset restores RW. The matrix retains the original capture and separates public permissions from explicit account grants. The example has no login, native API client or campaign persistence. The installed portal does not fall back to training data.

@@ -40,6 +40,7 @@ export type ResolvedAccess = {
   roles: Map<string, EvidencePath>;
   grants: Map<string, { permissions: string; sources: string[] }>;
   broadAccess: boolean;
+  unresolvedRoles: string[];
   warnings: string[];
 };
 export function permissions(value: string): string {
@@ -51,6 +52,7 @@ export function resolveAccess(snapshot: AccessSnapshot, roots: string[]): Resolv
   const definitions = new Map(snapshot.roles.map((r) => [r.Name, r]));
   const roles = new Map<string, EvidencePath>();
   const warnings = new Set<string>();
+  const unresolvedRoles = new Set<string>();
   const grants = new Map<string, { permissions: string; sources: string[] }>();
   const queue = roots.map((name) => ({ name, path: [] as string[], conditional: false }));
   for (let cursor = 0; cursor < queue.length; cursor++) {
@@ -62,6 +64,7 @@ export function resolveAccess(snapshot: AccessSnapshot, roots: string[]): Resolv
     if (previous && (!previous.conditional || conditional)) continue;
     roles.set(next.name, { roles: path, conditional });
     if (!role || Object.hasOwn(role, 'unavailable')) {
+      unresolvedRoles.add(next.name);
       warnings.add(`Role ${next.name} could not be read; its privileges are unknown.`);
       continue;
     }
@@ -77,7 +80,13 @@ export function resolveAccess(snapshot: AccessSnapshot, roots: string[]): Resolv
       else queue.push({ name, path, conditional });
     }
   }
-  return { roles, grants, broadAccess: roles.has('%All'), warnings: [...warnings] };
+  return {
+    roles,
+    grants,
+    broadAccess: roles.has('%All'),
+    unresolvedRoles: [...unresolvedRoles],
+    warnings: [...warnings],
+  };
 }
 
 export type Finding = {

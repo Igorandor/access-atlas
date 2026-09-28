@@ -305,3 +305,37 @@ test('capture reports denied lists and caps detail concurrency', async () => {
   assert.equal(result.users.length, 20);
   assert.match(result.warnings.join(' '), /denied/);
 });
+
+test('unresolved roles distinguish missing and denied definitions from readable cycles', () => {
+  const data = fixture();
+  data.roles.find((role) => role.Name === 'Reader')!.unavailable = '';
+  data.roles.find((role) => role.Name === 'Parent')!.GrantedRoles.push('Missing');
+  const access = resolveAccess(data, ['Parent']);
+  assert.deepEqual(access.unresolvedRoles.sort(), ['Missing', 'Reader']);
+  data.roles.find((role) => role.Name === 'Parent')!.GrantedRoles = ['Parent'];
+  const cycle = resolveAccess(data, ['Parent']);
+  assert.deepEqual(cycle.unresolvedRoles, []);
+  assert.match(cycle.warnings.join(' '), /cycle/);
+});
+test('unknown branches preserve known grants and a proven broad-role path', () => {
+  const data = fixture();
+  const access = resolveAccess(data, ['Writer', 'Elevated', 'Missing']);
+  assert.deepEqual(access.unresolvedRoles, ['Missing']);
+  assert.equal(access.grants.get('Data')?.permissions, 'RW');
+  assert.equal(access.broadAccess, true);
+});
+test('unavailable definitions outside the account graph do not make it incomplete', () => {
+  const data = fixture();
+  data.roles.find((role) => role.Name === 'Elevated')!.unavailable = 'Denied';
+  const access = resolveAccess(data, ['Writer']);
+  assert.deepEqual(access.unresolvedRoles, []);
+  assert.equal(access.grants.get('Data')?.permissions, 'RW');
+});
+test('a role-removal preview cannot recover the missing baseline definition', () => {
+  const data = fixture();
+  const original = resolveAccess(data, ['Writer', 'Missing']);
+  const preview = resolveAccess(data, ['Writer']);
+  assert.deepEqual(original.unresolvedRoles, ['Missing']);
+  assert.deepEqual(preview.unresolvedRoles, []);
+  assert.equal(original.grants.get('Data')?.permissions, preview.grants.get('Data')?.permissions);
+});

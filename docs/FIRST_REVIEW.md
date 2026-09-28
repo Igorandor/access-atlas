@@ -14,6 +14,8 @@ In **Access map**, select **Admin**, then filter resources to `%Admin_Secure`. E
 
 Uncheck `%Manager` under assigned roles. The preview shows the declared grants that depend on that role. Nothing is sent to IRIS. Choose **Reset preview** before continuing.
 
+If a role definition is missing or could not be read, its grants are unknown. The map and matrix retain the paths they can explain, but mark the account evidence as incomplete. Removing an unreadable role in the preview cannot establish the full effect of that removal; the change count covers only known grants. Read the missing definitions with an appropriately authorized account before drawing an access conclusion. A captured role cycle alone does not imply missing data.
+
 An existing instance may have different accounts or assignments. Select a known account and inspect its own source paths instead of expecting the bundled values.
 
 ## 2. Keep a review record
@@ -34,7 +36,7 @@ Record **Investigate** when evidence or ownership is unclear. A certification de
 
 Switching to another object asks before discarding an edited decision. When you arrive from a follow-up, **Back to follow-ups** also checks for unsaved decision or scope changes.
 
-To understand an earlier decision, open **Activity** and expand its saved decision evidence. Read the reason, follow-up date and capture identifier attached to that revision. **Report & follow-ups â†’ Activity** offers the same evidence. An older decision describes the review at that time; use **Certification** or **Decisions** to check the current review status. Include **Campaign activity** when exporting a report if the recipient needs that history.
+To understand an earlier decision, open **Activity** and expand its saved decision evidence. Read the reason, follow-up date and capture identifier attached to that revision. **Report & follow-ups → Activity** offers the same evidence. An older decision describes the review at that time; use **Certification** or **Decisions** to check the current review status. Include **Campaign activity** when exporting a report if the recipient needs that history.
 
 ## 4. Export the work that remains
 

@@ -32,6 +32,14 @@ export function ResourceMatrix({
     () => new Map(snapshot.users.map((u) => [u.Name, resolveAccess(snapshot, u.Roles)])),
     [snapshot],
   );
+  function incomplete(user: AccessUser) {
+    return user.unavailable !== undefined || !!access.get(user.Name)?.unresolvedRoles.length;
+  }
+  function explicitGrant(user: AccessUser, resource: string) {
+    if (user.unavailable !== undefined) return '?';
+    const known = access.get(user.Name)?.grants.get(resource)?.permissions;
+    return incomplete(user) ? (known ? known + ' + ?' : '?') : known || '—';
+  }
   return (
     <section className="panel matrix-panel">
       <div className="section-heading">
@@ -104,7 +112,13 @@ export function ResourceMatrix({
                   )}
                 </th>
                 <td>
-                  {access.get(u.Name)?.broadAccess ? <Badge tone="warning">%All</Badge> : '—'}
+                  {u.unavailable === undefined && access.get(u.Name)?.broadAccess ? (
+                    <Badge tone="warning">%All</Badge>
+                  ) : incomplete(u) ? (
+                    '?'
+                  ) : (
+                    '—'
+                  )}
                 </td>
                 {columns.map((r) => (
                   <td key={r.Name}>
@@ -112,9 +126,7 @@ export function ResourceMatrix({
                       aria-label={`Explain ${u.Name} on ${r.Name}`}
                       onClick={() => setCell({ user: u, resource: r.Name })}
                     >
-                      {u.unavailable !== undefined
-                        ? '?'
-                        : access.get(u.Name)?.grants.get(r.Name)?.permissions || '—'}
+                      {explicitGrant(u, r.Name)}
                     </button>
                   </td>
                 ))}
@@ -126,7 +138,8 @@ export function ResourceMatrix({
       <p className="padded muted">
         Showing up to 50 matching accounts and {columns.length} of {resources.length} resources. A
         dash means no explicit grant in this capture; it is not a denial. Disabled accounts retain
-        their configuration.
+        their configuration. A question mark means account or role details could not be read.
+        Letters beside it are known grants; additional grants may be missing.
       </p>
       {cell && (
         <Modal
@@ -144,24 +157,40 @@ export function ResourceMatrix({
             )}
             <p>
               Reachable %All:{' '}
-              {access.get(cell.user.Name)?.broadAccess
+              {cell.user.unavailable === undefined && access.get(cell.user.Name)?.broadAccess
                 ? 'yes — broad privileges are not expanded into this matrix'
-                : 'no declared path'}
+                : incomplete(cell.user)
+                  ? 'unknown — account or role details are incomplete'
+                  : 'no declared path'}
             </p>
-            {access
-              .get(cell.user.Name)
-              ?.grants.get(cell.resource)
-              ?.sources.map((role) => (
-                <p key={role}>
-                  <code>
-                    {[
-                      cell.user.Name,
-                      ...(access.get(cell.user.Name)?.roles.get(role)?.roles ?? [role]),
-                      cell.resource,
-                    ].join(' → ')}
-                  </code>
-                </p>
-              ))}
+            {cell.user.unavailable === undefined &&
+            access.get(cell.user.Name)?.unresolvedRoles.length ? (
+              <div className="notice">
+                These role definitions could not be read; their privileges are unknown:
+                <ul>
+                  {access.get(cell.user.Name)!.unresolvedRoles.map((role) => (
+                    <li key={role}>
+                      <code>{role}</code>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {cell.user.unavailable === undefined &&
+              access
+                .get(cell.user.Name)
+                ?.grants.get(cell.resource)
+                ?.sources.map((role) => (
+                  <p key={role}>
+                    <code>
+                      {[
+                        cell.user.Name,
+                        ...(access.get(cell.user.Name)?.roles.get(role)?.roles ?? [role]),
+                        cell.resource,
+                      ].join(' → ')}
+                    </code>
+                  </p>
+                ))}
             <p className="notice">
               Runtime application roles, escalation, SQL privileges and row policies are outside
               this configuration projection.
