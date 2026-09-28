@@ -1,16 +1,24 @@
 # Verification record
 
+## Unsaved finding decisions — September 28, 2026
+
+Cancelling a finding decision, opening another finding, or returning to follow-ups now asks whether to keep editing or discard a changed draft. Reopening the same finding keeps its draft without a prompt. Closing the dialog or pressing Escape keeps the draft; discarding never saves. This guard does not cover global workspace/campaign navigation or browser unload, so the guide still instructs reviewers to save before leaving those views.
+
+Three regressions exercise the actual parent and form components: unchanged navigation, preserving/discarding a draft, and same-finding versus different-finding navigation. Production build and all 222 tests pass. Browser checks used the actual component and shared model with synthetic accounts and no API calls. Desktop checks covered Keep editing, Cancel/Escape and changing findings; a 390px frame preserved the draft and returned to follow-ups after explicit discard, with zero save calls. The dialog fits the frame (356.4px width, 355px scroll width). These are responsive checks, not physical-device coverage.
+
+The README overview and first-review guide screenshots are unaltered frames from the current recorded walkthrough; they show a presentation campaign and are not live service data.
+
 ## Finding follow-up navigation — September 28, 2026
 
 A finding in Report & follow-ups can open its exact decision form. Returning retains the agenda search, source filter and report options because the report stays mounted within the selected campaign. The existing form still requires an explicit save; navigation performs no native write or decision mutation. A different campaign gets its own report state. The return control is disabled during a pending campaign mutation.
 
-Production browser checks used the retained September presentation campaign: filter SuperUser/finding, open the correct existing decision with heading focus, and return to the same one-row filter. Desktop and a390px frame passed; mobile document width/scroll width were390/390. No decision was saved during these navigation checks. Production build and the219 existing regressions pass. These responsive checks do not claim physical touchscreen coverage.
+Production browser checks used the retained September presentation campaign: filter SuperUser/finding, open the correct existing decision with heading focus, and return to the same one-row filter. Desktop and a 390px frame passed; mobile document width/scroll width were390/390. No decision was saved during these navigation checks. Production build and the219 existing regressions pass. These responsive checks do not claim physical touchscreen coverage.
 
 ## Certification pagination — September 28, 2026
 
 With31 pending objects, saving the only decision on page2 shortened the pending list to30 but left the UI on an empty page showing31–30. The list now clamps the displayed page to the available range; zero matches also have an explicit empty state. A regression exercising the actual component failed before the fix and passes afterward, including the zero-result case.
 
-Browser QA used the actual CertificationReview and shared certification model with31 synthetic accounts, an in-memory save callback and no native/API operations. Desktop and a390px frame both returned to1–30 of30 after recording Account31, disabled both page buttons and retained the saved-decision receipt. The mobile document remained390/390px. Full production build and219 tests passed.
+Browser QA used the actual CertificationReview and shared certification model with31 synthetic accounts, an in-memory save callback and no native/API operations. Desktop and a 390px frame both returned to1–30 of30 after recording Account31, disabled both page buttons and retained the saved-decision receipt. The mobile document remained390/390px. Full production build and219 tests passed.
 
 ## Report preview and initial loading — September 28, 2026
 
@@ -138,3 +146,4 @@ Integration browser result: production client passed wallet keyword matching, mi
 The bounded deployment review found two startup mismatches: IRIS_URL accepted a path prefix that fixed native URL construction discarded, and HTTP PUBLIC_ORIGIN accepted COOKIE_SECURE=true. Startup now rejects both before opening a listener. Two regressions cover invalid prefixes, both contradictory cookie/origin combinations, valid root origins, loopback development and HTTPS deployment. Build and184 Node tests pass. The original routing observation used a synthetic transport and no IRIS connection; no installer, native data, environment file or volume was changed. No browser UI changed in this correction. Harbor/Waypoint already had the corresponding guards and required no edit.
 
 Production-client integration for saved-campaign entry passed desktop1280×900 after first snapshot503 and phone390×844/375 after429. Saved list and detail opened independently, with the capture error still shown. An explicit partial200 capture recovered configuration tabs without navigating away from the selected campaign. With campaign reads separately denied403, a fresh mobile page showed the permission error and no saved row/detail. Fixture counters: four snapshot requests, three campaign lists, two details, zero mutation attempts and zero native connections. Evidence: atlas-campaign-entry-browser-state.json and desktop/mobile/denied-mobile screenshots in research outside the submission. These checks exercise synthetic transport and the production client; existing server authorization probes were not modified.
+

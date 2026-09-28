@@ -8,6 +8,8 @@ Start the stack with `docker compose up -d --build`, open <http://localhost:3200
 
 In **Access map**, select **Admin**, then filter resources to `%Admin_Secure`. Expand the resource to see its source path through `%Manager`. This explains the captured configuration; it is not a test of what an existing session can do.
 
+![The Admin account reaches %Admin_Secure through %Manager](images/grant-path.png)
+
 Uncheck `%Manager` under assigned roles. The preview shows the declared grants that depend on that role. Nothing is sent to IRIS. Choose **Reset preview** before continuing.
 
 An existing instance may have different accounts or assignments. Select a known account and inspect its own source paths instead of expecting the bundled values.
@@ -33,6 +35,10 @@ Record **Investigate** when evidence or ownership is unclear. A certification de
 Open **Report & follow-ups**. **Readiness** lists missing decisions and unresolved investigations. **Follow-ups** puts outstanding work and dates in one queue. **Open finding** opens its decision; save any changes before using **Back to follow-ups**, which keeps the report filters. Under **Export report**, choose **Preview report** to check the selected sections and optional reviewer note. Close the preview, then download Markdown for a repository or printable HTML for offline review and PDF printing.
 
 Inspect the [example report from the recorded walkthrough](examples/access-review.md), or download [its standalone HTML version](examples/access-review.html). It intentionally shows unfinished work. The example is a saved report, not a live demo or a security certification.
+
+![A saved campaign still needs decisions before its review is complete](images/review-readiness.png)
+
+These screenshots use the bundled instance and a presentation campaign. Your account counts and review progress will differ.
 
 ## 5. Start the next period
 
