@@ -181,3 +181,9 @@ The production build and 241 tests pass, including six keyed-component lifecycle
 
 This does not persist drafts after logout/session expiry or browser reload/close. Unrelated remediation and next-period form drafts are outside this correction. Existing session isolation is unchanged.
 
+## Next-period confirmation — September 28, 2026
+
+Reproduced a confirmation from an earlier campaign revision remaining active after a source reload changed the certification scope. Confirmation now belongs to the source ID and revision, and the submit handler independently enforces it. A changed source requires a new review while retaining the entered title and description. Three actual-component regressions cover source changes, unchanged rerenders, edited inputs and submission guards. Build and all 244 tests pass.
+
+Desktop and 390px browser checks used the real component with synthetic campaign props: changing Finance/excluded to AllDepartments/included cleared confirmation and disabled creation; entered text remained. Confirming the new settings submitted revision 2 to an in-memory callback. The full production styles kept the phone document at 390px with horizontal scrolling confined to the comparison table. No campaign or native operation was sent to a server.
+

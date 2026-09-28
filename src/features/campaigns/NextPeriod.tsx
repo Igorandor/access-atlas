@@ -18,7 +18,10 @@ export function NextPeriod({
   const [copyPolicies, setCopyPolicies] = useState(true);
   const [copyCertificationScope, setCopyCertificationScope] = useState(true);
   const [dueDate, setDueDate] = useState('');
-  const [reviewed, setReviewed] = useState(false);
+  const [reviewedSource, setReviewedSource] = useState<{ id: string; revision: number }>();
+  const reviewed =
+    reviewedSource?.id === campaign.id && reviewedSource.revision === campaign.revision;
+  const sourceChanged = reviewedSource !== undefined && !reviewed;
   const [error, setError] = useState('');
   const input: PeriodInput = {
     revision: campaign.revision,
@@ -41,6 +44,11 @@ export function NextPeriod({
   );
   async function submit(event: React.FormEvent) {
     event.preventDefault();
+    if (disabled) return;
+    if (!reviewed || !title.trim() || !preview.length) {
+      setError('Review the current settings before creating the next campaign.');
+      return;
+    }
     try {
       await create(input);
       setError('');
@@ -56,6 +64,12 @@ export function NextPeriod({
         available with its captures and decisions.
       </p>
       {error && <ErrorBox error={error} />}
+      {sourceChanged && (
+        <p className="notice" role="status">
+          The campaign changed. Review the updated settings and confirm again. Your entered fields
+          are unchanged.
+        </p>
+      )}
       {!!unresolved.length && (
         <aside className="notice">
           <strong>{unresolved.length} unresolved remediations remain in this campaign.</strong>
@@ -76,7 +90,7 @@ export function NextPeriod({
               maxLength={160}
               onChange={(event) => {
                 setTitle(event.target.value);
-                setReviewed(false);
+                setReviewedSource(undefined);
               }}
             />
           </label>
@@ -88,7 +102,7 @@ export function NextPeriod({
               rows={4}
               onChange={(event) => {
                 setDescription(event.target.value);
-                setReviewed(false);
+                setReviewedSource(undefined);
               }}
             />
           </label>
@@ -99,7 +113,7 @@ export function NextPeriod({
                 checked={copyDutyRules}
                 onChange={(event) => {
                   setCopyDutyRules(event.target.checked);
-                  setReviewed(false);
+                  setReviewedSource(undefined);
                 }}
               />
               <span>
@@ -113,7 +127,7 @@ export function NextPeriod({
                 checked={copyPolicies}
                 onChange={(event) => {
                   setCopyPolicies(event.target.checked);
-                  setReviewed(false);
+                  setReviewedSource(undefined);
                 }}
               />
               <span>
@@ -127,7 +141,7 @@ export function NextPeriod({
                 checked={copyCertificationScope}
                 onChange={(event) => {
                   setCopyCertificationScope(event.target.checked);
-                  setReviewed(false);
+                  setReviewedSource(undefined);
                 }}
               />
               <span>
@@ -157,7 +171,7 @@ export function NextPeriod({
                   value={dueDate}
                   onChange={(event) => {
                     setDueDate(event.target.value);
-                    setReviewed(false);
+                    setReviewedSource(undefined);
                   }}
                 />
               </label>
@@ -193,7 +207,14 @@ export function NextPeriod({
             <input
               type="checkbox"
               checked={reviewed}
-              onChange={(event) => setReviewed(event.target.checked)}
+              onChange={(event) => {
+                setReviewedSource(
+                  event.target.checked
+                    ? { id: campaign.id, revision: campaign.revision }
+                    : undefined,
+                );
+                setError('');
+              }}
             />
             I reviewed the settings for the next period.
           </label>

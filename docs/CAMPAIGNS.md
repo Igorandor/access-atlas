@@ -47,6 +47,8 @@ For a finding in the follow-up agenda, choose **Open finding** to open its exact
 
 Next review period previews copied duty rules, policies and certification scope. It starts a separate campaign with no captures, decisions or remediation receipts; the previous due date is cleared unless a new one is supplied. The source campaign remains unchanged, including any unresolved writes. New period creation requires the selected source revision and current access to it.
 
+The confirmation applies to the displayed source revision. If a reload changes that revision, review the updated settings and confirm again. Your entered title and description remain in the form.
+
 Archive hides a campaign from the default list without deleting its data. Include archived restores it to the list. Reopen a closed or archived campaign before changing review records. Campaign limits and backup instructions are in [Deployment](DEPLOYMENT.md).
 
 ### Leaving an unfinished review
