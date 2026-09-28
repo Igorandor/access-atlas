@@ -69,4 +69,4 @@ The September 27, 2026 checkpoint passed production builds and 218 Node tests. S
 
 ## Video walkthrough
 
-[Watch the recorded workflow on YouTube](https://www.youtube.com/watch?v=5IzkxZosweA).
+[Watch the recorded workflow on YouTube](https://www.youtube.com/watch?v=MQmV8uuzKGo).
