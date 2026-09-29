@@ -6,7 +6,7 @@ Built for the [InterSystems Programming Contest: Build Your Own Management Porta
 
 ![Access Atlas reviewing real IRIS configuration](docs/images/overview.png)
 
-Try the [interactive access example](https://igorandor.github.io/access-atlas/) without installing anything. It uses synthetic training data to show two grant paths, a role-removal preview and separate public permissions. No IRIS connection, credentials or saved campaign are involved. [Example scope and build instructions](docs/INTERACTIVE_EXAMPLE.md).
+Try the [interactive access example](https://igorandor.github.io/access-atlas/) without installing anything. Follow two grant paths, preview removing a role, compare supplied before/after captures and download a training review with the remaining follow-up. The data is synthetic; no IRIS connection, credentials or saved campaign are involved. [Example scope and build instructions](docs/INTERACTIVE_EXAMPLE.md).
 
 For your own instance, follow the [first access review](docs/FIRST_REVIEW.md). You can also inspect an [exported review report](docs/examples/access-review.md) with open investigations and missing decisions.
 

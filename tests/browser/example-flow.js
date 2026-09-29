@@ -94,6 +94,78 @@ async function run() {
     bits() === 'RW' && !document.querySelector('.simulation-note'),
   );
   check('Flow made no backend request', connectionAttempts === 0);
+  await click(button('Review outcome'));
+  check(
+    'Outcome starts with an explicit supplied-capture comparison, no report yet',
+    !!button('Compare supplied captures') &&
+      !button('Download training report') &&
+      document
+        .querySelector('.example-outcome')
+        .textContent.includes('No change or readback is performed on IRIS'),
+  );
+  await click(button('Compare supplied captures'));
+  check(
+    'Comparison exposes remaining read path and unresolved owner decision',
+    document.querySelector('.example-result').textContent.includes('RW → R') &&
+      document
+        .querySelector('.example-evidence')
+        .textContent.includes('alex.training → ReportingReader → OrdersReader → TrainingOrders') &&
+      document.querySelector('.example-evidence').textContent.includes('not approval to retain it'),
+  );
+  const note = document.querySelector('.example-note textarea');
+  Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set.call(
+    note,
+    '<script>unsafe()</script> Check reporting purpose.',
+  );
+  note.dispatchEvent(new Event('input', { bubbles: true }));
+  await pause();
+  await click(document.querySelector('.example-report summary'));
+  check(
+    'Report renders reviewer text as text, with training and scope labels',
+    document
+      .querySelector('.example-report pre')
+      .textContent.includes('<script>unsafe()</script> Check reporting purpose.') &&
+      !document.querySelector('.example-report script') &&
+      document.querySelector('.example-report pre').textContent.includes('SYNTHETIC EXAMPLE'),
+  );
+  let downloaded;
+  const createUrl = URL.createObjectURL;
+  const anchorClick = HTMLAnchorElement.prototype.click;
+  URL.createObjectURL = (blob) => {
+    downloaded = blob;
+    return createUrl(blob);
+  };
+  HTMLAnchorElement.prototype.click = function () {
+    if (this.download !== 'atlas-training-review.txt') return anchorClick.call(this);
+  };
+  try {
+    await click(button('Download training report'));
+  } finally {
+    URL.createObjectURL = createUrl;
+    HTMLAnchorElement.prototype.click = anchorClick;
+  }
+  check(
+    'Download contains the displayed report and the exact reviewer note',
+    downloaded?.type === 'text/plain;charset=utf-8' &&
+      (await downloaded.text()) === document.querySelector('.example-report pre').textContent,
+  );
+  await click(button('Reset exercise'));
+  check(
+    'Reset removes report, comparison and previous note',
+    !document.querySelector('.example-report') &&
+      !document.querySelector('.example-note') &&
+      !!button('Compare supplied captures'),
+  );
+  await click(button('Compare supplied captures'));
+  check(
+    'New comparison starts with no retained note',
+    document.querySelector('.example-note textarea').value === '',
+  );
+  await click(button('Access map'));
+  check(
+    'Comparison leaves original map data unchanged and makes no backend call',
+    bits() === 'RW' && connectionAttempts === 0,
+  );
 }
 run()
   .catch((error) => checks.push({ name: error.message, pass: false }))

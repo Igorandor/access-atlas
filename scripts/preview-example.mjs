@@ -18,7 +18,7 @@ http
         response
           .writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' })
           .end(
-            '<!doctype html><title>Atlas example at390px</title><iframe title="Atlas example390px" src="/access-atlas/" style="width:390px;height:844px;border:1px solid #888"></iframe>',
+            '<!doctype html><title>Atlas example at390px</title><iframe title="Atlas example390px" src="/access-atlas/?manual" style="width:390px;height:844px;border:1px solid #888"></iframe>',
           );
         return;
       }
@@ -38,7 +38,11 @@ http
         return;
       }
       let body = await readFile(path);
-      if (audit && path.endsWith('index.html'))
+      if (
+        audit &&
+        !new URL(request.url, `http://127.0.0.1:${port}`).searchParams.has('manual') &&
+        path.endsWith('index.html')
+      )
         body = Buffer.from(
           body
             .toString()

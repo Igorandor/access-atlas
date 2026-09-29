@@ -1,5 +1,11 @@
 # Verification record
 
+## Training review outcome — September 29, 2026
+
+The isolated interactive example now compares two supplied synthetic captures after a support-role reassignment, explains the remaining read path and exports a plain-text training report with an optional reviewer note. It uses the existing configuration graph and snapshot comparison functions. It performs no IRIS change or live readback and creates no saved campaign or remediation receipt.
+
+The production build, example build and 302 tests pass. Seventeen browser checks cover both original views, the new outcome, reset, text-only note rendering, exact report content and zero backend requests. Manual checks at 1280px and 390px show matching client/scroll widths. A downloaded 1428-byte report contains the entered note and synthetic-evidence limitations. These checks verify an example; they are not evidence of a native write or authorization decision.
+
 ## Duty-rule draft after refused save — September 29, 2026
 
 Release 1.2.8 retains the title and role choices when adding a campaign duty rule is refused. The title clears only after a confirmed save. An unavailable campaign-list refresh after that save is reported separately and does not invite a repeated addition. Pending fields are locked, repeated add callbacks are guarded, and a late result cannot clear a replacement draft or snapshot. Standalone rules still save in page memory.
@@ -229,7 +235,7 @@ Verified September 26, 2026 on disposable IRIS Community 2026.2 build 221U. Each
 | test:process             | Explicit demo worker suspend/resume/terminate passes; disappearance checked.                                            |
 | test:access              | Native nested-role analysis, resource change detection and cleanup pass.                                                |
 
-The replacement kept security and API regression contracts. Five tests for the removed Harbor-style presentation helper were retired with that helper. Lower totals than an earlier revision do not indicate that failing security tests were deleted.
+Security and API regression contracts were retained. Five tests for a retired presentation helper were removed with that helper. Lower totals than an earlier revision do not indicate that failing security tests were deleted.
 
 ## Browser verification
 
@@ -259,7 +265,7 @@ Integration browser result: production client passed wallet keyword matching, mi
 
 ## Existing-instance configuration validation — September 27, 2026
 
-The bounded deployment review found two startup mismatches: IRIS_URL accepted a path prefix that fixed native URL construction discarded, and HTTP PUBLIC_ORIGIN accepted COOKIE_SECURE=true. Startup now rejects both before opening a listener. Two regressions cover invalid prefixes, both contradictory cookie/origin combinations, valid root origins, loopback development and HTTPS deployment. Build and184 Node tests pass. The original routing observation used a synthetic transport and no IRIS connection; no installer, native data, environment file or volume was changed. No browser UI changed in this correction. Harbor/Waypoint already had the corresponding guards and required no edit.
+The bounded deployment review found two startup mismatches: IRIS_URL accepted a path prefix that fixed native URL construction discarded, and HTTP PUBLIC_ORIGIN accepted COOKIE_SECURE=true. Startup now rejects both before opening a listener. Two regressions cover invalid prefixes, both contradictory cookie/origin combinations, valid root origins, loopback development and HTTPS deployment. Build and184 Node tests pass. The original routing observation used a synthetic transport and no IRIS connection; no installer, native data, environment file or volume was changed. No browser UI changed in this correction.
 
 Production-client integration for saved-campaign entry passed desktop1280×900 after first snapshot503 and phone390×844/375 after429. Saved list and detail opened independently, with the capture error still shown. An explicit partial200 capture recovered configuration tabs without navigating away from the selected campaign. With campaign reads separately denied403, a fresh mobile page showed the permission error and no saved row/detail. Fixture counters: four snapshot requests, three campaign lists, two details, zero mutation attempts and zero native connections. Evidence: atlas-campaign-entry-browser-state.json and desktop/mobile/denied-mobile screenshots in research outside the submission. These checks exercise synthetic transport and the production client; existing server authorization probes were not modified.
 

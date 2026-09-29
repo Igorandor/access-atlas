@@ -6,13 +6,17 @@ The interactive example uses the same Access map and Resource matrix components 
 
 ## Follow two paths to one resource
 
-The page includes a **Three-step walkthrough** you can expand while exploring.
+The page includes a **Role-change walkthrough** you can follow while exploring.
 
 1. Open **Access map** and select **alex.training**.
 2. Expand **TrainingOrders**. Inspect the path through **SupportTeam** and the independent path through **ReportingReader**.
 3. Uncheck **SupportTeam**. The preview removes write permission, while read permission remains through ReportingReader.
 4. Choose **Reset preview** to restore the original role selection.
 5. Open **Resource matrix**. It shows the original example capture, unaffected by the Access map preview. Inspect an account/resource cell for its explanation, and the separate public-permissions row for **TrainingStatus**.
+6. Open **Review outcome**, then **Compare supplied captures**. The supplied after capture omits SupportTeam but retains ReportingReader. The comparison shows one changed account and the remaining read path; the account owner's need for reporting access is still an open question.
+7. Add an optional reviewer note, read the report and choose **Download training report**. This plain-text file preserves the two capture times, remaining access, limits and your note. The page stores no campaign: leaving this view or resetting the exercise clears the note.
+
+The comparison uses the application's graph and snapshot-difference functions on two fixed synthetic captures. It does not apply a change or re-read IRIS, and it is independent of the role selections in Access map. The training report is not a live remediation receipt or approval.
 
 The graph explains declared configuration. It does not test an IRIS session's runtime access, change a role assignment or model application-specific authorization.
 

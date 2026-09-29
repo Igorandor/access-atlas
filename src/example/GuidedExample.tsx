@@ -2,9 +2,10 @@ import { useState } from 'react';
 import { AccessMap } from '../features/access/AccessMap';
 import { ResourceMatrix } from '../features/access/ResourceMatrix';
 import { trainingSnapshot } from './training-snapshot';
+import { ReviewOutcome } from './ReviewOutcome';
 
 export function GuidedExample() {
-  const [view, setView] = useState<'map' | 'matrix'>('map');
+  const [view, setView] = useState<'map' | 'matrix' | 'outcome'>('map');
   return (
     <main className="access-atlas-app guided-example">
       <header className="example-header">
@@ -17,8 +18,8 @@ export function GuidedExample() {
           Install Access Atlas and review your own instance
         </a>
       </header>
-      <details className="example-guide">
-        <summary>Three-step walkthrough</summary>
+      <details className="example-guide" open>
+        <summary>Role-change walkthrough</summary>
         <ol>
           <li>In Access map, expand TrainingOrders to see where alex.training gets R and W.</li>
           <li>
@@ -28,6 +29,10 @@ export function GuidedExample() {
           <li>
             Open Resource matrix. Explain the RW cell, then compare TrainingStatus’s public R with
             the account’s dash.
+          </li>
+          <li>
+            Open Review outcome to compare supplied before/after captures and download a training
+            report with the remaining follow-up.
           </li>
         </ol>
         <p>
@@ -50,14 +55,23 @@ export function GuidedExample() {
         >
           Resource matrix
         </button>
+        <button
+          className={view === 'outcome' ? 'active' : ''}
+          aria-current={view === 'outcome' ? 'page' : undefined}
+          onClick={() => setView('outcome')}
+        >
+          Review outcome
+        </button>
       </nav>
       {view === 'map' ? (
         <AccessMap snapshot={trainingSnapshot} />
-      ) : (
+      ) : view === 'matrix' ? (
         <>
           <p className="example-scroll-hint">Scroll horizontally to read all columns.</p>
           <ResourceMatrix snapshot={trainingSnapshot} initialResourceSearch="Training" />
         </>
+      ) : (
+        <ReviewOutcome />
       )}
       <footer className="example-limits">
         <p>
@@ -66,8 +80,9 @@ export function GuidedExample() {
           authoritative.
         </p>
         <p>
-          The connected application also supports saved reviews and reviewed changes; this example
-          does not simulate them.
+          The training report is a downloadable exercise, not a saved campaign or live change
+          receipt. The connected application stores campaigns and reviewed-change records on its
+          gateway.
         </p>
         <p>
           <a href="./THIRD_PARTY_LICENSES.txt">Licenses</a>

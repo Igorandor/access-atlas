@@ -5,6 +5,41 @@ import { buildSync } from 'esbuild';
 import { trainingSnapshot } from '../src/example/training-snapshot';
 import { parseSnapshot } from '../shared/snapshot-schema';
 import { resolveAccess } from '../shared/access-model';
+import {
+  trainingAfter,
+  trainingReviewOutcome,
+  trainingReviewReport,
+} from '../src/example/review-outcome';
+
+test('training comparison records only the removed assignment and preserves independent read evidence', () => {
+  const original = JSON.stringify(trainingSnapshot);
+  const result = trainingReviewOutcome();
+  assert.equal(result.before, 'RW');
+  assert.equal(result.after, 'R');
+  assert.equal(result.changes.length, 1);
+  assert.equal(result.changes[0].kind, 'users');
+  assert.equal(result.changes[0].name, 'alex.training');
+  assert.equal(result.beforePaths.length, 2);
+  assert.deepEqual(result.afterPaths, [
+    'alex.training → ReportingReader → OrdersReader → TrainingOrders',
+  ]);
+  assert.deepEqual(trainingAfter.resources, trainingSnapshot.resources);
+  assert.deepEqual(trainingAfter.roles, trainingSnapshot.roles);
+  assert.equal(JSON.stringify(trainingSnapshot), original);
+});
+
+test('downloadable training evidence identifies synthetic captures, open follow-up and the entered note', () => {
+  const report = trainingReviewReport(' Confirm reporting requirement with owner. ');
+  assert.match(report, /SYNTHETIC EXAMPLE/);
+  assert.match(report, /No IRIS connection, native change or live readback/);
+  assert.match(report, /09:00:00.000Z/);
+  assert.match(report, /09:10:00.000Z/);
+  assert.match(report, /Declared permissions: RW → R/);
+  assert.match(report, /Open follow-up:/);
+  assert.match(report, /not a remediation receipt or approval/);
+  assert.match(report, /Confirm reporting requirement with owner\./);
+  assert.match(trainingReviewReport('  '), /\(none\)/);
+});
 
 test('training capture keeps an independent read path when the support assignment is removed', () => {
   const snapshot = parseSnapshot(trainingSnapshot);
