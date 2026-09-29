@@ -1,0 +1,1 @@
+import{s as e,u as t}from"./index-DZwABkq0.js";async function n(n,r,i=t){try{let e=await i(n);r.current()&&r.received(e)}catch(t){if(!r.current())return;t instanceof e&&t.status===403&&r.refused(),r.failed(t.message)}}export{n as t};

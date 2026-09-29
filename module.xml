@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="IRIS" version="26">
+  <Document name="access-atlas.ZPM">
+    <Module>
+      <Name>access-atlas</Name>
+      <Version>1.3.0</Version>
+      <Description>Trace inherited IRIS permissions and retain access review campaigns.</Description>
+      <Author><Person>Igor Podlewski</Person><CopyrightDate>2026</CopyrightDate><License>MIT</License></Author>
+      <Packaging>module</Packaging>
+      <SystemRequirements Version="&gt;=2026.2" />
+      <SourcesRoot>iris</SourcesRoot>
+      <Resource Name="Atlas.Rest.CLS" Directory="." />
+      <Resource Name="Atlas.Telemetry.CLS" Directory="." />
+      <Resource Name="Atlas.PackageInstaller.CLS" Directory="." />
+      <Invoke Class="Atlas.PackageInstaller" Method="Validate" Phase="Compile" When="After" CheckStatus="true" />
+      <FileCopy Name="ipm/gateway/" Target="${libdir}access-atlas/1.3.0/" />
+      <FileCopy Name="docs/IPM.md" Target="${libdir}access-atlas/1.3.0/IPM.md"/>
+      <WebApplication Name="/api/atlas" NameSpace="${namespace}" DispatchClass="Atlas.Rest" AutheEnabled="32" Resource="%Admin_Operate" Enabled="1" />
+      <AfterInstallMessage>Access Atlas installed. Node.js 22.12+ is required. Configure a separate campaign directory and start lib/access-atlas/1.3.0/start.mjs as described in docs/IPM.md. No accounts or native grants were created.</AfterInstallMessage>
+    </Module>
+  </Document>
+</Export>

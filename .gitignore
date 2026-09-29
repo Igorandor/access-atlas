@@ -10,3 +10,5 @@ playwright-report/
 .DS_Store
 dist-server/
 dist-example/
+!ipm/gateway/dist/
+!ipm/gateway/dist/**

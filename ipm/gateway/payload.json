@@ -1,0 +1,31 @@
+{
+  "version": "1.3.0",
+  "files": {
+    "dist/assets/AccessReview-C05ljTIv.js": "cd9de2ba9959964cefdf91cda7bc0cebc157c77035d04e2485f2b9e689edb0b9",
+    "dist/assets/AccessReview-dSIOfiwO.css": "1f486b328fc4f28c76e4dd89c11685ec1d6cb0d8daadfe73d893b0c26ab4e414",
+    "dist/assets/ApiWorkbench-BsQimU0j.js": "5326785471a9e7cfc6d1a65cabda0f23014430778e378d56782289bca020f243",
+    "dist/assets/ApiWorkbench-DefvQXJt.css": "965473c779a401cd27371f9f25ca5c964e9fc23934f99c7a14cfbf5f01eab12e",
+    "dist/assets/ConfigurationDesk-CezYslFG.js": "214509fc6312880a051dde53d86333e99df2e98db5c16fdd1e563f74e6c233df",
+    "dist/assets/DataView-BH9tWlEc.js": "bbec81d6dba02860096841991b0564f3946407d55c7aeda58fa25337f25dd023",
+    "dist/assets/index-DnOWIdkL.css": "b14ef6a5f8479fda1fa3c308ec5892d440a5196974fa2f1913abdd3085acf312",
+    "dist/assets/index-DZwABkq0.js": "8197e0770990223452d189ab8680704ee56dad4572e845467e6a369da8224260",
+    "dist/assets/LogReview-CyNJwWbL.js": "21b4b8cd5fdf03c9832387c5a8c3b2f9c75c3b32b1425d583d7f1ea4cde2c445",
+    "dist/assets/LogReview-Dz6d0qLj.css": "05a4ef05563e5dfac69bb35f37ef028d908119cce5636fb9d0ba081444c85c4d",
+    "dist/assets/manrope-cyrillic-wght-normal-Dvxsihut.woff2": "c268b459a9329e59fecf39a17618efd44c71735532048d60b12aab76a8c14914",
+    "dist/assets/manrope-greek-wght-normal-DL7QRZyv.woff2": "2fb2e8cbfd52ae46179a8b6024eb162f1f9c6de3d22d6e3a30d8f395de7220be",
+    "dist/assets/manrope-latin-ext-wght-normal-Ch3YOpNY.woff2": "3911b66d9f2e005a4b989223405d0e5032619c668597ba467cc76a23c8fffcfb",
+    "dist/assets/manrope-latin-wght-normal-DHIcAJRg.woff2": "a30ddcd349703aff7464c34bef3fffdff405ee50c113440d7c8693c02d210972",
+    "dist/assets/manrope-vietnamese-wght-normal-usUDDRr7.woff2": "6bbb044ab420e07edb0a3042d2eb314b85e83a0182e945a15ab3b9092668dfd5",
+    "dist/assets/ReadDesk-S8AGNOMS.js": "2ddedc56c5e126a1ee84421e29270c6a5fcfe4ba8af27fb4e38e2647ed001b60",
+    "dist/assets/saved-evidence-1VQ0Uyl9.js": "b4efa0e28408269f25b972aa1539dab74eba00c4cf8df09170cddc3728eb10d7",
+    "dist/assets/schema-CHnOlqzp.js": "14d2938048dd7d923da0784bfc82bb8ee25bf151dc90ff550e8c5f5f4d317106",
+    "dist/assets/schemas-B3Yfgq3k.js": "938198de6f0c547a8904ddc877e708fc3cb1364c3504fcfd939c3286786a388b",
+    "dist/favicon.svg": "ae24155597433abf628764517a1da87a65443b635094b84eafbf192aea01937e",
+    "dist/index.html": "efba04a0c245d223a9747c10c5da69f58483a3203ba51667c30fcb597bcd5065",
+    "LICENSE": "889230939d54a84de95e7987b86bf305d86d90fbe58099ab8cfd2f29b9eb643d",
+    "server.cjs": "8588d64c64233a08acd5cb40d0994b421a23405bec168f7030016d0969cb68a1",
+    "server.cjs.LEGAL.txt": "ab11a31bad9728d9dba45761883b437ffe8823094a6d8ab764f80a55b97ed10b",
+    "start.mjs": "410adac35c21404d22b13bece43d93e6d4d797d0d9324042b123e647c2244394",
+    "THIRD_PARTY_LICENSES.txt": "e8ac552d997db0ed375346a5aa1d71701d8e913e976a3d276a86da11206ef47a"
+  }
+}

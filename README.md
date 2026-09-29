@@ -90,6 +90,10 @@ ATLAS_PORT=3201 ATLAS_ORIGIN=http://localhost:3201 IRIS_WEB_PORT=52781 docker co
 
 In PowerShell, set the corresponding `$env:ATLAS_PORT`, `$env:ATLAS_ORIGIN` and `$env:IRIS_WEB_PORT` variables before running Compose. Use the exact configured browser origin; `localhost` and `127.0.0.1` are different origins.
 
+## Install with IPM
+
+The IPM package includes the compiled frontend, bundled gateway and native extension. On an existing IRIS 2026.2 instance, it avoids installing npm dependencies or compiling the application. Node.js 22.12+ remains a runtime prerequisite. Follow the [IPM installation guide](docs/IPM.md) for package loading, configuration, startup and upgrades. Docker remains the quickest complete installation.
+
 ## Connect to an existing IRIS instance
 
 Use IRIS Community **2026.2 with SysAdmin API v2**, or a compatible newer instance. The bundled stack pins 2026.2 build 221U. IRIS for Health exposes the same management APIs, but the included automated live checks were run on standard IRIS Community; a separate IRIS for Health installation has not been certified here.

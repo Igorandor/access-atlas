@@ -21,7 +21,7 @@ The application includes English installation instructions and a written demonst
 
 The [published technology bonus list](https://community.intersystems.com/post/technology-bonuses-intersystems-programming-contest-build-your-own-management-portal) was reviewed. Atlas uses Docker and Embedded Python for a concrete purpose: native host telemetry and bounded log reads.
 
-The video is available through the link in [VIDEO.md](VIDEO.md). No bonus award is assumed. Online hosting, IPM publication, community ideas, first-time participation and reported vendor bugs are not claimed.
+The video is available through the link in [VIDEO.md](VIDEO.md). No bonus award is assumed. Online hosting, community ideas, first-time participation and reported vendor bugs are not claimed. Version 1.3.0 adds a complete IPM package with the frontend, gateway dependencies and native extension; see [installation and verification](IPM.md). Registry publication is requested through Open Exchange. The IPM bonus is not counted until the published package is available through the registry, and any award remains the organizer's decision.
 
 ## Submission follow-up
 
