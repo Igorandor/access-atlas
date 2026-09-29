@@ -135,7 +135,7 @@ For a gateway container connected to an existing IRIS instance, set `IRIS_URL`, 
 1. Under Administration, choose Application register and inspect an existing route. Select Propose changes, include Description, edit its inspected value and review the before/after proposal.
 2. Under Account register, inspect roles and their nested grants. A new or changed object includes only selected fields; native errors preserve the proposal for correction.
 3. Security register includes wallet boundaries and secret metadata. Select a collection before creating or rotating an entry. Stored secret values cannot be retrieved.
-4. Task register shows native task execution state separately from configuration. Create an on-demand Atlas.DemoTask in %SYS to record a harmless timestamp in ^AtlasDemo; inspect task history to verify execution.
+4. Task register shows native task execution state separately from configuration. In the bundled Docker installation, create an on-demand `Atlas.DemoTask` in `%SYS` to record a timestamp in `^AtlasDemo`; inspect task history to verify execution. The IPM package omits this sample task. On an existing instance, use a task class approved for your environment and review its effects before running it.
 5. Under Instance, choose Instance status and load Host capacity and counters. The data describes the OS visible to IRIS. CPU ticks are cumulative, not a sampled utilization percentage.
 6. Host & devices provides process inspection and reviewed controls, device definitions and database inventory.
 7. Logs normalizes loaded messages, alerts, audit records and task history, with severity/time/text filters, window comparison and CSV export. Filtering applies to the loaded window. Session history lasts only for the current gateway session.
