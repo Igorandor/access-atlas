@@ -54,6 +54,16 @@ Inspect the [example report from the recorded walkthrough](examples/access-revie
 
 These screenshots use the bundled instance and a presentation campaign. Your account counts and review progress will differ.
 
-## 5. Start the next period
+## 5. Compare evidence after an approved role change
+
+When a separately approved change has been completed, return to the same campaign and choose **Capture access** with a new label. Keep the earlier capture as the baseline. Capturing again reads configuration; it does not apply or repeat the change. If a submitted change has an uncertain outcome, check its current saved receipt and reconcile it before deciding whether another action is appropriate.
+
+Open **Capture history**, choose the earlier capture under **Before** and the new one under **After**. Start with **Configuration** to identify the changed account or role. Then open **Account impact**, find the account and choose **Inspect impact**. Read the before/after grant letters in **Ordinary**, **Conditional** and **Public**, rather than treating a removed role as proof that all access disappeared.
+
+For example, removing a support assignment may change an ordinary resource grant from **RW** to **R** because a separate reporting role still supplies read permission. Return to the campaign's **Access map**, select that account and expand the resource to explain the remaining path in the latest capture. Review whether that remaining assignment is still required, record the decision or follow-up, then export the campaign report.
+
+These comparisons describe captured configuration. Incomplete evidence, active sessions, application-specific controls and public grants limit the conclusion; a configuration difference does not prove who made the change or establish runtime access. The [interactive example](INTERACTIVE_EXAMPLE.md) demonstrates this two-path case with supplied synthetic captures and a training report, without changing IRIS.
+
+## 6. Start the next period
 
 **Next review period** previews which settings will be copied. Review the title, scope and new due date, then confirm. The new campaign starts without prior captures or decisions; the original remains available. Capture current access before making the next period's decisions.
