@@ -18,7 +18,7 @@ zn "%SYS"
 zpm "install access-atlas"
 ```
 
-The registry command requires publication in the community registry. Until the Open Exchange publication has completed, download `access-atlas-1.3.0.tgz` from the [1.3.0 release](https://github.com/Igorandor/access-atlas/releases/tag/v1.3.0), transfer it to the IRIS host, and load that archive instead:
+Version 1.3.0 is published in the community registry. Installation with `zpm "install access-atlas"` was verified on September 29, 2026. For an offline installation, download `access-atlas-1.3.0.tgz` from the [1.3.0 release](https://github.com/Igorandor/access-atlas/releases/tag/v1.3.0), transfer it to the IRIS host, and load that archive instead:
 
 ```objectscript
 zn "%SYS"
