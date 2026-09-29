@@ -1,5 +1,13 @@
 # Verification record
 
+## Duty-rule draft after refused save — September 29, 2026
+
+Release 1.2.8 retains the title and role choices when adding a campaign duty rule is refused. The title clears only after a confirmed save. An unavailable campaign-list refresh after that save is reported separately and does not invite a repeated addition. Pending fields are locked, repeated add callbacks are guarded, and a late result cannot clear a replacement draft or snapshot. Standalone rules still save in page memory.
+
+Production build and 300 tests pass, including three actual parent/detail regression cases for refusal, success and success followed by a failed list refresh. Ten browser checks cover those cases, pending controls, local rules, replacement drafts and callback errors. Run `node scripts/test-duty-rule-browser.mjs` and open its printed URL.
+
+Manual desktop and 390px checks confirm retained fields after refusal, successful deliberate retry and correct saved-state reporting after a list failure. The page fits both tested widths (1280px and 390px), and keyboard focus reaches the role selector. Transport and campaign records are synthetic; no native calls or durable writes occurred.
+
 ## Expired session during SQL refresh — September 29, 2026
 
 Release 1.2.7 ends an established Atlas session when its session refresh returns HTTP 401, including an unreadable response body. The existing App handler removes the cached workspace and shows sign-in. Initial unauthenticated discovery remains quiet; 403 and transient 503 responses do not end the session. Responses from an older session remain unable to sign out a newer account. There is no automatic retry, and previously downloaded files are unaffected.

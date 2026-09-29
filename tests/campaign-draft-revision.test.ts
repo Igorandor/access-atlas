@@ -6,9 +6,10 @@ import { transformSync } from 'esbuild';
 import * as campaignModel from '../shared/campaign';
 import * as campaignReport from '../shared/campaign-report';
 import * as certification from '../shared/certification';
+import * as dutyRules from '../shared/duty-rules';
 
 const tick = () => new Promise<void>((resolve) => setImmediate(resolve));
-type Scenario = 'settings' | 'scope' | 'status';
+type Scenario = 'settings' | 'scope' | 'status' | 'rules';
 type Hooks = { slots: any[]; cursor: number; effects: Array<() => void> };
 
 // Real parent, detail, certification and saved-read callbacks, with independent
@@ -47,6 +48,30 @@ async function harness(scenario: Scenario) {
       },
     ],
   };
+  if (scenario === 'rules')
+    stored.captures = [
+      {
+        id: '33333333-3333-4333-8333-333333333333',
+        label: 'Saved access',
+        snapshot: {
+          version: 1,
+          instance: stored.instance,
+          startedAt: stored.createdAt,
+          capturedAt: stored.createdAt,
+          users: [],
+          resources: [],
+          apps: [],
+          warnings: [],
+          roles: ['Requester', 'Approver'].map((Name) => ({
+            Name,
+            Description: '',
+            GrantedRoles: [],
+            Resources: [],
+            EscalationOnly: false,
+          })),
+        },
+      },
+    ];
   const writes: any[] = [];
   let applied = 0;
   let refuseStatus = true;
@@ -88,6 +113,7 @@ async function harness(scenario: Scenario) {
         Object.assign(stored, { title: body.title, description: body.description });
       else if (body.action === 'certification-scope')
         stored.certificationScope = structuredClone(body.scope);
+      else if (body.action === 'rules') stored.rules = structuredClone(body.rules);
       else if (body.action === 'state') {
         if (refuseStatus) throw new RequestError('Resolve investigating decisions first.', 409);
         stored.state = body.state;
@@ -100,7 +126,8 @@ async function harness(scenario: Scenario) {
   const state = (): Hooks => ({ slots: [], cursor: 0, effects: [] });
   const parent = state(),
     detail = state(),
-    cert = state();
+    cert = state(),
+    duty = state();
   let active = parent;
   const hooks = {
     useState(initial: any) {
@@ -140,6 +167,7 @@ async function harness(scenario: Scenario) {
     '../../../shared/campaign': campaignModel,
     '../../../shared/campaign-report': campaignReport,
     '../../../shared/certification': certification,
+    '../../../shared/duty-rules': dutyRules,
     '../../components/ui': { ErrorBox: () => null, Loading: () => null, Badge: () => null },
   };
   function load(file: string) {
@@ -156,6 +184,7 @@ async function harness(scenario: Scenario) {
   }
   modules['../../saved-evidence'] = load('src/saved-evidence.ts');
   modules['./CertificationReview'] = load('src/features/campaigns/CertificationReview.tsx');
+  modules['../access/DutyReview'] = load('src/features/access/DutyReview.tsx');
   const components = load('src/features/campaigns/Campaigns.tsx');
   function walk(node: any): any[] {
     if (!node || typeof node !== 'object') return [];
@@ -191,6 +220,10 @@ async function harness(scenario: Scenario) {
     return node ? render(node.type, node.props, detail) : [];
   };
   const formNodes = () => {
+    if (scenario === 'rules') {
+      const node = content().find((node) => node.type?.name === 'DutyReview');
+      return node ? render(node.type, node.props, duty) : [];
+    }
     if (scenario !== 'scope') return content();
     const node = content().find((node) => node.type?.name === 'CertificationReview');
     return node ? render(node.type, node.props, cert) : [];
@@ -198,7 +231,7 @@ async function harness(scenario: Scenario) {
   function flush() {
     for (let i = 0; i < 3; i++) {
       formNodes();
-      for (const target of [parent, detail, cert])
+      for (const target of [parent, detail, cert, duty])
         while (target.effects.length) target.effects.shift()!();
     }
   }
@@ -219,11 +252,27 @@ async function harness(scenario: Scenario) {
     .find((node) => node.type === 'button' && text(node).includes('Original title'))
     .props.onClick();
   await tick();
-  button(scenario !== 'scope' ? 'Settings' : 'Certification', content()).props.onClick();
+  button(
+    scenario === 'rules' ? 'Duty rules' : scenario !== 'scope' ? 'Settings' : 'Certification',
+    content(),
+  ).props.onClick();
   flush();
   return {
     writes,
     reads,
+    ruleFields: () =>
+      formNodes().filter(
+        (node) => node.type === 'select' || (node.type === 'input' && node.props.maxLength === 160),
+      ),
+    fillRule() {
+      const fields = formNodes().filter(
+        (node) => node.type === 'select' || (node.type === 'input' && node.props.maxLength === 160),
+      );
+      ['Request and approve payments', 'Requester', 'Approver'].forEach((value, i) =>
+        fields[i].props.onChange({ target: { value } }),
+      );
+      flush();
+    },
     workspaceHidden: () =>
       page().some(
         (node) =>
@@ -520,3 +569,26 @@ test('mutation revalidation holds pending and ignores a late refusal after a new
   assert.equal(ui.exportVisible(), true);
   assert.equal(ui.input().props.value, 'Draft');
 });
+
+for (const outcome of ['refused', 'saved', 'saved-list-failure'] as const) {
+  test(`duty rule draft follows confirmed parent save: ${outcome}`, async () => {
+    const ui = await harness('rules');
+    ui.fillRule();
+    if (outcome === 'refused') ui.refuseMutation();
+    if (outcome === 'saved-list-failure') ui.refuseList(503);
+    const submit = ui.button('Add review rule').props.onClick;
+    submit();
+    submit(); // A retained callback must not dispatch a second pending addition.
+    ui.flush();
+    assert.ok(ui.ruleFields().every((field) => field.props.disabled));
+    await ui.settle();
+    assert.equal(ui.writes.length, 1);
+    assert.equal(ui.stored.rules.length, outcome === 'refused' ? 0 : 1);
+    assert.deepEqual(
+      ui.ruleFields().map((field) => field.props.value),
+      [outcome === 'refused' ? 'Request and approve payments' : '', 'Requester', 'Approver'],
+    );
+    assert.ok(ui.ruleFields().every((field) => !field.props.disabled));
+    if (outcome === 'saved-list-failure') assert.match(ui.pageError(), /saved.*list|list.*failed/i);
+  });
+}

@@ -275,6 +275,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
     input: Omit<CampaignChange, 'revision'>,
     expectedRevision?: number,
     onRefused?: (message: string) => void,
+    onApplied?: () => void,
   ) {
     if (!current) return;
     const token = ++sequence.current;
@@ -289,6 +290,7 @@ export function Campaigns({ onManageAccount }: { onManageAccount: (account: stri
       if (token !== sequence.current) return;
       applied = true;
       setCurrent(result);
+      onApplied?.();
       await refreshListAfterSave(token);
     } catch (failure) {
       if (token !== sequence.current) return;
@@ -589,6 +591,7 @@ function CampaignDetail({
     input: ChangePayload,
     expectedRevision?: number,
     onRefused?: (message: string) => void,
+    onApplied?: () => void,
   ) => Promise<void>;
   reload: () => void;
   onManageAccount: (account: string) => void;
@@ -823,7 +826,13 @@ function CampaignDetail({
             snapshot={latest.snapshot}
             rules={campaign.rules}
             persisted
-            onRulesChange={(rules) => void change({ action: 'rules', rules })}
+            onRulesChange={async (rules) => {
+              let applied = false;
+              await change({ action: 'rules', rules }, undefined, undefined, () => {
+                applied = true;
+              });
+              return applied;
+            }}
           />
         </fieldset>
       )}

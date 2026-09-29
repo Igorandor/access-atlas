@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { checkDuties, dutyRulesSchema, type DutyRule } from '../../../shared/duty-rules';
 import type { AccessSnapshot } from '../../../shared/access-model';
 import { download } from '../../api';
@@ -13,7 +13,7 @@ export function DutyReview({
 }: {
   snapshot: AccessSnapshot;
   rules?: DutyRule[];
-  onRulesChange?: (rules: DutyRule[]) => void;
+  onRulesChange?: (rules: DutyRule[]) => boolean | Promise<boolean>;
   persisted?: boolean;
 }) {
   const [localRules, setLocalRules] = useState<DutyRule[]>([]),
@@ -21,17 +21,47 @@ export function DutyReview({
   const [left, setLeft] = useState(''),
     [right, setRight] = useState(''),
     [error, setError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const adding = useRef(false),
+    draftVersion = useRef(0);
+  const snapshotKey = JSON.stringify([snapshot.instance, snapshot.capturedAt]);
+  const currentSnapshot = useRef(snapshotKey);
+  currentSnapshot.current = snapshotKey;
   const rules = savedRules ?? localRules;
-  const setRules = (next: DutyRule[]) =>
-    onRulesChange ? onRulesChange(next) : setLocalRules(next);
-  const results = useMemo(() => checkDuties(snapshot, rules), [snapshot, rules]);
-  function add() {
+  async function setRules(next: DutyRule[]) {
     try {
-      setRules(dutyRulesSchema.parse([...rules, { title, left, right }]));
-      setTitle('');
-      setError('');
+      if (onRulesChange) return await onRulesChange(next);
+      setLocalRules(next);
+      return true;
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : 'Could not save the review rules.');
+      return false;
+    }
+  }
+  const results = useMemo(() => checkDuties(snapshot, rules), [snapshot, rules]);
+  async function add() {
+    if (adding.current) return;
+    let next: DutyRule[];
+    try {
+      next = dutyRulesSchema.parse([...rules, { title, left, right }]);
     } catch {
       setError('Give the rule a title, choose two different roles, and keep at most 20 rules.');
+      return;
+    }
+    const version = draftVersion.current;
+    adding.current = true;
+    setSaving(true);
+    setError('');
+    try {
+      if (
+        (await setRules(next)) &&
+        draftVersion.current === version &&
+        currentSnapshot.current === snapshotKey
+      )
+        setTitle('');
+    } finally {
+      adding.current = false;
+      setSaving(false);
     }
   }
   return (
@@ -57,14 +87,25 @@ export function DutyReview({
           Rule title
           <input
             maxLength={160}
+            disabled={saving}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              draftVersion.current++;
+              setTitle(e.target.value);
+            }}
             placeholder="Request and approve payments"
           />
         </label>
         <label className="field">
           First role
-          <select value={left} onChange={(e) => setLeft(e.target.value)}>
+          <select
+            disabled={saving}
+            value={left}
+            onChange={(e) => {
+              draftVersion.current++;
+              setLeft(e.target.value);
+            }}
+          >
             <option value="">Choose role</option>
             {snapshot.roles.map((role) => (
               <option key={role.Name}>{role.Name}</option>
@@ -73,15 +114,22 @@ export function DutyReview({
         </label>
         <label className="field">
           Conflicting role
-          <select value={right} onChange={(e) => setRight(e.target.value)}>
+          <select
+            disabled={saving}
+            value={right}
+            onChange={(e) => {
+              draftVersion.current++;
+              setRight(e.target.value);
+            }}
+          >
             <option value="">Choose role</option>
             {snapshot.roles.map((role) => (
               <option key={role.Name}>{role.Name}</option>
             ))}
           </select>
         </label>
-        <button onClick={add} disabled={rules.length >= 20}>
-          Add review rule
+        <button onClick={() => void add()} disabled={saving || rules.length >= 20}>
+          {saving ? 'Saving review rule…' : 'Add review rule'}
         </button>
       </div>
       {error && <ErrorBox error={error} />}
@@ -91,7 +139,8 @@ export function DutyReview({
             <strong>{rule.title}</strong> · {rule.left} + {rule.right}{' '}
             <button
               aria-label={'Remove rule ' + rule.title}
-              onClick={() => setRules(rules.filter((_, i) => i !== index))}
+              disabled={saving}
+              onClick={() => void setRules(rules.filter((_, i) => i !== index))}
             >
               Remove
             </button>
@@ -106,6 +155,7 @@ export function DutyReview({
           Import rules
           <input
             type="file"
+            disabled={saving}
             accept=".json,application/json"
             onChange={async (e) => {
               const file = e.target.files?.[0];
@@ -113,8 +163,8 @@ export function DutyReview({
               if (!file) return;
               try {
                 if (file.size > 32_000) throw Error();
-                setRules(dutyRulesSchema.parse(JSON.parse(await file.text())));
-                setError('');
+                if (await setRules(dutyRulesSchema.parse(JSON.parse(await file.text()))))
+                  setError('');
               } catch {
                 setError(
                   'Invalid rules file. Use an exported JSON array with at most 20 role pairs (32 KB maximum).',

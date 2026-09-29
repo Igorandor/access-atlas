@@ -11,6 +11,8 @@ The Campaigns tab remains available while an ad hoc capture is loading or after 
 3. Configure duty rules and review policies. Policies provide deterministic prompts; they do not enforce IRIS authorization.
 4. In Decisions, record acceptance, a required change, an investigation or a documented exception with a reason. Follow-up dates are calendar dates in UTC.
 
+When adding a duty rule, its title and selected roles stay in the form if saving is refused. Review the error before trying again. A confirmed save clears the submitted title; a later failure to refresh the campaign list does not undo that save. Rules added outside a campaign remain in page memory and should be exported before sign-out or reload.
+
 Finding decisions are tied to exact finding content. A changed finding requires another review. Captures are sequential reads, not transactions. An unchanged finding can retain its decision even when the capture changed; object certification uses stricter evidence comparison.
 
 In Access map, **Inspect account** opens a fresh read of that account in the configuration register. **Back to access review** returns to the same campaign, map and filter. This also works for the ad hoc access map. The shortcut does not create a proposal or change permissions; the register uses current native authorization rather than the saved capture.
